@@ -1,4 +1,4 @@
-# 🧪 Lab Suvidha - Multi-Tenant Cloud Pathology LIMS
+# 🧪 DigitLab - Multi-Tenant Cloud Pathology LIMS
 
 Enterprise-grade Cloud Laboratory Information Management System (LIMS) & SaaS platform built with **ASP.NET Core (Backend Web API)**, **Angular 19+ (Frontend SPA)**, and **Microsoft SQL Server / EF Core**.
 
@@ -72,7 +72,7 @@ npm start
 | Role | Email / Username | Password | Access Level |
 |---|---|---|---|
 | **👨‍⚕️ Lab Owner / Admin** | `doctor@citylab.com` | `Pass@12345` | Full Lab Operations, Billing, Result Entry, Letterhead, Accounts |
-| **🛡️ Super Administrator** | `admin@labsuvidha.com` | `Admin@12345` | Platform Multi-Lab Management, SaaS Plans & Global Analytics |
+| **🛡️ Super Administrator** | `admin@digitlab.com` | `Admin@12345` | Platform Multi-Lab Management, SaaS Plans & Global Analytics |
 | **🧪 Lab Technician / Staff** | `staff@citylab.com` | `Pass@12345` | Case Entry & Investigation Result Entry |
 
 ---

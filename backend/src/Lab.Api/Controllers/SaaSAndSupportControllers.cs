@@ -102,7 +102,7 @@ public class SubscriptionsController : ControllerBase
 
         return Ok(new RazorpayOrderResponse(
             OrderId: mockOrderId,
-            KeyId: "rzp_test_LabSuvidhaDemoKey",
+            KeyId: "rzp_test_DigitLabDemoKey",
             Amount: amount,
             Currency: "INR",
             LabName: lab?.LabName ?? "Pathology Lab"

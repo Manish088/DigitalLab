@@ -18,8 +18,8 @@ import { AuthService } from '../../core/services/auth.service';
         <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-brand-500 to-cyan-400 text-white shadow-xl shadow-brand-500/25 mb-4">
           <i class="fa-solid fa-microscope text-2xl"></i>
         </div>
-        <h2 class="text-3xl font-extrabold text-white tracking-tight font-heading">Lab Suvidha LIMS</h2>
-        <p class="mt-2 text-sm text-slate-400">Cloud Pathology Laboratory Information Management System</p>
+        <h2 class="text-3xl font-extrabold text-white tracking-tight font-heading">DigitLab LIMS</h2>
+        <p class="mt-2 text-sm text-slate-400">Next-Gen Cloud Pathology Laboratory Information Management System</p>
       </div>
 
       <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
@@ -79,10 +79,10 @@ import { AuthService } from '../../core/services/auth.service';
                   <div class="text-brand-400 font-semibold">👨‍⚕️ Lab Owner / Admin</div>
                   <div class="text-slate-500 text-[10px]">doctor&#64;citylab.com</div>
                 </button>
-                <button type="button" (click)="fillDemo('admin@labsuvidha.com', 'Admin@12345')"
+                <button type="button" (click)="fillDemo('admin@digitlab.com', 'Admin@12345')"
                   class="p-2 rounded-lg bg-slate-900/90 border border-slate-700 hover:border-amber-500 text-left transition-colors">
                   <div class="text-amber-400 font-semibold">🛡️ Super Admin</div>
-                  <div class="text-slate-500 text-[10px]">admin&#64;labsuvidha.com</div>
+                  <div class="text-slate-500 text-[10px]">admin&#64;digitlab.com</div>
                 </button>
               </div>
             </div>

@@ -23,9 +23,9 @@ public class JwtTokenService : IJwtTokenService
 
     public string GenerateJwtToken(ApplicationUser user, string? labName = null)
     {
-        var secret = _config["Jwt:Key"] ?? "LabSuvidhaEnterpriseSuperSecretEncryptionKey2026!@#$%^&*";
-        var issuer = _config["Jwt:Issuer"] ?? "LabSuvidha";
-        var audience = _config["Jwt:Audience"] ?? "LabSuvidhaApp";
+        var secret = _config["Jwt:Key"] ?? "DigitLabEnterpriseSuperSecretEncryptionKey2026!@#$%^&*";
+        var issuer = _config["Jwt:Issuer"] ?? "DigitLab";
+        var audience = _config["Jwt:Audience"] ?? "DigitLabApp";
         var expiryMinutes = int.TryParse(_config["Jwt:ExpiryMinutes"], out var mins) ? mins : 1440; // 24 hours
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));

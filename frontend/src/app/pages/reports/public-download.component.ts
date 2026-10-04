@@ -77,7 +77,7 @@ import { ApiService } from '../../core/services/api.service';
           </a>
 
           <div class="text-center text-[10px] text-slate-400">
-            Powered by Lab Suvidha Cloud Pathology Information System
+            Powered by DigitLab Cloud Pathology Information System
           </div>
         </div>
       </div>

@@ -16,8 +16,8 @@ import { RouterLink } from '@angular/router';
               <i class="fa-solid fa-microscope text-xl"></i>
             </div>
             <div>
-              <span class="text-xl font-extrabold text-white font-heading tracking-tight">Lab Suvidha</span>
-              <span class="text-[10px] text-cyan-400 font-bold block uppercase tracking-widest">Cloud Pathology LIMS</span>
+              <span class="text-xl font-extrabold text-white font-heading tracking-tight">DigitLab</span>
+              <span class="text-[10px] text-cyan-400 font-bold block uppercase tracking-widest">Next-Gen Cloud Pathology LIMS</span>
             </div>
           </div>
 
@@ -121,7 +121,7 @@ import { RouterLink } from '@angular/router';
 
       <!-- Footer -->
       <footer class="py-12 bg-slate-950 border-t border-slate-900 text-center text-xs text-slate-500">
-        <p>© 2026 Lab Suvidha. Built with ASP.NET Core & Angular. All rights reserved.</p>
+        <p>© 2026 DigitLab. Built with ASP.NET Core & Angular. All rights reserved.</p>
       </footer>
     </div>
   `

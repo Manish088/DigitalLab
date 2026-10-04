@@ -49,9 +49,9 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 .AddDefaultTokenProviders();
 
 // 3. Add JWT Authentication
-var jwtKey = builder.Configuration["Jwt:Key"] ?? "LabSuvidhaEnterpriseSuperSecretEncryptionKey2026!@#$%^&*";
-var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "LabSuvidha";
-var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "LabSuvidhaApp";
+var jwtKey = builder.Configuration["Jwt:Key"] ?? "DigitLabEnterpriseSuperSecretEncryptionKey2026!@#$%^&*";
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "DigitLab";
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "DigitLabApp";
 
 builder.Services.AddAuthentication(options =>
 {
@@ -104,7 +104,7 @@ builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo
     {
-        Title = "Lab Suvidha LIMS & Pathology API",
+        Title = "DigitLab LIMS & Pathology API",
         Version = "v1",
         Description = "Enterprise Multi-Tenant Cloud Pathology Laboratory Information Management System API"
     });
@@ -165,7 +165,7 @@ if (app.Environment.IsDevelopment() || true)
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Lab Suvidha LIMS API v1");
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "DigitLab LIMS API v1");
         c.RoutePrefix = "swagger";
     });
 }

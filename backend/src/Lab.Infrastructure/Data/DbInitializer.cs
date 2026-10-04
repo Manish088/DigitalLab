@@ -29,7 +29,7 @@ public static class DbInitializer
         }
 
         // 2. Seed Super Admin
-        var superAdminEmail = "admin@labsuvidha.com";
+        var superAdminEmail = "admin@digitlab.com";
         var superAdmin = await userManager.FindByEmailAsync(superAdminEmail);
         if (superAdmin == null)
         {

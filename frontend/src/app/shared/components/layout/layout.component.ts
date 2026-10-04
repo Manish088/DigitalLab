@@ -19,7 +19,7 @@ import { AuthService } from '../../../core/services/auth.service';
             <div>
               <div class="flex items-center space-x-2">
                 <h1 class="text-lg font-bold text-slate-900 font-heading leading-none">
-                  {{ currentUser()?.labName || 'Lab Suvidha LIMS' }}
+                  {{ currentUser()?.labName || 'DigitLab LIMS' }}
                 </h1>
                 <span *ngIf="currentUser()?.role" class="px-2 py-0.5 text-xs font-semibold rounded-full bg-brand-50 text-brand-700 border border-brand-200">
                   {{ currentUser()?.role }}
@@ -118,7 +118,7 @@ import { AuthService } from '../../../core/services/auth.service';
           </div>
 
           <div class="p-3 bg-slate-950 border-t border-slate-800 text-xs text-slate-500 flex justify-between items-center">
-            <span>Lab Suvidha v2.6.0</span>
+            <span>DigitLab v2.6.0</span>
             <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
           </div>
         </aside>
