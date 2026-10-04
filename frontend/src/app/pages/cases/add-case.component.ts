@@ -154,6 +154,7 @@ import { DoctorReferral, CollectionAgent, TestMaster, TestCategory, Gender, Prio
                         <span><i class="fa-solid fa-phone text-[9px] mr-1 text-slate-400"></i>{{ p.phone || 'No Mobile' }}</span>
                         <span>•</span>
                         <span>{{ p.ageYears }} Yrs / {{ getGenderText(p.gender) }}</span>
+                        <span *ngIf="p.bloodGroup" class="px-1.5 py-0.2 text-[10px] font-bold bg-rose-50 text-rose-700 rounded border border-rose-200">{{ p.bloodGroup }}</span>
                       </div>
                     </div>
                     <button type="button" class="px-2.5 py-1 rounded-lg bg-brand-600 text-white font-bold text-xs shadow-sm hover:bg-brand-500">
@@ -210,9 +211,10 @@ import { DoctorReferral, CollectionAgent, TestMaster, TestCategory, Gender, Prio
                         <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 font-mono">{{ p.uhid }}</span>
                       </div>
                       <div class="text-[11px] text-slate-500 flex items-center space-x-2">
-                        <span><i class="fa-solid fa-phone text-[9px] mr-1 text-slate-400"></i>{{ p.phone }}</span>
+                        <span><i class="fa-solid fa-phone text-[9px] mr-1 text-slate-400"></i>{{ p.phone || 'No Mobile' }}</span>
                         <span>•</span>
                         <span>{{ p.ageYears }} Yrs / {{ getGenderText(p.gender) }}</span>
+                        <span *ngIf="p.bloodGroup" class="px-1.5 py-0.2 text-[10px] font-bold bg-rose-50 text-rose-700 rounded border border-rose-200">{{ p.bloodGroup }}</span>
                       </div>
                     </div>
                     <button type="button" class="px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-bold text-xs shadow-sm hover:bg-emerald-500">
@@ -725,6 +727,28 @@ export class AddCaseComponent implements OnInit {
     return g === 2 ? 'Female' : (g === 3 ? 'Other' : 'Male');
   }
 
+  normalizeBloodGroup(bg: any): string {
+    if (!bg) return '';
+    const clean = String(bg).trim().toUpperCase().replace(/\s+/g, '');
+    if (clean === 'A+' || clean === 'APOSITIVE' || clean === 'A_POS' || clean === 'APOS' || clean === 'A+VE' || clean === 'A +') return 'A+';
+    if (clean === 'A-' || clean === 'ANEGATIVE' || clean === 'A_NEG' || clean === 'ANEG' || clean === 'A-VE' || clean === 'A -') return 'A-';
+    if (clean === 'B+' || clean === 'BPOSITIVE' || clean === 'B_POS' || clean === 'BPOS' || clean === 'B+VE' || clean === 'B +') return 'B+';
+    if (clean === 'B-' || clean === 'BNEGATIVE' || clean === 'B_NEG' || clean === 'BNEG' || clean === 'B-VE' || clean === 'B -') return 'B-';
+    if (clean === 'O+' || clean === 'OPOSITIVE' || clean === 'O_POS' || clean === 'OPOS' || clean === 'O+VE' || clean === 'O +') return 'O+';
+    if (clean === 'O-' || clean === 'ONEGATIVE' || clean === 'O_NEG' || clean === 'ONEG' || clean === 'O-VE' || clean === 'O -') return 'O-';
+    if (clean === 'AB+' || clean === 'ABPOSITIVE' || clean === 'AB_POS' || clean === 'ABPOS' || clean === 'AB+VE' || clean === 'AB +') return 'AB+';
+    if (clean === 'AB-' || clean === 'ABNEGATIVE' || clean === 'AB_NEG' || clean === 'ABNEG' || clean === 'AB-VE' || clean === 'AB -') return 'AB-';
+
+    const valid = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
+    const found = valid.find(v => v.toLowerCase() === String(bg).trim().toLowerCase());
+    if (found) return found;
+
+    if (clean === 'UNKNOWN' || clean === 'NULL' || clean === 'UNDEFINED' || clean === 'NONE' || clean === 'NA') {
+      return '';
+    }
+    return String(bg).trim();
+  }
+
   selectPatient(p: Patient): void {
     this.selectedPatientId = p.id;
     this.selectedPatientUhid = p.uhid;
@@ -735,7 +759,7 @@ export class AddCaseComponent implements OnInit {
       ageMonths: p.ageMonths || 0,
       ageDays: p.ageDays || 0,
       phone: p.phone || '',
-      bloodGroup: p.bloodGroup || '',
+      bloodGroup: this.normalizeBloodGroup(p.bloodGroup),
       address: p.address || ''
     };
     this.patientSearchQuery = '';
@@ -793,7 +817,7 @@ export class AddCaseComponent implements OnInit {
 
     const payload = {
       patientId: this.selectedPatientId ? this.selectedPatientId : null,
-      newPatient: this.selectedPatientId ? null : {
+      newPatient: {
         fullName: this.patient.fullName.trim(),
         gender: Number(this.patient.gender) || 1,
         ageYears: Number(this.patient.ageYears) || 0,
@@ -802,7 +826,7 @@ export class AddCaseComponent implements OnInit {
         phone: this.patient.phone ? this.patient.phone.trim() : null,
         email: null,
         address: this.patient.address ? this.patient.address.trim() : null,
-        bloodGroup: this.patient.bloodGroup || null
+        bloodGroup: this.normalizeBloodGroup(this.patient.bloodGroup) || null
       },
       referringDoctorId: cleanDoctorId,
       collectionAgentId: cleanAgentId,

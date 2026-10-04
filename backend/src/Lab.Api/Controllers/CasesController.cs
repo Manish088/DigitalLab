@@ -207,6 +207,27 @@ public class CasesController : ControllerBase
             if (dto.PatientId.HasValue && dto.PatientId != Guid.Empty)
             {
                 patientId = dto.PatientId.Value;
+                if (dto.NewPatient != null)
+                {
+                    var existingPatient = await _context.Patients.FirstOrDefaultAsync(p => p.Id == patientId);
+                    if (existingPatient != null)
+                    {
+                        if (!string.IsNullOrWhiteSpace(dto.NewPatient.FullName))
+                            existingPatient.FullName = dto.NewPatient.FullName.Trim();
+                        existingPatient.Gender = dto.NewPatient.Gender;
+                        existingPatient.AgeYears = dto.NewPatient.AgeYears;
+                        existingPatient.AgeMonths = dto.NewPatient.AgeMonths;
+                        existingPatient.AgeDays = dto.NewPatient.AgeDays;
+                        if (!string.IsNullOrWhiteSpace(dto.NewPatient.Phone))
+                            existingPatient.Phone = dto.NewPatient.Phone.Trim();
+                        if (!string.IsNullOrWhiteSpace(dto.NewPatient.Address))
+                            existingPatient.Address = dto.NewPatient.Address.Trim();
+                        if (!string.IsNullOrWhiteSpace(dto.NewPatient.BloodGroup))
+                            existingPatient.BloodGroup = dto.NewPatient.BloodGroup.Trim();
+
+                        await _context.SaveChangesAsync();
+                    }
+                }
             }
             else if (dto.NewPatient != null)
             {
