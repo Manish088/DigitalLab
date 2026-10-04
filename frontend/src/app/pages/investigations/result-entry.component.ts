@@ -191,6 +191,9 @@ import { TestMaster, TestCategory } from '../../core/models/lims.models';
                           [class.bg-slate-100]="caseDetails.status === 'Approved'"
                           [class.cursor-not-allowed]="caseDetails.status === 'Approved'"
                           [class.font-bold]="caseDetails.status === 'Approved'"
+                          [class.border-rose-500]="highlightEmptyFields && (!param.resultValue || param.resultValue.toString().trim() === '')"
+                          [class.border-2]="highlightEmptyFields && (!param.resultValue || param.resultValue.toString().trim() === '')"
+                          [class.bg-rose-50]="highlightEmptyFields && (!param.resultValue || param.resultValue.toString().trim() === '')"
                           class="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none">
                           <option value="">Select Option</option>
                           <option *ngFor="let opt of param.optionsList" [value]="opt">{{ opt }}</option>
@@ -203,7 +206,11 @@ import { TestMaster, TestCategory } from '../../core/models/lims.models';
                           [disabled]="caseDetails.status === 'Approved'"
                           [class]="caseDetails.status === 'Approved' 
                             ? 'w-full px-3 py-1.5 text-xs border border-slate-200 bg-slate-100/90 text-slate-900 font-bold rounded-lg cursor-not-allowed select-none shadow-none'
-                            : (param.isAbnormal ? 'w-full px-3 py-1.5 text-xs border border-rose-400 bg-rose-50/40 text-rose-900 font-bold rounded-lg focus:ring-2 focus:ring-rose-500 focus:outline-none transition-all' : 'w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none transition-all')">
+                            : (param.isAbnormal 
+                                ? 'w-full px-3 py-1.5 text-xs border border-rose-400 bg-rose-50/40 text-rose-900 font-bold rounded-lg focus:ring-2 focus:ring-rose-500 focus:outline-none transition-all' 
+                                : (highlightEmptyFields && (!param.resultValue || param.resultValue.toString().trim() === '')
+                                    ? 'w-full px-3 py-1.5 text-xs border-2 border-rose-500 bg-rose-50/70 text-rose-950 font-medium rounded-lg focus:ring-2 focus:ring-rose-500 focus:outline-none transition-all placeholder:text-rose-400'
+                                    : 'w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none transition-all'))">
                       </div>
                     </td>
 
@@ -478,6 +485,7 @@ export class ResultEntryComponent implements OnInit {
   showApproveModal = false;
   showUnlockModal = false;
   unlocking = false;
+  highlightEmptyFields = false;
   errorMessage = '';
 
   // Add Tests Modal State
@@ -644,15 +652,25 @@ export class ResultEntryComponent implements OnInit {
       return;
     }
 
-    const hasAnyValue = (this.caseDetails?.items || []).some((i: any) =>
-      (i.parameters || []).some((p: any) => p.resultValue !== undefined && p.resultValue !== null && p.resultValue.toString().trim() !== '')
-    );
+    // Strictly validate that ALL parameters across all tests are filled
+    const missingTests: string[] = [];
+    (this.caseDetails?.items || []).forEach((item: any) => {
+      const emptyParams = (item.parameters || []).filter(
+        (p: any) => p.resultValue === undefined || p.resultValue === null || p.resultValue.toString().trim() === ''
+      );
+      if (emptyParams.length > 0 || !item.parameters || item.parameters.length === 0) {
+        missingTests.push(`${item.testName || 'Test'} (${emptyParams.length} empty)`);
+      }
+    });
 
-    if (!hasAnyValue) {
-      this.toast.warning('Please enter at least one test result value before saving.');
+    if (missingTests.length > 0) {
+      this.highlightEmptyFields = true;
+      this.toast.warning(`All parameter values are required before saving. Missing: ${missingTests.join(', ')}`);
+      this.cdr.detectChanges();
       return;
     }
 
+    this.highlightEmptyFields = false;
     this.saving = true;
     const payload = {
       caseOrderId: this.caseId,

@@ -150,22 +150,37 @@ public class InvestigationsController : ControllerBase
             return BadRequest(new { message = "This diagnostic report is already approved and locked. Results cannot be modified without unlocking the report." });
         }
 
-        // Validate that at least one parameter value has been entered
-        var totalValuesEntered = dto.Items?
-            .SelectMany(i => i.Results ?? new List<SaveResultValueDto>())
-            .Count(r => !string.IsNullOrWhiteSpace(r.ResultValue)) ?? 0;
-
-        if (totalValuesEntered == 0)
-        {
-            return BadRequest(new { message = "Cannot save empty results. Please enter at least one test parameter value." });
-        }
-
         var itemsList = await _context.CaseOrderItems
+            .Include(i => i.Test)
             .Include(i => i.Results).ThenInclude(r => r.Parameter)
             .Where(i => i.CaseOrderId == dto.CaseOrderId)
             .ToListAsync();
 
         caseOrder.Items = itemsList;
+
+        // Strictly validate that ALL parameters across all tests are filled
+        var missingTests = new List<string>();
+        foreach (var item in caseOrder.Items)
+        {
+            var itemDto = dto.Items?.FirstOrDefault(i => i.CaseOrderItemId == item.Id);
+            var missingCount = item.Results.Count(r => {
+                var resDto = itemDto?.Results?.FirstOrDefault(rd => rd.ParameterId == r.ParameterId);
+                return string.IsNullOrWhiteSpace(resDto?.ResultValue);
+            });
+
+            if (missingCount > 0 || !item.Results.Any())
+            {
+                var testName = item.Test?.TestName ?? "Test";
+                missingTests.Add($"{testName} ({missingCount} parameter(s) empty)");
+            }
+        }
+
+        if (missingTests.Any())
+        {
+            return BadRequest(new { 
+                message = $"All parameter values are required before saving. Missing in: {string.Join(", ", missingTests)}. Please fill all parameters." 
+            });
+        }
 
         var patientAgeDays = caseOrder.Patient.AgeYears * 365 + caseOrder.Patient.AgeMonths * 30 + caseOrder.Patient.AgeDays;
 
@@ -181,15 +196,16 @@ public class InvestigationsController : ControllerBase
 
         var normalRangesLookup = normalRangesList.ToLookup(nr => nr.ParameterId);
 
-        foreach (var itemDto in dto.Items)
+        foreach (var itemDto in dto.Items ?? new List<SaveItemResultDto>())
         {
             var item = caseOrder.Items.FirstOrDefault(i => i.Id == itemDto.CaseOrderItemId);
             if (item == null) continue;
 
             item.PathologistRemarks = itemDto.PathologistRemarks;
             item.InterpretationNote = itemDto.InterpretationNote;
+            item.Status = ItemResultStatus.Completed;
 
-            foreach (var resDto in itemDto.Results)
+            foreach (var resDto in itemDto.Results ?? new List<SaveResultValueDto>())
             {
                 var res = item.Results.FirstOrDefault(r => r.ParameterId == resDto.ParameterId);
                 if (res == null) continue;
@@ -259,42 +275,13 @@ public class InvestigationsController : ControllerBase
                     res.IsAbnormal = false;
                 }
             }
-
-            // Update item status based on item parameter completion
-            int itemTotalParams = item.Results.Count;
-            int itemFilledParams = item.Results.Count(r => !string.IsNullOrWhiteSpace(r.ResultValue));
-            if (itemTotalParams > 0 && itemFilledParams == itemTotalParams)
-            {
-                item.Status = ItemResultStatus.Completed;
-            }
-            else if (itemFilledParams > 0)
-            {
-                item.Status = ItemResultStatus.InProgress;
-            }
-            else
-            {
-                item.Status = ItemResultStatus.Pending;
-            }
         }
 
-        // Smart status progression for overall CaseOrder
-        var allCaseParams = caseOrder.Items.SelectMany(i => i.Results).ToList();
-        var allFilledParams = allCaseParams.Count(r => !string.IsNullOrWhiteSpace(r.ResultValue));
-
-        if (allCaseParams.Count > 0 && allFilledParams == allCaseParams.Count)
-        {
-            caseOrder.Status = CaseStatus.Completed;
-        }
-        else
-        {
-            caseOrder.Status = CaseStatus.InProgress;
-        }
+        caseOrder.Status = CaseStatus.Completed;
 
         await _context.SaveChangesAsync();
         return Ok(new { 
-            message = caseOrder.Status == CaseStatus.Completed 
-                ? "All investigation results saved successfully. Ready for verification." 
-                : "Investigation results saved (Status: In Progress)." 
+            message = "All investigation results saved successfully. Ready for verification." 
         });
     }
 
