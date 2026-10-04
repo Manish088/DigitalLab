@@ -137,10 +137,31 @@ import { DoctorReferral, TestMaster, TestCategory } from '../../core/models/lims
                   <div class="font-medium text-slate-800">{{ c.doctorName }}</div>
                 </td>
 
-                <!-- Tests -->
-                <td class="p-3.5 max-w-[200px]">
-                  <div class="font-semibold text-slate-700 truncate" [title]="c.testsSummary">{{ c.testsSummary }}</div>
-                  <div class="text-[11px] text-slate-400">{{ c.testsCount }} test(s)</div>
+                <!-- Tests Booked -->
+                <td class="p-3.5 min-w-[220px] max-w-[320px]">
+                  <div class="space-y-1">
+                    <div *ngFor="let tName of getDisplayedTests(c)" 
+                      class="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-lg bg-slate-100 hover:bg-slate-200/80 text-slate-800 text-xs font-semibold border border-slate-200 mr-1 mb-1 max-w-full"
+                      [title]="tName">
+                      <i class="fa-solid fa-vial text-brand-600 text-[10px] shrink-0"></i>
+                      <span class="truncate">{{ tName }}</span>
+                    </div>
+
+                    <!-- If more than 3 tests, show a +X more pill with expand toggle -->
+                    <span *ngIf="getTotalTestCount(c) > 3 && !c.expandedTests" 
+                      (click)="c.expandedTests = true"
+                      class="inline-flex items-center px-2 py-0.5 rounded-lg bg-brand-50 hover:bg-brand-100 text-brand-700 text-[10px] font-bold border border-brand-200 cursor-pointer"
+                      [title]="c.testsSummary">
+                      + {{ getTotalTestCount(c) - 3 }} more...
+                    </span>
+
+                    <span *ngIf="c.expandedTests" 
+                      (click)="c.expandedTests = false"
+                      class="inline-flex items-center px-2 py-0.5 rounded-lg bg-slate-200 text-slate-700 text-[10px] font-bold cursor-pointer">
+                      Show less ▲
+                    </span>
+                  </div>
+                  <div class="text-[10px] text-slate-400 mt-0.5 font-medium">{{ c.testsCount }} test(s) booked</div>
                 </td>
 
                 <!-- Financials -->
@@ -624,5 +645,27 @@ export class CaseListComponent implements OnInit {
         this.toast.error(err.error?.message || 'Failed to add tests to case.');
       }
     });
+  }
+
+  getTestList(c: any): string[] {
+    if (c.testNames && Array.isArray(c.testNames) && c.testNames.length > 0) {
+      return c.testNames;
+    }
+    if (c.testsSummary) {
+      return c.testsSummary.split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0);
+    }
+    return [];
+  }
+
+  getTotalTestCount(c: any): number {
+    return c.testsCount || this.getTestList(c).length;
+  }
+
+  getDisplayedTests(c: any): string[] {
+    const list = this.getTestList(c);
+    if (c.expandedTests || list.length <= 3) {
+      return list;
+    }
+    return list.slice(0, 3);
   }
 }

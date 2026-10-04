@@ -94,7 +94,8 @@ public class CasesController : ControllerBase
                 PaymentStatus = c.PaymentStatus.ToString(),
                 c.PublicAccessToken,
                 TestsCount = c.Items.Count,
-                TestsSummary = string.Join(", ", c.Items.Select(i => i.Test.TestName))
+                TestsSummary = string.Join(", ", c.Items.Select(i => i.Test.TestName)),
+                TestNames = c.Items.Select(i => i.Test.TestName).ToList()
             })
             .ToListAsync();
 
