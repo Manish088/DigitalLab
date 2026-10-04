@@ -472,6 +472,206 @@ public class CasesController : ControllerBase
         return Ok(new { message = "Due payment recorded successfully.", caseOrder.PaidAmount, caseOrder.DueAmount, PaymentStatus = caseOrder.PaymentStatus.ToString() });
     }
 
+    [HttpPost("{id}/add-tests")]
+    public async Task<IActionResult> AddTestsToCase(Guid id, [FromBody] AddTestsToCaseDto dto)
+    {
+        try
+        {
+            var caseOrder = await _context.CaseOrders
+                .Include(c => c.Patient)
+                .Include(c => c.Items).ThenInclude(i => i.Test)
+                .FirstOrDefaultAsync(c => c.Id == id);
+
+            if (caseOrder == null) return NotFound(new { message = "Case order not found." });
+
+            if (caseOrder.Status == CaseStatus.Approved)
+                return BadRequest(new { message = "Cannot add tests to an already approved and verified case report." });
+
+            if (dto.TestIds == null || dto.TestIds.Count == 0)
+                return BadRequest(new { message = "Please select at least one test to add." });
+
+            var existingTestIds = caseOrder.Items.Select(i => i.TestId).ToHashSet();
+            var newTestIds = dto.TestIds.Where(tid => !existingTestIds.Contains(tid)).Distinct().ToList();
+
+            if (newTestIds.Count == 0)
+                return BadRequest(new { message = "All selected tests are already added to this case order." });
+
+            var testsToAdd = await _context.Tests
+                .Include(t => t.Parameters).ThenInclude(p => p.NormalRanges)
+                .Where(t => newTestIds.Contains(t.Id))
+                .ToListAsync();
+
+            if (testsToAdd.Count == 0)
+                return BadRequest(new { message = "Selected tests could not be found." });
+
+            var patientObj = caseOrder.Patient;
+            decimal additionalGross = 0;
+
+            foreach (var test in testsToAdd)
+            {
+                var itemDiscount = 0m;
+                var itemNet = Math.Max(0m, Math.Round(test.Price - itemDiscount, 2));
+
+                var orderItem = new CaseOrderItem
+                {
+                    CaseOrderId = caseOrder.Id,
+                    TestId = test.Id,
+                    ItemPrice = Math.Round(test.Price, 2),
+                    DiscountAmount = itemDiscount,
+                    NetAmount = itemNet,
+                    Status = ItemResultStatus.Pending
+                };
+                await _context.CaseOrderItems.AddAsync(orderItem);
+                await _context.SaveChangesAsync();
+
+                additionalGross += test.Price;
+
+                foreach (var param in test.Parameters.OrderBy(p => p.DisplayOrder))
+                {
+                    var matchedRange = param.NormalRanges.FirstOrDefault(r =>
+                        (r.ApplicableGender == Gender.Both || r.ApplicableGender == patientObj.Gender) &&
+                        patientObj.AgeYears * 365 >= r.MinAgeDays &&
+                        patientObj.AgeYears * 365 <= r.MaxAgeDays);
+
+                    var rangeText = matchedRange?.TextualRange ??
+                                    (matchedRange?.MinNormalValue.HasValue == true && matchedRange?.MaxNormalValue.HasValue == true
+                                        ? $"{matchedRange.MinNormalValue} - {matchedRange.MaxNormalValue} {param.Unit}"
+                                        : null);
+
+                    var resVal = new TestResultValue
+                    {
+                        CaseOrderItemId = orderItem.Id,
+                        ParameterId = param.Id,
+                        ParameterName = param.ParameterName,
+                        Unit = param.Unit,
+                        NormalRangeText = rangeText,
+                        ResultValue = param.DefaultValue,
+                        DisplayOrder = param.DisplayOrder
+                    };
+                    await _context.TestResultValues.AddAsync(resVal);
+                }
+            }
+
+            // Update Financials
+            caseOrder.TotalAmount += Math.Round(additionalGross, 2);
+            if (dto.AdditionalDiscountAmount > 0)
+            {
+                caseOrder.DiscountAmount += Math.Round(dto.AdditionalDiscountAmount, 2);
+            }
+            caseOrder.NetAmount = Math.Max(0m, Math.Round(caseOrder.TotalAmount - caseOrder.DiscountAmount, 2));
+
+            if (dto.AdditionalPaidAmount > 0)
+            {
+                var cleanPaid = Math.Round(dto.AdditionalPaidAmount, 2);
+                caseOrder.PaidAmount += cleanPaid;
+
+                var txCount = await _context.PaymentTransactions.IgnoreQueryFilters().CountAsync() + 1;
+                var txNum = $"TXN-{DateTime.UtcNow:yyyyMM}-{txCount:D4}";
+                while (await _context.PaymentTransactions.IgnoreQueryFilters().AnyAsync(p => p.TransactionNumber == txNum))
+                {
+                    txCount++;
+                    txNum = $"TXN-{DateTime.UtcNow:yyyyMM}-{txCount:D4}";
+                }
+
+                var tx = new PaymentTransaction
+                {
+                    CaseOrderId = caseOrder.Id,
+                    TransactionNumber = txNum,
+                    TransactionDate = DateTime.UtcNow,
+                    Amount = cleanPaid,
+                    PaymentMethod = dto.PaymentMethod,
+                    ReferenceNumber = dto.TransactionRef,
+                    ReceivedByName = _currentUserService.FullName ?? "Reception Desk",
+                    Remarks = $"Payment for added tests: {string.Join(", ", testsToAdd.Select(t => t.TestName))}"
+                };
+                await _context.PaymentTransactions.AddAsync(tx);
+            }
+
+            caseOrder.DueAmount = Math.Max(0m, Math.Round(caseOrder.NetAmount - caseOrder.PaidAmount, 2));
+            caseOrder.PaymentStatus = caseOrder.DueAmount <= 0 ? PaymentStatus.Paid : (caseOrder.PaidAmount > 0 ? PaymentStatus.Partial : PaymentStatus.Unpaid);
+
+            // Revert Completed status back to InProgress if new tests are added
+            if (caseOrder.Status == CaseStatus.Completed)
+            {
+                caseOrder.Status = CaseStatus.InProgress;
+            }
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                message = $"{testsToAdd.Count} test(s) added successfully to case {caseOrder.CaseNumber}.",
+                caseOrderId = caseOrder.Id,
+                caseOrder.TotalAmount,
+                caseOrder.DiscountAmount,
+                caseOrder.NetAmount,
+                caseOrder.PaidAmount,
+                caseOrder.DueAmount,
+                PaymentStatus = caseOrder.PaymentStatus.ToString(),
+                Status = caseOrder.Status.ToString()
+            });
+        }
+        catch (Exception ex)
+        {
+            var detailedMsg = ex.InnerException != null ? $"{ex.Message} --> {ex.InnerException.Message}" : ex.Message;
+            return StatusCode(500, new { message = detailedMsg });
+        }
+    }
+
+    [HttpDelete("{id}/items/{itemId}")]
+    public async Task<IActionResult> RemoveTestFromCase(Guid id, Guid itemId)
+    {
+        try
+        {
+            var caseOrder = await _context.CaseOrders
+                .Include(c => c.Items).ThenInclude(i => i.Test)
+                .Include(c => c.Items).ThenInclude(i => i.Results)
+                .FirstOrDefaultAsync(c => c.Id == id);
+
+            if (caseOrder == null) return NotFound(new { message = "Case order not found." });
+
+            if (caseOrder.Status == CaseStatus.Approved)
+                return BadRequest(new { message = "Cannot modify or remove tests from an already approved case report." });
+
+            if (caseOrder.Items.Count <= 1)
+                return BadRequest(new { message = "A case must have at least one test. You cannot remove all tests from a case." });
+
+            var itemToRemove = caseOrder.Items.FirstOrDefault(i => i.Id == itemId);
+            if (itemToRemove == null) return NotFound(new { message = "Test item not found in this case." });
+
+            var removedPrice = itemToRemove.ItemPrice;
+
+            // Remove results & item
+            _context.TestResultValues.RemoveRange(itemToRemove.Results);
+            _context.CaseOrderItems.Remove(itemToRemove);
+
+            // Recalculate financials
+            caseOrder.TotalAmount = Math.Max(0m, Math.Round(caseOrder.TotalAmount - removedPrice, 2));
+            if (caseOrder.DiscountAmount > caseOrder.TotalAmount)
+                caseOrder.DiscountAmount = caseOrder.TotalAmount;
+            caseOrder.NetAmount = Math.Max(0m, Math.Round(caseOrder.TotalAmount - caseOrder.DiscountAmount, 2));
+            caseOrder.DueAmount = Math.Max(0m, Math.Round(caseOrder.NetAmount - caseOrder.PaidAmount, 2));
+            caseOrder.PaymentStatus = caseOrder.DueAmount <= 0 ? PaymentStatus.Paid : (caseOrder.PaidAmount > 0 ? PaymentStatus.Partial : PaymentStatus.Unpaid);
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                message = $"Test {itemToRemove.Test?.TestName ?? "Investigation"} removed from case.",
+                caseOrder.TotalAmount,
+                caseOrder.NetAmount,
+                caseOrder.PaidAmount,
+                caseOrder.DueAmount,
+                PaymentStatus = caseOrder.PaymentStatus.ToString()
+            });
+        }
+        catch (Exception ex)
+        {
+            var detailedMsg = ex.InnerException != null ? $"{ex.Message} --> {ex.InnerException.Message}" : ex.Message;
+            return StatusCode(500, new { message = detailedMsg });
+        }
+    }
+
     [AllowAnonymous]
     [HttpGet("{id}/barcode-svg")]
     public async Task<IActionResult> GetBarcodeSvg(Guid id)

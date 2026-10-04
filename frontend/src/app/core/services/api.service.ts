@@ -67,6 +67,20 @@ export class ApiService {
     return this.http.post<CaseOrder>(`${this.baseUrl}/cases`, caseData);
   }
 
+  addTestsToCase(caseOrderId: string, data: {
+    testIds: string[];
+    additionalDiscountAmount?: number;
+    additionalPaidAmount?: number;
+    paymentMethod?: number;
+    transactionRef?: string | null;
+  }): Observable<any> {
+    return this.http.post(`${this.baseUrl}/cases/${caseOrderId}/add-tests`, data);
+  }
+
+  removeTestFromCase(caseOrderId: string, itemId: string): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/cases/${caseOrderId}/items/${itemId}`);
+  }
+
   settleDuePayment(caseOrderId: string, data: { amount: number; paymentMethod: number; referenceNumber?: string; remarks?: string }): Observable<any> {
     return this.http.post(`${this.baseUrl}/cases/${caseOrderId}/settle-due`, data);
   }

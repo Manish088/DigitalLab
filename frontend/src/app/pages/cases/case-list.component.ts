@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
-import { DoctorReferral } from '../../core/models/lims.models';
+import { DoctorReferral, TestMaster, TestCategory } from '../../core/models/lims.models';
 
 @Component({
   selector: 'app-case-list',
@@ -169,6 +169,12 @@ import { DoctorReferral } from '../../core/models/lims.models';
 
                 <!-- Actions -->
                 <td class="p-3.5 text-right space-x-1">
+                  <!-- Add More Tests (If Not Approved) -->
+                  <button *ngIf="c.status !== 'Approved'" (click)="openAddTestsModal(c)"
+                    class="inline-flex items-center p-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 hover:text-indigo-800 transition-colors" title="Add More Tests to Case">
+                    <i class="fa-solid fa-plus-circle text-xs"></i>
+                  </button>
+
                   <!-- Result Entry -->
                   <a [routerLink]="['/investigations', c.id]" class="inline-flex items-center p-1.5 rounded-lg bg-slate-100 hover:bg-brand-50 hover:text-brand-600 text-slate-600 transition-colors" title="Investigation Result Entry">
                     <i class="fa-solid fa-vial-circle-check text-xs"></i>
@@ -267,6 +273,123 @@ import { DoctorReferral } from '../../core/models/lims.models';
           </button>
         </div>
       </div>
+
+      <!-- Add More Tests Modal Popup -->
+      <div *ngIf="addTestsModalCase" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-slate-100 transform transition-all animate-in fade-in zoom-in-95 duration-200 space-y-4">
+          
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div>
+              <h3 class="text-base font-bold text-slate-900 font-heading flex items-center">
+                <i class="fa-solid fa-vial-virus text-indigo-600 mr-2"></i> Add Additional Tests to Case
+              </h3>
+              <p class="text-xs text-slate-500">Case: <span class="font-mono font-bold text-brand-600">{{ addTestsModalCase.caseNumber }}</span> | Patient: <strong>{{ addTestsModalCase.patientName }}</strong></p>
+            </div>
+            <button type="button" (click)="addTestsModalCase = null" class="text-slate-400 hover:text-slate-600 text-sm">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+
+          <!-- Search & Filters -->
+          <div class="space-y-2">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div class="sm:col-span-2 relative">
+                <input type="text" [(ngModel)]="addTestSearch" placeholder="Search test name or code..."
+                  class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none">
+              </div>
+              <div>
+                <select [(ngModel)]="addTestCategory" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                  <option value="">All Categories</option>
+                  <option *ngFor="let cat of categories" [value]="cat.id">{{ cat.categoryName }}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Test Catalog List -->
+          <div class="border border-slate-200 rounded-2xl max-h-60 overflow-y-auto divide-y divide-slate-100">
+            <div *ngIf="loadingCatalog" class="p-6 text-center text-xs text-slate-400">
+              <i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Loading test catalog...
+            </div>
+
+            <div *ngFor="let t of filteredAvailableTests"
+              (click)="toggleNewTest(t)"
+              [class.bg-indigo-50]="isTestSelectedForAdd(t.id)"
+              class="p-2.5 flex items-center justify-between hover:bg-slate-50/80 cursor-pointer transition-colors">
+              
+              <div class="flex items-center space-x-3">
+                <input type="checkbox"
+                  [checked]="isTestSelectedForAdd(t.id)"
+                  (click)="$event.stopPropagation(); toggleNewTest(t)"
+                  class="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4">
+                <div>
+                  <div class="font-bold text-xs text-slate-800">{{ t.testName }}</div>
+                  <div class="text-[10px] text-slate-400">{{ t.testCode }} • {{ t.categoryName || 'General' }}</div>
+                </div>
+              </div>
+
+              <div class="text-right">
+                <div class="font-bold text-xs text-slate-900">₹{{ t.price }}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pricing & Payment Inputs for Added Tests -->
+          <div *ngIf="selectedNewTestIds.length > 0" class="bg-indigo-50/60 p-3.5 rounded-2xl border border-indigo-100 space-y-3">
+            <div class="flex justify-between items-center text-xs font-bold text-slate-800">
+              <span>Selected ({{ selectedNewTestIds.length }} new test(s)):</span>
+              <span class="text-indigo-900 text-sm">₹{{ addedGrossTotal }}</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-indigo-100 text-xs">
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Additional Discount (₹)</label>
+                <input type="number" [(ngModel)]="additionalDiscount" (input)="onAddDiscountChange()" min="0" [max]="addedGrossTotal"
+                  class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs bg-white">
+              </div>
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1 flex justify-between items-center">
+                  <span>Pay Now Amount (₹)</span>
+                  <button type="button" (click)="payFullAdded()" class="text-[10px] text-indigo-600 font-bold hover:underline">Full Paid</button>
+                </label>
+                <input type="number" [(ngModel)]="additionalPaid" min="0" [max]="addedNetPayable"
+                  class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs font-bold text-emerald-600 bg-white">
+              </div>
+            </div>
+
+            <div *ngIf="additionalPaid > 0" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Payment Mode</label>
+                <select [(ngModel)]="additionalPaymentMethod" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs bg-white">
+                  <option [value]="1">Cash Counter</option>
+                  <option [value]="2">UPI / QR Code</option>
+                  <option [value]="3">Card</option>
+                  <option [value]="4">Net Banking</option>
+                </select>
+              </div>
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Transaction Ref / Note</label>
+                <input type="text" [(ngModel)]="additionalTransactionRef" placeholder="e.g. UPI Ref / Receipt No"
+                  class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs bg-white">
+              </div>
+            </div>
+          </div>
+
+          <!-- Footer Buttons -->
+          <div class="flex items-center justify-end space-x-3 pt-2">
+            <button type="button" (click)="addTestsModalCase = null" [disabled]="addingTests"
+              class="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 font-semibold text-xs hover:bg-slate-50 transition-colors">
+              Cancel
+            </button>
+            <button type="button" (click)="submitAddTests()" [disabled]="addingTests || selectedNewTestIds.length === 0"
+              class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 transition-all flex items-center disabled:opacity-50">
+              <i *ngIf="addingTests" class="fa-solid fa-spinner fa-spin mr-1.5"></i>
+              <i *ngIf="!addingTests" class="fa-solid fa-plus mr-1.5"></i>
+              {{ addingTests ? 'Adding Tests...' : 'Add ' + selectedNewTestIds.length + ' Test(s) to Case' }}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   `
 })
@@ -296,6 +419,20 @@ export class CaseListComponent implements OnInit {
   };
 
   barcodeModalCase: any = null;
+
+  // Add Tests Modal State
+  addTestsModalCase: any = null;
+  catalogTests: TestMaster[] = [];
+  categories: TestCategory[] = [];
+  loadingCatalog = false;
+  addTestSearch = '';
+  addTestCategory = '';
+  selectedNewTestIds: string[] = [];
+  additionalDiscount = 0;
+  additionalPaid = 0;
+  additionalPaymentMethod = 1;
+  additionalTransactionRef = '';
+  addingTests = false;
 
   ngOnInit(): void {
     this.loadCases();
@@ -363,5 +500,129 @@ export class CaseListComponent implements OnInit {
 
   showBarcode(c: any): void {
     this.barcodeModalCase = c;
+  }
+
+  // Add Tests Logic
+  openAddTestsModal(caseItem: any): void {
+    if (caseItem.status === 'Approved') {
+      this.toast.warning('Cannot add tests to an already approved report.');
+      return;
+    }
+
+    this.addTestsModalCase = caseItem;
+    this.selectedNewTestIds = [];
+    this.additionalDiscount = 0;
+    this.additionalPaid = 0;
+    this.additionalPaymentMethod = 1;
+    this.additionalTransactionRef = '';
+    this.addTestSearch = '';
+    this.addTestCategory = '';
+    this.cdr.detectChanges();
+
+    if (this.catalogTests.length === 0) {
+      this.loadingCatalog = true;
+      this.cdr.detectChanges();
+
+      this.api.getCategories().subscribe(cats => {
+        this.categories = cats || [];
+        this.cdr.detectChanges();
+      });
+
+      this.api.getTests().subscribe({
+        next: (tests) => {
+          this.catalogTests = tests || [];
+          this.loadingCatalog = false;
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          this.loadingCatalog = false;
+          this.cdr.detectChanges();
+          this.toast.error('Failed to load test catalog.');
+        }
+      });
+    }
+  }
+
+  isTestSelectedForAdd(testId: string): boolean {
+    return this.selectedNewTestIds.includes(testId);
+  }
+
+  toggleNewTest(t: TestMaster): void {
+    const idx = this.selectedNewTestIds.indexOf(t.id);
+    if (idx >= 0) {
+      this.selectedNewTestIds.splice(idx, 1);
+    } else {
+      this.selectedNewTestIds.push(t.id);
+    }
+    this.additionalPaid = this.addedNetPayable;
+    this.cdr.detectChanges();
+  }
+
+  get filteredAvailableTests(): TestMaster[] {
+    return this.catalogTests.filter(t => {
+      const matchCat = !this.addTestCategory || t.categoryId === this.addTestCategory;
+      const search = this.addTestSearch.trim().toLowerCase();
+      const matchSearch = !search ||
+        t.testName.toLowerCase().includes(search) ||
+        t.testCode.toLowerCase().includes(search) ||
+        (t.categoryName && t.categoryName.toLowerCase().includes(search));
+      return matchCat && matchSearch;
+    });
+  }
+
+  get addedGrossTotal(): number {
+    return this.catalogTests
+      .filter(t => this.selectedNewTestIds.includes(t.id))
+      .reduce((sum, t) => sum + t.price, 0);
+  }
+
+  get addedNetPayable(): number {
+    return Math.max(0, this.addedGrossTotal - this.additionalDiscount);
+  }
+
+  onAddDiscountChange(): void {
+    if (this.additionalDiscount > this.addedGrossTotal) {
+      this.additionalDiscount = this.addedGrossTotal;
+    }
+    this.additionalPaid = this.addedNetPayable;
+    this.cdr.detectChanges();
+  }
+
+  payFullAdded(): void {
+    this.additionalPaid = this.addedNetPayable;
+    this.cdr.detectChanges();
+  }
+
+  submitAddTests(): void {
+    if (!this.addTestsModalCase || this.selectedNewTestIds.length === 0) {
+      this.toast.warning('Please select at least one test to add.');
+      return;
+    }
+
+    this.addingTests = true;
+    this.cdr.detectChanges();
+
+    const payload = {
+      testIds: this.selectedNewTestIds,
+      additionalDiscountAmount: Number(this.additionalDiscount) || 0,
+      additionalPaidAmount: Number(this.additionalPaid) || 0,
+      paymentMethod: Number(this.additionalPaymentMethod) || 1,
+      transactionRef: this.additionalTransactionRef ? this.additionalTransactionRef.trim() : null
+    };
+
+    this.api.addTestsToCase(this.addTestsModalCase.id, payload).subscribe({
+      next: (res) => {
+        this.addingTests = false;
+        this.addTestsModalCase = null;
+        this.toast.success(res.message || 'Tests added successfully to case!');
+        this.cdr.detectChanges();
+        this.loadCases();
+      },
+      error: (err) => {
+        this.addingTests = false;
+        this.cdr.detectChanges();
+        this.toast.error(err.error?.message || 'Failed to add tests to case.');
+      }
+    });
   }
 }

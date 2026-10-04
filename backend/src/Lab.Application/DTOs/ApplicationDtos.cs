@@ -49,6 +49,14 @@ public record CreateCaseOrderDto(
     string? Notes
 );
 
+public record AddTestsToCaseDto(
+    List<Guid> TestIds,
+    decimal AdditionalDiscountAmount = 0,
+    decimal AdditionalPaidAmount = 0,
+    PaymentMethod PaymentMethod = PaymentMethod.Cash,
+    string? TransactionRef = null
+);
+
 public record CaseOrderDto(
     Guid Id,
     Guid TenantId,
