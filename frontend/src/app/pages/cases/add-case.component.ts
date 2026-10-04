@@ -109,7 +109,7 @@ import { DoctorReferral, CollectionAgent, TestMaster, TestCategory, Gender, Prio
                     <div class="text-[11px] text-slate-500 flex items-center space-x-3">
                       <span><i class="fa-solid fa-phone text-[9px] mr-1 text-slate-400"></i>{{ p.phone || 'No Mobile' }}</span>
                       <span>•</span>
-                      <span>{{ p.ageYears }} Yrs / {{ p.gender === 1 ? 'Male' : (p.gender === 2 ? 'Female' : 'Other') }}</span>
+                      <span>{{ p.ageYears }} Yrs / {{ getGenderText(p.gender) }}</span>
                       <span *ngIf="p.bloodGroup">• {{ p.bloodGroup }}</span>
                       <span *ngIf="p.address">• {{ p.address }}</span>
                     </div>
@@ -153,7 +153,7 @@ import { DoctorReferral, CollectionAgent, TestMaster, TestCategory, Gender, Prio
                       <div class="text-[11px] text-slate-500 flex items-center space-x-2">
                         <span><i class="fa-solid fa-phone text-[9px] mr-1 text-slate-400"></i>{{ p.phone || 'No Mobile' }}</span>
                         <span>•</span>
-                        <span>{{ p.ageYears }} Yrs / {{ p.gender === 1 ? 'Male' : (p.gender === 2 ? 'Female' : 'Other') }}</span>
+                        <span>{{ p.ageYears }} Yrs / {{ getGenderText(p.gender) }}</span>
                       </div>
                     </div>
                     <button type="button" class="px-2.5 py-1 rounded-lg bg-brand-600 text-white font-bold text-xs shadow-sm hover:bg-brand-500">
@@ -212,7 +212,7 @@ import { DoctorReferral, CollectionAgent, TestMaster, TestCategory, Gender, Prio
                       <div class="text-[11px] text-slate-500 flex items-center space-x-2">
                         <span><i class="fa-solid fa-phone text-[9px] mr-1 text-slate-400"></i>{{ p.phone }}</span>
                         <span>•</span>
-                        <span>{{ p.ageYears }} Yrs / {{ p.gender === 1 ? 'Male' : (p.gender === 2 ? 'Female' : 'Other') }}</span>
+                        <span>{{ p.ageYears }} Yrs / {{ getGenderText(p.gender) }}</span>
                       </div>
                     </div>
                     <button type="button" class="px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-bold text-xs shadow-sm hover:bg-emerald-500">
@@ -710,12 +710,27 @@ export class AddCaseComponent implements OnInit {
     }
   }
 
+  normalizeGender(gender: any): number {
+    if (gender === 2 || gender === '2' || gender === 'Female' || gender === 'female' || gender === 'FEMALE' || gender === Gender.Female) {
+      return 2;
+    }
+    if (gender === 3 || gender === '3' || gender === 'Other' || gender === 'other' || gender === 'OTHER' || gender === Gender.Other) {
+      return 3;
+    }
+    return 1;
+  }
+
+  getGenderText(gender: any): string {
+    const g = this.normalizeGender(gender);
+    return g === 2 ? 'Female' : (g === 3 ? 'Other' : 'Male');
+  }
+
   selectPatient(p: Patient): void {
     this.selectedPatientId = p.id;
     this.selectedPatientUhid = p.uhid;
     this.patient = {
       fullName: p.fullName,
-      gender: p.gender,
+      gender: this.normalizeGender(p.gender),
       ageYears: p.ageYears,
       ageMonths: p.ageMonths || 0,
       ageDays: p.ageDays || 0,
