@@ -102,6 +102,10 @@ export class ApiService {
     return this.http.post(`${this.baseUrl}/investigations/${caseOrderId}/approve`, {});
   }
 
+  unlockReport(caseOrderId: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/investigations/${caseOrderId}/unlock`, {});
+  }
+
   // Reports & PDF
   getReportPdfUrl(caseOrderId: string, letterheadMode: boolean = true): string {
     return `${this.baseUrl}/reports/pdf/${caseOrderId}?letterheadMode=${letterheadMode}`;

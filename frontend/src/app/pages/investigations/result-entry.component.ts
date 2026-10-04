@@ -77,21 +77,26 @@ import { TestMaster, TestCategory } from '../../core/models/lims.models';
               <i class="fa-solid fa-plus-circle mr-1.5"></i> Add Tests
             </button>
 
-            <!-- Save Button -->
-            <button (click)="saveResults()" [disabled]="saving"
+            <!-- Save Button (Only when not approved) -->
+            <button *ngIf="caseDetails.status !== 'Approved'" (click)="saveResults()" [disabled]="saving"
               class="inline-flex items-center px-4 py-2 rounded-xl text-sm font-semibold bg-brand-600 hover:bg-brand-500 text-white shadow-md shadow-brand-500/20 transition-all disabled:opacity-50">
               <i *ngIf="saving" class="fa-solid fa-spinner fa-spin mr-1.5"></i>
               <i *ngIf="!saving" class="fa-solid fa-floppy-disk mr-1.5"></i>
               Save Results
             </button>
 
-            <!-- Approve Report Button -->
-            <button (click)="approveReport()" [disabled]="approving || caseDetails.status === 'Approved'"
+            <!-- Approve Report Button / Approved Badge -->
+            <button *ngIf="caseDetails.status !== 'Approved'" (click)="approveReport()" [disabled]="approving"
               class="inline-flex items-center px-4 py-2 rounded-xl text-sm font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20 transition-all disabled:opacity-50">
               <i *ngIf="approving" class="fa-solid fa-spinner fa-spin mr-1.5"></i>
               <i *ngIf="!approving" class="fa-solid fa-stamp mr-1.5"></i>
-              {{ caseDetails.status === 'Approved' ? 'Report Approved ✓' : 'Verify & Approve Report' }}
+              Verify & Approve Report
             </button>
+
+            <span *ngIf="caseDetails.status === 'Approved'"
+              class="inline-flex items-center px-3.5 py-2 rounded-xl text-sm font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-sm">
+              <i class="fa-solid fa-circle-check mr-1.5 text-emerald-600"></i> Report Approved & Locked ✓
+            </span>
 
             <!-- View PDF Report (Standard with Header) -->
             <button type="button" (click)="printReportPdf(true)"
@@ -112,6 +117,28 @@ import { TestMaster, TestCategory } from '../../core/models/lims.models';
               <i class="fa-solid fa-file-invoice mr-1.5 text-emerald-600"></i> Print Bill
             </button>
           </div>
+        </div>
+
+        <!-- Approved & Locked Security Alert Banner -->
+        <div *ngIf="caseDetails.status === 'Approved'" class="bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-300/80 p-4 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm animate-in fade-in duration-200">
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-emerald-600/30">
+              <i class="fa-solid fa-shield-halved text-lg"></i>
+            </div>
+            <div>
+              <div class="text-xs font-bold text-emerald-950 flex items-center space-x-2">
+                <span>Verified Diagnostic Report (Results Locked)</span>
+                <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black border border-emerald-200">LOCKED & SIGNED ✓</span>
+              </div>
+              <div class="text-[11px] text-emerald-800 mt-0.5">
+                Approved by <strong>{{ caseDetails.approvedByName }}</strong> on {{ caseDetails.approvedAt | date:'dd MMM yyyy, hh:mm a' }}. Input editing is disabled to protect clinical report authenticity.
+              </div>
+            </div>
+          </div>
+
+          <button type="button" (click)="showUnlockModal = true" class="px-3.5 py-2 rounded-xl bg-white border border-amber-300 text-amber-900 hover:bg-amber-50 font-bold text-xs shadow-sm transition-all flex items-center shrink-0">
+            <i class="fa-solid fa-lock-open mr-1.5 text-amber-600"></i> Unlock Report to Edit
+          </button>
         </div>
 
         <!-- Investigation Parameters Grid -->
@@ -157,6 +184,10 @@ import { TestMaster, TestCategory } from '../../core/models/lims.models';
                         <!-- Dropdown Options if optionsList is present -->
                         <select *ngIf="param.optionsList && param.optionsList.length > 0"
                           [(ngModel)]="param.resultValue" (change)="onValueChange(param)"
+                          [disabled]="caseDetails.status === 'Approved'"
+                          [class.bg-slate-100]="caseDetails.status === 'Approved'"
+                          [class.cursor-not-allowed]="caseDetails.status === 'Approved'"
+                          [class.font-bold]="caseDetails.status === 'Approved'"
                           class="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none">
                           <option value="">Select Option</option>
                           <option *ngFor="let opt of param.optionsList" [value]="opt">{{ opt }}</option>
@@ -165,8 +196,11 @@ import { TestMaster, TestCategory } from '../../core/models/lims.models';
                         <!-- Standard Text / Numeric Input -->
                         <input *ngIf="!param.optionsList || param.optionsList.length === 0"
                           type="text" [(ngModel)]="param.resultValue" (input)="onValueChange(param)" placeholder="Enter value"
-                          [class]="param.isAbnormal ? 'border-rose-400 bg-rose-50/40 text-rose-900 font-bold focus:ring-rose-500' : 'border-slate-300 focus:ring-brand-500'"
-                          class="w-full px-3 py-1.5 text-xs border rounded-lg focus:ring-2 focus:outline-none transition-all">
+                          [readonly]="caseDetails.status === 'Approved'"
+                          [disabled]="caseDetails.status === 'Approved'"
+                          [class]="caseDetails.status === 'Approved' 
+                            ? 'w-full px-3 py-1.5 text-xs border border-slate-200 bg-slate-100/90 text-slate-900 font-bold rounded-lg cursor-not-allowed select-none shadow-none'
+                            : (param.isAbnormal ? 'w-full px-3 py-1.5 text-xs border border-rose-400 bg-rose-50/40 text-rose-900 font-bold rounded-lg focus:ring-2 focus:ring-rose-500 focus:outline-none transition-all' : 'w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none transition-all')">
                       </div>
                     </td>
 
@@ -207,11 +241,19 @@ import { TestMaster, TestCategory } from '../../core/models/lims.models';
               <div>
                 <label class="block font-semibold text-slate-700 mb-1">Pathologist Remarks / Impression</label>
                 <textarea [(ngModel)]="item.pathologistRemarks" rows="2" placeholder="e.g. Normocytic Normochromic blood picture. No abnormal cells seen."
+                  [readonly]="caseDetails.status === 'Approved'"
+                  [disabled]="caseDetails.status === 'Approved'"
+                  [class.bg-slate-100]="caseDetails.status === 'Approved'"
+                  [class.cursor-not-allowed]="caseDetails.status === 'Approved'"
                   class="w-full p-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none"></textarea>
               </div>
               <div>
                 <label class="block font-semibold text-slate-700 mb-1">Clinical Interpretation / Notes</label>
                 <textarea [(ngModel)]="item.interpretationNote" rows="2" placeholder="Standard clinical guidance or interpretation template..."
+                  [readonly]="caseDetails.status === 'Approved'"
+                  [disabled]="caseDetails.status === 'Approved'"
+                  [class.bg-slate-100]="caseDetails.status === 'Approved'"
+                  [class.cursor-not-allowed]="caseDetails.status === 'Approved'"
                   class="w-full p-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none"></textarea>
               </div>
             </div>
@@ -249,6 +291,41 @@ import { TestMaster, TestCategory } from '../../core/models/lims.models';
                 <i *ngIf="approving" class="fa-solid fa-spinner fa-spin mr-1.5"></i>
                 <i *ngIf="!approving" class="fa-solid fa-check-double mr-1.5"></i>
                 {{ approving ? 'Approving...' : 'Yes, Approve Now' }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Custom Report Unlock Confirmation Modal Popup -->
+        <div *ngIf="showUnlockModal" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 transform transition-all animate-in fade-in zoom-in-95 duration-200">
+            <div class="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mb-4 mx-auto shadow-inner">
+              <i class="fa-solid fa-lock-open text-2xl"></i>
+            </div>
+            
+            <div class="text-center space-y-2">
+              <h3 class="text-lg font-bold text-slate-900 font-heading">Unlock Report for Modification?</h3>
+              <p class="text-xs text-slate-500 leading-relaxed">
+                This report is currently verified & approved. Unlocking it will remove digital approval status and allow parameter values or tests to be modified.
+              </p>
+              <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-800 text-[11px] text-left space-y-1">
+                <div class="flex items-center font-bold text-amber-900">
+                  <i class="fa-solid fa-triangle-exclamation text-amber-600 mr-1.5"></i> Re-approval Required
+                </div>
+                <div class="text-slate-600">After updating results, you will need to re-verify and approve the report again before generating final certified PDFs.</div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 mt-6">
+              <button type="button" (click)="showUnlockModal = false" [disabled]="unlocking"
+                class="w-full py-2.5 rounded-xl border border-slate-300 text-slate-700 font-semibold text-xs hover:bg-slate-50 transition-colors">
+                Cancel
+              </button>
+              <button type="button" (click)="confirmUnlockReport()" [disabled]="unlocking"
+                class="w-full py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs shadow-lg shadow-amber-600/30 transition-all flex items-center justify-center">
+                <i *ngIf="unlocking" class="fa-solid fa-spinner fa-spin mr-1.5"></i>
+                <i *ngIf="!unlocking" class="fa-solid fa-lock-open mr-1.5"></i>
+                {{ unlocking ? 'Unlocking...' : 'Yes, Unlock Report' }}
               </button>
             </div>
           </div>
@@ -396,6 +473,8 @@ export class ResultEntryComponent implements OnInit {
   saving = false;
   approving = false;
   showApproveModal = false;
+  showUnlockModal = false;
+  unlocking = false;
   errorMessage = '';
 
   // Add Tests Modal State
@@ -640,6 +719,26 @@ export class ResultEntryComponent implements OnInit {
         this.showApproveModal = false;
         this.cdr.detectChanges();
         this.toast.error(err.error?.message || 'Error saving results before approval.');
+      }
+    });
+  }
+
+  confirmUnlockReport(): void {
+    this.unlocking = true;
+    this.cdr.detectChanges();
+    this.api.unlockReport(this.caseId).subscribe({
+      next: (res) => {
+        this.unlocking = false;
+        this.showUnlockModal = false;
+        this.toast.success(res.message || 'Report unlocked successfully. You can now edit results.');
+        this.cdr.detectChanges();
+        this.loadInvestigationDetails();
+      },
+      error: (err) => {
+        this.unlocking = false;
+        this.showUnlockModal = false;
+        this.cdr.detectChanges();
+        this.toast.error(err.error?.message || 'Failed to unlock report.');
       }
     });
   }

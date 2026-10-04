@@ -143,7 +143,12 @@ public class InvestigationsController : ControllerBase
             .Include(c => c.Patient)
             .FirstOrDefaultAsync(c => c.Id == dto.CaseOrderId);
 
-        if (caseOrder == null) return NotFound();
+        if (caseOrder == null) return NotFound(new { message = "Case order not found." });
+
+        if (caseOrder.Status == CaseStatus.Approved)
+        {
+            return BadRequest(new { message = "This diagnostic report is already approved and locked. Results cannot be modified without unlocking the report." });
+        }
 
         var itemsList = await _context.CaseOrderItems
             .Include(i => i.Results).ThenInclude(r => r.Parameter)
@@ -279,5 +284,33 @@ public class InvestigationsController : ControllerBase
 
         await _context.SaveChangesAsync();
         return Ok(new { message = "Report verified and approved successfully.", ApprovedByName = caseOrder.ApprovedByName, ApprovedAt = caseOrder.ApprovedAt });
+    }
+
+    [HttpPost("{caseOrderId}/unlock")]
+    public async Task<IActionResult> UnlockReport(Guid caseOrderId)
+    {
+        var caseOrder = await _context.CaseOrders
+            .Include(c => c.Items)
+            .FirstOrDefaultAsync(c => c.Id == caseOrderId);
+
+        if (caseOrder == null) return NotFound(new { message = "Case order not found." });
+
+        if (caseOrder.Status != CaseStatus.Approved)
+            return BadRequest(new { message = "Report is not currently in Approved status." });
+
+        caseOrder.Status = CaseStatus.Completed;
+        caseOrder.ApprovedByName = null;
+        caseOrder.ApprovedByUserId = null;
+        caseOrder.ApprovedAt = null;
+
+        foreach (var item in caseOrder.Items)
+        {
+            item.Status = ItemResultStatus.Completed;
+            item.VerifiedByName = null;
+            item.VerifiedAt = null;
+        }
+
+        await _context.SaveChangesAsync();
+        return Ok(new { message = "Report unlocked successfully. Results can now be edited and re-verified." });
     }
 }
