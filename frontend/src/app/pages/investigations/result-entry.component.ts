@@ -1,0 +1,466 @@
+import { Component, OnInit, inject, ChangeDetectorRef, Input } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ApiService } from '../../core/services/api.service';
+
+@Component({
+  selector: 'app-result-entry',
+  standalone: true,
+  imports: [CommonModule, FormsModule, RouterLink],
+  template: `
+    <div class="space-y-6">
+      <!-- Loading State -->
+      <div *ngIf="loading" class="bg-white p-12 rounded-3xl border border-slate-100 shadow-sm text-center space-y-3">
+        <i class="fa-solid fa-circle-notch fa-spin text-3xl text-brand-600"></i>
+        <div class="text-sm font-bold text-slate-700">Loading Patient Case & Investigation Parameters...</div>
+        <p class="text-xs text-slate-400">Fetching diagnostic parameters, normal ranges, and previous values...</p>
+      </div>
+
+      <!-- Error State -->
+      <div *ngIf="errorMessage && !loading" class="bg-rose-50 border border-rose-200 p-6 rounded-2xl text-rose-800 text-xs space-y-3">
+        <div class="font-bold flex items-center text-sm">
+          <i class="fa-solid fa-triangle-exclamation mr-2 text-rose-600"></i> Unable to Load Investigation
+        </div>
+        <p>{{ errorMessage }}</p>
+        <div class="flex items-center space-x-3 pt-2">
+          <button (click)="loadInvestigationDetails()" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-semibold text-xs transition-colors">
+            <i class="fa-solid fa-rotate-right mr-1.5"></i> Retry
+          </button>
+          <a routerLink="/cases" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-xl font-semibold text-xs hover:bg-slate-50 transition-colors">
+            Back to Case List
+          </a>
+        </div>
+      </div>
+
+      <!-- Toast Notification -->
+      <div *ngIf="toastMessage" class="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center shadow-sm">
+        <i class="fa-solid fa-circle-check text-emerald-600 mr-2 text-base"></i>
+        {{ toastMessage }}
+      </div>
+
+      <!-- Main Content when caseDetails is loaded -->
+      <ng-container *ngIf="caseDetails && !loading">
+        <!-- Top Patient & Case Status Banner -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div class="space-y-1">
+            <div class="flex items-center space-x-2">
+              <a routerLink="/cases" class="text-xs font-bold text-slate-500 hover:text-brand-600 mr-1"><i class="fa-solid fa-arrow-left mr-1"></i> Cases</a>
+              <span class="text-xs font-mono font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded">Case: {{ caseDetails.caseNumber }}</span>
+              <span class="text-xs font-mono font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded">||| {{ caseDetails.barcode }}</span>
+              <span [ngClass]="{
+                'bg-emerald-50 text-emerald-700 border-emerald-200': caseDetails.status === 'Approved',
+                'bg-blue-50 text-blue-700 border-blue-200': caseDetails.status === 'Completed',
+                'bg-amber-50 text-amber-700 border-amber-200': caseDetails.status === 'Registered' || caseDetails.status === 'SampleCollected',
+                'bg-purple-50 text-purple-700 border-purple-200': caseDetails.status === 'InProgress'
+              }" class="px-2.5 py-0.5 rounded-full text-xs font-bold border">
+                {{ caseDetails.status }}
+              </span>
+            </div>
+            <h2 class="text-xl font-black text-slate-900 font-heading">
+              {{ caseDetails.patient?.fullName }}
+              <span class="text-slate-500 font-normal text-sm">({{ caseDetails.patient?.ageYears }} Yrs / {{ getGenderDisplay(caseDetails.patient?.gender) }})</span>
+            </h2>
+            <div class="text-xs text-slate-500 flex items-center space-x-3">
+              <span><strong>UHID:</strong> {{ caseDetails.patient?.uhid }}</span>
+              <span>•</span>
+              <span><strong>Ref Doctor:</strong> {{ caseDetails.doctorName }}</span>
+              <span>•</span>
+              <span><strong>Order Date:</strong> {{ caseDetails.orderDate | date:'dd MMM yyyy, hh:mm a' }}</span>
+              <span *ngIf="caseDetails.approvedByName">•</span>
+              <span *ngIf="caseDetails.approvedByName" class="text-emerald-700 font-semibold">
+                <strong>Approved by:</strong> {{ caseDetails.approvedByName }} ({{ caseDetails.approvedAt | date:'dd MMM, hh:mm a' }})
+              </span>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <!-- Save Button -->
+            <button (click)="saveResults()" [disabled]="saving"
+              class="inline-flex items-center px-4 py-2 rounded-xl text-sm font-semibold bg-brand-600 hover:bg-brand-500 text-white shadow-md shadow-brand-500/20 transition-all disabled:opacity-50">
+              <i *ngIf="saving" class="fa-solid fa-spinner fa-spin mr-1.5"></i>
+              <i *ngIf="!saving" class="fa-solid fa-floppy-disk mr-1.5"></i>
+              Save Results
+            </button>
+
+            <!-- Approve Report Button -->
+            <button (click)="approveReport()" [disabled]="approving || caseDetails.status === 'Approved'"
+              class="inline-flex items-center px-4 py-2 rounded-xl text-sm font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20 transition-all disabled:opacity-50">
+              <i *ngIf="approving" class="fa-solid fa-spinner fa-spin mr-1.5"></i>
+              <i *ngIf="!approving" class="fa-solid fa-stamp mr-1.5"></i>
+              {{ caseDetails.status === 'Approved' ? 'Report Approved ✓' : 'Verify & Approve Report' }}
+            </button>
+
+            <!-- View PDF Report (Standard with Header) -->
+            <button type="button" (click)="printReportPdf(true)"
+              class="inline-flex items-center px-3.5 py-2 rounded-xl text-sm font-semibold bg-brand-50 hover:bg-brand-100 text-brand-800 transition-all cursor-pointer shadow-sm border border-brand-200">
+              <i class="fa-solid fa-file-pdf mr-1.5 text-brand-600"></i> Print Report PDF
+            </button>
+
+            <!-- View PDF Report (Pre-printed Letterhead Mode) -->
+            <button type="button" (click)="printReportPdf(false)"
+              class="inline-flex items-center px-3 py-2 rounded-xl text-xs font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all cursor-pointer shadow-sm"
+              title="Print on pre-printed laboratory letterhead stationary">
+              <i class="fa-solid fa-print mr-1 text-slate-500"></i> Letterhead Mode
+            </button>
+
+            <!-- View Invoice / Bill -->
+            <button type="button" (click)="printInvoicePdf()"
+              class="inline-flex items-center px-3.5 py-2 rounded-xl text-sm font-semibold bg-slate-100 hover:bg-slate-200 text-slate-800 transition-all cursor-pointer shadow-sm">
+              <i class="fa-solid fa-file-invoice mr-1.5 text-emerald-600"></i> Print Bill
+            </button>
+          </div>
+        </div>
+
+        <!-- Investigation Parameters Grid -->
+        <div class="space-y-6" *ngFor="let item of caseDetails.items">
+          <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+            <!-- Item Department & Test Name Header -->
+            <div class="bg-slate-900 text-white p-4 flex items-center justify-between">
+              <div class="flex items-center space-x-2">
+                <span class="px-2 py-0.5 rounded bg-brand-500/20 text-brand-300 text-xs font-semibold uppercase">{{ item.categoryName }}</span>
+                <h3 class="font-bold text-sm font-heading">{{ item.testName }} ({{ item.testCode }})</h3>
+              </div>
+              <div class="text-xs text-slate-400">
+                Sample: <strong class="text-slate-200">{{ item.sampleType || 'Whole Blood' }}</strong> ({{ item.containerVialType || 'EDTA' }})
+              </div>
+            </div>
+
+            <!-- Parameters Table -->
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-50 text-slate-500 uppercase tracking-wider font-semibold border-b border-slate-200">
+                  <tr>
+                    <th class="p-3 w-1/3">Investigation Parameter</th>
+                    <th class="p-3 w-1/4">Result Value *</th>
+                    <th class="p-3 w-1/6">Unit</th>
+                    <th class="p-3 w-1/4">Normal Reference Range</th>
+                    <th class="p-3 w-1/6 text-center">Status Flag</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                  <tr *ngFor="let param of item.parameters" class="hover:bg-slate-50/50">
+                    <!-- Parameter Name -->
+                    <td class="p-3 font-semibold text-slate-800">
+                      {{ param.parameterName }}
+                    </td>
+
+                    <!-- Result Input -->
+                    <td class="p-3">
+                      <div class="relative">
+                        <!-- Dropdown Options if optionsList is present -->
+                        <select *ngIf="param.optionsList && param.optionsList.length > 0"
+                          [(ngModel)]="param.resultValue" (change)="onValueChange(param)"
+                          class="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                          <option value="">Select Option</option>
+                          <option *ngFor="let opt of param.optionsList" [value]="opt">{{ opt }}</option>
+                        </select>
+
+                        <!-- Standard Text / Numeric Input -->
+                        <input *ngIf="!param.optionsList || param.optionsList.length === 0"
+                          type="text" [(ngModel)]="param.resultValue" (input)="onValueChange(param)" placeholder="Enter value"
+                          [class]="param.isAbnormal ? 'border-rose-400 bg-rose-50/40 text-rose-900 font-bold focus:ring-rose-500' : 'border-slate-300 focus:ring-brand-500'"
+                          class="w-full px-3 py-1.5 text-xs border rounded-lg focus:ring-2 focus:outline-none transition-all">
+                      </div>
+                    </td>
+
+                    <!-- Unit -->
+                    <td class="p-3 text-slate-500 font-mono">
+                      {{ param.unit || '-' }}
+                    </td>
+
+                    <!-- Normal Range -->
+                    <td class="p-3 text-slate-600">
+                      <span class="bg-slate-100 px-2 py-0.5 rounded text-[11px] font-medium text-slate-700">
+                        {{ param.normalRangeText || 'N/A' }}
+                      </span>
+                    </td>
+
+                    <!-- Status Flag Badge -->
+                    <td class="p-3 text-center">
+                      <span *ngIf="param.flag === 'Normal'" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        Normal
+                      </span>
+                      <span *ngIf="param.flag === 'High'" class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-50 text-rose-700 border border-rose-200">
+                        HIGH ↑
+                      </span>
+                      <span *ngIf="param.flag === 'Low'" class="px-2 py-0.5 rounded-full text-[10px] font-black bg-blue-50 text-blue-700 border border-blue-200">
+                        LOW ↓
+                      </span>
+                      <span *ngIf="param.flag === 'Critical'" class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-600 text-white shadow-sm">
+                        CRITICAL ⚠
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Clinical Remarks & Interpretation Notes -->
+            <div class="p-4 bg-slate-50/70 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Pathologist Remarks / Impression</label>
+                <textarea [(ngModel)]="item.pathologistRemarks" rows="2" placeholder="e.g. Normocytic Normochromic blood picture. No abnormal cells seen."
+                  class="w-full p-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none"></textarea>
+              </div>
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Clinical Interpretation / Notes</label>
+                <textarea [(ngModel)]="item.interpretationNote" rows="2" placeholder="Standard clinical guidance or interpretation template..."
+                  class="w-full p-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none"></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+    </div>
+  `
+})
+export class ResultEntryComponent implements OnInit {
+  public api = inject(ApiService);
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private cdr = inject(ChangeDetectorRef);
+
+  @Input() id?: string;
+
+  caseId = '';
+  caseDetails: any = null;
+  loading = true;
+  saving = false;
+  approving = false;
+  errorMessage = '';
+  toastMessage = '';
+
+  ngOnInit(): void {
+    this.route.paramMap.subscribe(params => {
+      this.caseId = this.id || params.get('id') || this.route.snapshot.params['id'] || '';
+      if (this.caseId) {
+        this.loadInvestigationDetails();
+      } else {
+        this.loading = false;
+        this.errorMessage = 'No Case ID found in URL route.';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  loadInvestigationDetails(): void {
+    if (!this.caseId) {
+      this.loading = false;
+      this.errorMessage = 'No Case ID specified.';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.loading = true;
+    this.errorMessage = '';
+    this.cdr.detectChanges();
+
+    this.api.getInvestigationDetails(this.caseId).subscribe({
+      next: (res) => {
+        try {
+          this.caseDetails = res;
+          if (this.caseDetails?.items) {
+            this.caseDetails.items.forEach((item: any) => {
+              if (item.parameters) {
+                item.parameters.forEach((p: any) => {
+                  p.optionsList = this.parseOptions(p.optionsJson);
+                  this.onValueChange(p);
+                });
+              }
+            });
+          }
+        } catch (e: any) {
+          console.error('Error processing case details:', e);
+        } finally {
+          this.loading = false;
+          this.cdr.detectChanges();
+        }
+      },
+      error: (err) => {
+        this.loading = false;
+        console.error('Error loading investigation:', err);
+        if (err.status === 401) {
+          this.errorMessage = 'Your session has expired. Please log in again to view case investigation.';
+        } else if (err.status === 404) {
+          this.errorMessage = `Case not found with ID: ${this.caseId}`;
+        } else {
+          this.errorMessage = err.error?.message || (typeof err.error === 'string' ? err.error : 'Failed to load case investigation details from server.');
+        }
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  parseOptions(optionsJson?: string): string[] {
+    if (!optionsJson) return [];
+    try {
+      const parsed = JSON.parse(optionsJson);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return optionsJson.split(',').map(s => s.trim()).filter(s => !s);
+    }
+  }
+
+  getGenderDisplay(gender: any): string {
+    if (gender === 1 || gender === 'Male' || gender === 'male') return 'Male';
+    if (gender === 2 || gender === 'Female' || gender === 'female') return 'Female';
+    if (gender === 3 || gender === 'Other') return 'Other';
+    return gender || 'N/A';
+  }
+
+  getReportPdfUrl(caseId: string, letterheadMode: boolean = true): string {
+    return this.api.getReportPdfUrl(caseId, letterheadMode);
+  }
+
+  printReportPdf(letterheadMode: boolean = true): void {
+    const targetId = this.caseDetails?.id || this.caseId;
+    if (!targetId) return;
+
+    if (this.caseDetails?.items) {
+      const payload = {
+        caseOrderId: this.caseId,
+        items: (this.caseDetails.items || []).map((i: any) => ({
+          caseOrderItemId: i.id,
+          pathologistRemarks: i.pathologistRemarks,
+          interpretationNote: i.interpretationNote,
+          results: (i.parameters || []).map((p: any) => ({
+            parameterId: p.parameterId,
+            resultValue: p.resultValue !== undefined && p.resultValue !== null ? p.resultValue.toString() : '',
+            remarks: p.remarks || ''
+          }))
+        }))
+      };
+
+      this.api.saveInvestigationResults(payload).subscribe({
+        next: () => window.open(this.api.getReportPdfUrl(targetId, letterheadMode), '_blank'),
+        error: () => window.open(this.api.getReportPdfUrl(targetId, letterheadMode), '_blank')
+      });
+    } else {
+      window.open(this.api.getReportPdfUrl(targetId, letterheadMode), '_blank');
+    }
+  }
+
+  printInvoicePdf(): void {
+    const targetId = this.caseDetails?.id || this.caseId;
+    if (targetId) {
+      window.open(this.api.getInvoicePdfUrl(targetId), '_blank');
+    }
+  }
+
+  onValueChange(param: any): void {
+    if (!param.resultValue) {
+      param.flag = 'Normal';
+      param.isAbnormal = false;
+      return;
+    }
+
+    const val = parseFloat(param.resultValue);
+    if (isNaN(val)) {
+      param.flag = 'Normal';
+      param.isAbnormal = false;
+      return;
+    }
+
+    if (param.panicLowValue !== null && param.panicLowValue !== undefined && val <= param.panicLowValue) {
+      param.flag = 'Critical';
+      param.isAbnormal = true;
+    } else if (param.panicHighValue !== null && param.panicHighValue !== undefined && val >= param.panicHighValue) {
+      param.flag = 'Critical';
+      param.isAbnormal = true;
+    } else if (param.minNormalValue !== null && param.minNormalValue !== undefined && val < param.minNormalValue) {
+      param.flag = 'Low';
+      param.isAbnormal = true;
+    } else if (param.maxNormalValue !== null && param.maxNormalValue !== undefined && val > param.maxNormalValue) {
+      param.flag = 'High';
+      param.isAbnormal = true;
+    } else {
+      param.flag = 'Normal';
+      param.isAbnormal = false;
+    }
+  }
+
+  saveResults(): void {
+    this.saving = true;
+    const payload = {
+      caseOrderId: this.caseId,
+      items: (this.caseDetails.items || []).map((i: any) => ({
+        caseOrderItemId: i.id,
+        pathologistRemarks: i.pathologistRemarks,
+        interpretationNote: i.interpretationNote,
+        results: (i.parameters || []).map((p: any) => ({
+          parameterId: p.parameterId,
+          resultValue: p.resultValue !== undefined && p.resultValue !== null ? p.resultValue.toString() : '',
+          remarks: p.remarks || ''
+        }))
+      }))
+    };
+
+    this.api.saveInvestigationResults(payload).subscribe({
+      next: () => {
+        this.saving = false;
+        this.toastMessage = 'Results saved successfully!';
+        this.cdr.detectChanges();
+        setTimeout(() => {
+          this.toastMessage = '';
+          this.cdr.detectChanges();
+        }, 4000);
+        this.loadInvestigationDetails();
+      },
+      error: (err) => {
+        this.saving = false;
+        this.cdr.detectChanges();
+        alert(err.error?.message || 'Error saving results.');
+      }
+    });
+  }
+
+  approveReport(): void {
+    if (!confirm('Are you sure you want to verify and digitally approve this laboratory report?')) return;
+
+    this.approving = true;
+    this.cdr.detectChanges();
+
+    const payload = {
+      caseOrderId: this.caseId,
+      items: (this.caseDetails?.items || []).map((i: any) => ({
+        caseOrderItemId: i.id,
+        pathologistRemarks: i.pathologistRemarks,
+        interpretationNote: i.interpretationNote,
+        results: (i.parameters || []).map((p: any) => ({
+          parameterId: p.parameterId,
+          resultValue: p.resultValue !== undefined && p.resultValue !== null ? p.resultValue.toString() : '',
+          remarks: p.remarks || ''
+        }))
+      }))
+    };
+
+    // First save the entered values into database, then approve!
+    this.api.saveInvestigationResults(payload).subscribe({
+      next: () => {
+        this.api.approveReport(this.caseId).subscribe({
+          next: (approveRes) => {
+            this.approving = false;
+            this.toastMessage = 'Results saved & Report verified & digitally approved!';
+            this.cdr.detectChanges();
+            setTimeout(() => {
+              this.toastMessage = '';
+              this.cdr.detectChanges();
+            }, 4000);
+            this.loadInvestigationDetails();
+          },
+          error: (err) => {
+            this.approving = false;
+            this.cdr.detectChanges();
+            alert(err.error?.message || 'Error approving report.');
+          }
+        });
+      },
+      error: (err) => {
+        this.approving = false;
+        this.cdr.detectChanges();
+        alert(err.error?.message || 'Error saving results before approval.');
+      }
+    });
+  }
+}

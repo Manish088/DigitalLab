@@ -1,0 +1,45 @@
+# Visual Studio & C# / .NET
+**/bin/
+**/obj/
+.vs/
+*.user
+*.userosscache
+*.sln.docstates
+*.suo
+*.userprefs
+*.DotSettings.user
+
+# Node & Angular Frontend
+**/node_modules/
+**/.angular/
+**/dist/
+**/coverage/
+.npm
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# SQLite Database Files
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Test artifacts & generated PDFs / SVGs / Logs
+test_*.pdf
+test_*.svg
+*.log
+*.tmp
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
