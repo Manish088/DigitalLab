@@ -150,6 +150,16 @@ public class InvestigationsController : ControllerBase
             return BadRequest(new { message = "This diagnostic report is already approved and locked. Results cannot be modified without unlocking the report." });
         }
 
+        // Validate that at least one parameter value has been entered
+        var totalValuesEntered = dto.Items?
+            .SelectMany(i => i.Results ?? new List<SaveResultValueDto>())
+            .Count(r => !string.IsNullOrWhiteSpace(r.ResultValue)) ?? 0;
+
+        if (totalValuesEntered == 0)
+        {
+            return BadRequest(new { message = "Cannot save empty results. Please enter at least one test parameter value." });
+        }
+
         var itemsList = await _context.CaseOrderItems
             .Include(i => i.Results).ThenInclude(r => r.Parameter)
             .Where(i => i.CaseOrderId == dto.CaseOrderId)
@@ -178,7 +188,6 @@ public class InvestigationsController : ControllerBase
 
             item.PathologistRemarks = itemDto.PathologistRemarks;
             item.InterpretationNote = itemDto.InterpretationNote;
-            item.Status = ItemResultStatus.Completed;
 
             foreach (var resDto in itemDto.Results)
             {
@@ -250,25 +259,78 @@ public class InvestigationsController : ControllerBase
                     res.IsAbnormal = false;
                 }
             }
+
+            // Update item status based on item parameter completion
+            int itemTotalParams = item.Results.Count;
+            int itemFilledParams = item.Results.Count(r => !string.IsNullOrWhiteSpace(r.ResultValue));
+            if (itemTotalParams > 0 && itemFilledParams == itemTotalParams)
+            {
+                item.Status = ItemResultStatus.Completed;
+            }
+            else if (itemFilledParams > 0)
+            {
+                item.Status = ItemResultStatus.InProgress;
+            }
+            else
+            {
+                item.Status = ItemResultStatus.Pending;
+            }
         }
 
-        if (caseOrder.Status == CaseStatus.Registered || caseOrder.Status == CaseStatus.SampleCollected)
+        // Smart status progression for overall CaseOrder
+        var allCaseParams = caseOrder.Items.SelectMany(i => i.Results).ToList();
+        var allFilledParams = allCaseParams.Count(r => !string.IsNullOrWhiteSpace(r.ResultValue));
+
+        if (allCaseParams.Count > 0 && allFilledParams == allCaseParams.Count)
         {
             caseOrder.Status = CaseStatus.Completed;
         }
+        else
+        {
+            caseOrder.Status = CaseStatus.InProgress;
+        }
 
         await _context.SaveChangesAsync();
-        return Ok(new { message = "Results saved successfully." });
+        return Ok(new { 
+            message = caseOrder.Status == CaseStatus.Completed 
+                ? "All investigation results saved successfully. Ready for verification." 
+                : "Investigation results saved (Status: In Progress)." 
+        });
     }
 
     [HttpPost("{caseOrderId}/approve")]
     public async Task<IActionResult> ApproveReport(Guid caseOrderId)
     {
         var caseOrder = await _context.CaseOrders
-            .Include(c => c.Items)
+            .Include(c => c.Items).ThenInclude(i => i.Results).ThenInclude(r => r.Parameter)
+            .Include(c => c.Items).ThenInclude(i => i.Test)
             .FirstOrDefaultAsync(c => c.Id == caseOrderId);
 
-        if (caseOrder == null) return NotFound();
+        if (caseOrder == null) return NotFound(new { message = "Case order not found." });
+
+        if (!caseOrder.Items.Any())
+        {
+            return BadRequest(new { message = "Cannot approve a case with no tests." });
+        }
+
+        // Validate that all test parameters have results entered
+        var missingTests = new List<string>();
+        foreach (var item in caseOrder.Items)
+        {
+            var missingCount = item.Results.Count(r => string.IsNullOrWhiteSpace(r.ResultValue));
+            if (missingCount > 0 || !item.Results.Any())
+            {
+                var testTitle = item.Test?.TestName ?? "Test";
+                missingTests.Add($"{testTitle} ({missingCount} parameter(s) empty)");
+            }
+        }
+
+        if (missingTests.Any())
+        {
+            return BadRequest(new { 
+                message = $"Cannot approve report: Results are missing for the following test(s):\n• " + string.Join("\n• ", missingTests) + "\nPlease enter all result values before approving." 
+            });
+        }
 
         caseOrder.Status = CaseStatus.Approved;
         caseOrder.ApprovedByName = _currentUserService.FullName ?? "Dr. Ananya Sen, MD";

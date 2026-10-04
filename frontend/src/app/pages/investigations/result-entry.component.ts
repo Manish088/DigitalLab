@@ -149,6 +149,9 @@ import { TestMaster, TestCategory } from '../../core/models/lims.models';
               <div class="flex items-center space-x-2">
                 <span class="px-2 py-0.5 rounded bg-brand-500/20 text-brand-300 text-xs font-semibold uppercase">{{ item.categoryName }}</span>
                 <h3 class="font-bold text-sm font-heading">{{ item.testName }} ({{ item.testCode }})</h3>
+                <span [class]="getItemStatus(item).color" class="px-2 py-0.5 rounded-full text-[10px] font-bold">
+                  {{ getItemStatus(item).text }}
+                </span>
                 <button *ngIf="caseDetails.status !== 'Approved' && caseDetails.items.length > 1" (click)="removeTest(item)"
                   class="ml-2 text-rose-300 hover:text-rose-100 hover:bg-rose-900/50 p-1 rounded transition-colors" title="Remove this test from case">
                   <i class="fa-solid fa-trash-can text-xs"></i>
@@ -576,29 +579,7 @@ export class ResultEntryComponent implements OnInit {
   printReportPdf(letterheadMode: boolean = true): void {
     const targetId = this.caseDetails?.id || this.caseId;
     if (!targetId) return;
-
-    if (this.caseDetails?.items) {
-      const payload = {
-        caseOrderId: this.caseId,
-        items: (this.caseDetails.items || []).map((i: any) => ({
-          caseOrderItemId: i.id,
-          pathologistRemarks: i.pathologistRemarks,
-          interpretationNote: i.interpretationNote,
-          results: (i.parameters || []).map((p: any) => ({
-            parameterId: p.parameterId,
-            resultValue: p.resultValue !== undefined && p.resultValue !== null ? p.resultValue.toString() : '',
-            remarks: p.remarks || ''
-          }))
-        }))
-      };
-
-      this.api.saveInvestigationResults(payload).subscribe({
-        next: () => window.open(this.api.getReportPdfUrl(targetId, letterheadMode), '_blank'),
-        error: () => window.open(this.api.getReportPdfUrl(targetId, letterheadMode), '_blank')
-      });
-    } else {
-      window.open(this.api.getReportPdfUrl(targetId, letterheadMode), '_blank');
-    }
+    window.open(this.api.getReportPdfUrl(targetId, letterheadMode), '_blank');
   }
 
   printInvoicePdf(): void {
@@ -606,6 +587,23 @@ export class ResultEntryComponent implements OnInit {
     if (targetId) {
       window.open(this.api.getInvoicePdfUrl(targetId), '_blank');
     }
+  }
+
+  getItemStatus(item: any): { text: string; color: string } {
+    if (!item.parameters || item.parameters.length === 0) {
+      return { text: 'Pending', color: 'bg-slate-700 text-slate-300' };
+    }
+    const filled = item.parameters.filter((p: any) => 
+      p.resultValue !== undefined && p.resultValue !== null && p.resultValue.toString().trim() !== ''
+    ).length;
+
+    if (filled === item.parameters.length) {
+      return { text: 'Completed ✓', color: 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' };
+    }
+    if (filled > 0) {
+      return { text: `${filled}/${item.parameters.length} In Progress`, color: 'bg-blue-500/20 text-blue-300 border border-blue-500/30' };
+    }
+    return { text: 'Pending Entry', color: 'bg-amber-500/20 text-amber-300 border border-amber-500/30' };
   }
 
   onValueChange(param: any): void {
@@ -641,6 +639,20 @@ export class ResultEntryComponent implements OnInit {
   }
 
   saveResults(): void {
+    if (this.caseDetails?.status === 'Approved') {
+      this.toast.warning('This report is approved and locked.');
+      return;
+    }
+
+    const hasAnyValue = (this.caseDetails?.items || []).some((i: any) =>
+      (i.parameters || []).some((p: any) => p.resultValue !== undefined && p.resultValue !== null && p.resultValue.toString().trim() !== '')
+    );
+
+    if (!hasAnyValue) {
+      this.toast.warning('Please enter at least one test result value before saving.');
+      return;
+    }
+
     this.saving = true;
     const payload = {
       caseOrderId: this.caseId,
@@ -650,16 +662,16 @@ export class ResultEntryComponent implements OnInit {
         interpretationNote: i.interpretationNote,
         results: (i.parameters || []).map((p: any) => ({
           parameterId: p.parameterId,
-          resultValue: p.resultValue !== undefined && p.resultValue !== null ? p.resultValue.toString() : '',
+          resultValue: p.resultValue !== undefined && p.resultValue !== null ? p.resultValue.toString().trim() : '',
           remarks: p.remarks || ''
         }))
       }))
     };
 
     this.api.saveInvestigationResults(payload).subscribe({
-      next: () => {
+      next: (res: any) => {
         this.saving = false;
-        this.toast.success('Investigation results saved successfully!');
+        this.toast.success(res?.message || 'Investigation results saved successfully!');
         this.cdr.detectChanges();
         this.loadInvestigationDetails();
       },
@@ -673,6 +685,23 @@ export class ResultEntryComponent implements OnInit {
 
   approveReport(): void {
     if (this.caseDetails?.status === 'Approved') return;
+
+    // Check if all parameters across all tests have values entered
+    const missingTests: string[] = [];
+    (this.caseDetails?.items || []).forEach((item: any) => {
+      const missingParams = (item.parameters || []).filter(
+        (p: any) => p.resultValue === undefined || p.resultValue === null || p.resultValue.toString().trim() === ''
+      );
+      if (missingParams.length > 0 || !item.parameters || item.parameters.length === 0) {
+        missingTests.push(`${item.testName || 'Test'} (${missingParams.length} missing)`);
+      }
+    });
+
+    if (missingTests.length > 0) {
+      this.toast.warning(`Cannot approve: Missing values in ${missingTests.join(', ')}. Please fill all parameter values.`);
+      return;
+    }
+
     this.showApproveModal = true;
     this.cdr.detectChanges();
   }
@@ -689,7 +718,7 @@ export class ResultEntryComponent implements OnInit {
         interpretationNote: i.interpretationNote,
         results: (i.parameters || []).map((p: any) => ({
           parameterId: p.parameterId,
-          resultValue: p.resultValue !== undefined && p.resultValue !== null ? p.resultValue.toString() : '',
+          resultValue: p.resultValue !== undefined && p.resultValue !== null ? p.resultValue.toString().trim() : '',
           remarks: p.remarks || ''
         }))
       }))
