@@ -2,6 +2,7 @@ import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
+import { ToastService } from '../../core/services/toast.service';
 import { TestMaster, TestCategory } from '../../core/models/lims.models';
 
 interface NewParamModel {
@@ -21,12 +22,6 @@ interface NewParamModel {
   imports: [CommonModule, FormsModule],
   template: `
     <div class="space-y-6">
-      <!-- Toast Notification -->
-      <div *ngIf="toastMessage" class="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center shadow-sm">
-        <i class="fa-solid fa-circle-check text-emerald-600 mr-2 text-base"></i>
-        {{ toastMessage }}
-      </div>
-
       <!-- Header -->
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -287,6 +282,7 @@ interface NewParamModel {
 })
 export class TestCatalogComponent implements OnInit {
   private api = inject(ApiService);
+  private toast = inject(ToastService);
   private cdr = inject(ChangeDetectorRef);
 
   categories: TestCategory[] = [];
@@ -298,7 +294,6 @@ export class TestCatalogComponent implements OnInit {
   // Add Test Modal State
   showAddModal = false;
   savingTest = false;
-  toastMessage = '';
 
   newTest = {
     testCode: '',
@@ -397,15 +392,15 @@ export class TestCatalogComponent implements OnInit {
 
   submitNewTest(): void {
     if (!this.newTest.testCode.trim()) {
-      alert('Please enter Test Code (e.g. WIDAL, DENGUE).');
+      this.toast.warning('Please enter Test Code (e.g. WIDAL, DENGUE).');
       return;
     }
     if (!this.newTest.testName.trim()) {
-      alert('Please enter Test Name.');
+      this.toast.warning('Please enter Test Name.');
       return;
     }
     if (!this.newTest.categoryId) {
-      alert('Please select Department / Category.');
+      this.toast.warning('Please select Department / Category.');
       return;
     }
 
@@ -453,16 +448,15 @@ export class TestCatalogComponent implements OnInit {
     };
 
     this.api.createTest(payload).subscribe({
-      next: (res) => {
+      next: () => {
         this.savingTest = false;
         this.showAddModal = false;
-        this.toastMessage = `Investigation "${this.newTest.testName}" added to catalog successfully!`;
-        setTimeout(() => this.toastMessage = '', 4000);
+        this.toast.success(`Investigation "${this.newTest.testName}" added to catalog successfully!`);
         this.loadCatalog();
       },
       error: (err) => {
         this.savingTest = false;
-        alert(err.error?.message || 'Failed to save test.');
+        this.toast.error(err.error?.message || 'Failed to save test.');
       }
     });
   }

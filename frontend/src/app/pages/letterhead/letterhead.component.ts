@@ -2,6 +2,7 @@ import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
+import { ToastService } from '../../core/services/toast.service';
 import { LetterheadConfig } from '../../core/models/lims.models';
 
 @Component({
@@ -237,6 +238,7 @@ import { LetterheadConfig } from '../../core/models/lims.models';
 })
 export class LetterheadComponent implements OnInit {
   private api = inject(ApiService);
+  private toast = inject(ToastService);
   private cdr = inject(ChangeDetectorRef);
 
   config: LetterheadConfig | null = null;
@@ -257,12 +259,12 @@ export class LetterheadComponent implements OnInit {
       next: () => {
         this.saving = false;
         this.cdr.detectChanges();
-        alert('Letterhead and branding settings saved successfully!');
+        this.toast.success('Letterhead and branding settings saved successfully!');
       },
       error: (err) => {
         this.saving = false;
         this.cdr.detectChanges();
-        alert(err.error?.message || 'Error saving letterhead configuration.');
+        this.toast.error(err.error?.message || 'Error saving letterhead configuration.');
       }
     });
   }

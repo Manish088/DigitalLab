@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
+import { ToastService } from '../../core/services/toast.service';
 import { DoctorReferral, CollectionAgent, TestMaster, TestCategory, Gender, PriorityLevel, PaymentMethod, Patient } from '../../core/models/lims.models';
 
 @Component({
@@ -462,6 +463,7 @@ import { DoctorReferral, CollectionAgent, TestMaster, TestCategory, Gender, Prio
 })
 export class AddCaseComponent implements OnInit {
   private api = inject(ApiService);
+  private toast = inject(ToastService);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
 
@@ -725,6 +727,7 @@ export class AddCaseComponent implements OnInit {
     this.showPatientDropdown = false;
     this.activeSearchContext = null;
     this.autoFilledNotification = `Auto-filled details for: ${p.fullName} (${p.uhid})`;
+    this.toast.info(`Loaded returning patient: ${p.fullName} (${p.uhid})`);
     setTimeout(() => {
       this.autoFilledNotification = '';
       this.cdr.detectChanges();
@@ -749,6 +752,7 @@ export class AddCaseComponent implements OnInit {
     this.showPatientDropdown = false;
     this.activeSearchContext = null;
     this.autoFilledNotification = '';
+    this.toast.info('Switched to new patient registration mode.');
     this.cdr.detectChanges();
   }
 
@@ -756,11 +760,13 @@ export class AddCaseComponent implements OnInit {
     this.validationError = '';
     if (!this.patient.fullName || !this.patient.fullName.trim()) {
       this.validationError = 'Please enter Patient Full Name before creating bill.';
+      this.toast.warning('Please enter Patient Full Name.');
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
     if (this.selectedTests.length === 0) {
       this.validationError = 'Please select at least one Test / Investigation package from the catalog.';
+      this.toast.warning('Please select at least one Test from catalog.');
       return;
     }
 
@@ -798,13 +804,16 @@ export class AddCaseComponent implements OnInit {
     this.api.createCase(payload).subscribe({
       next: () => {
         this.submitting = false;
+        this.toast.success(`Case and invoice bill created successfully for ${this.patient.fullName.trim()}!`);
         this.cdr.detectChanges();
         this.router.navigate(['/cases']);
       },
       error: (err) => {
         this.submitting = false;
         this.cdr.detectChanges();
-        this.validationError = err.error?.message || (err.error?.errors ? JSON.stringify(err.error.errors) : 'Error creating case bill.');
+        const errDetail = err.error?.message || (err.error?.errors ? JSON.stringify(err.error.errors) : 'Error creating case bill.');
+        this.validationError = errDetail;
+        this.toast.error(errDetail);
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     });

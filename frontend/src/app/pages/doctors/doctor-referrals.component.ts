@@ -2,6 +2,7 @@ import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
+import { ToastService } from '../../core/services/toast.service';
 import { DoctorReferral } from '../../core/models/lims.models';
 
 @Component({
@@ -160,6 +161,7 @@ import { DoctorReferral } from '../../core/models/lims.models';
 })
 export class DoctorReferralsComponent implements OnInit {
   private api = inject(ApiService);
+  private toast = inject(ToastService);
   private cdr = inject(ChangeDetectorRef);
 
   doctors: DoctorReferral[] = [];
@@ -200,13 +202,17 @@ export class DoctorReferralsComponent implements OnInit {
   }
 
   createDoctor(): void {
-    if (!this.newDoc.doctorName) return;
+    if (!this.newDoc.doctorName) {
+      this.toast.warning('Please enter doctor name.');
+      return;
+    }
     this.api.createDoctor(this.newDoc).subscribe({
       next: () => {
         this.showAddModal = false;
+        this.toast.success(`Dr. ${this.newDoc.doctorName} registered successfully!`);
         this.loadDoctors();
       },
-      error: (err) => alert(err.error?.message || 'Error saving doctor.')
+      error: (err) => this.toast.error(err.error?.message || 'Error saving doctor.')
     });
   }
 
@@ -228,11 +234,12 @@ export class DoctorReferralsComponent implements OnInit {
 
     this.api.recordDoctorPayout(payload).subscribe({
       next: () => {
+        const docName = this.payoutDoc?.doctorName || '';
         this.payoutDoc = null;
-        alert('Payout recorded successfully!');
+        this.toast.success(`Payout of ₹${this.payoutData.paidAmount} recorded for Dr. ${docName}!`);
         this.loadDoctors();
       },
-      error: (err) => alert(err.error?.message || 'Error recording payout.')
+      error: (err) => this.toast.error(err.error?.message || 'Error recording payout.')
     });
   }
 }

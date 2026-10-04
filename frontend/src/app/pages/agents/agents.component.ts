@@ -2,6 +2,7 @@ import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
+import { ToastService } from '../../core/services/toast.service';
 import { CollectionAgent } from '../../core/models/lims.models';
 
 @Component({
@@ -90,6 +91,7 @@ import { CollectionAgent } from '../../core/models/lims.models';
 })
 export class AgentsComponent implements OnInit {
   private api = inject(ApiService);
+  private toast = inject(ToastService);
   private cdr = inject(ChangeDetectorRef);
 
   agents: CollectionAgent[] = [];
@@ -117,13 +119,17 @@ export class AgentsComponent implements OnInit {
   }
 
   createAgent(): void {
-    if (!this.newAgent.agentName || !this.newAgent.centreName) return;
+    if (!this.newAgent.agentName || !this.newAgent.centreName) {
+      this.toast.warning('Please enter agent name and centre name.');
+      return;
+    }
     this.api.createAgent(this.newAgent).subscribe({
       next: () => {
         this.showAddModal = false;
+        this.toast.success('Collection agent added successfully!');
         this.loadAgents();
       },
-      error: (err) => alert(err.error?.message || 'Error saving agent.')
+      error: (err) => this.toast.error(err.error?.message || 'Error saving agent.')
     });
   }
 }

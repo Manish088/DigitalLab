@@ -2,6 +2,7 @@ import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
+import { ToastService } from '../../core/services/toast.service';
 import { SupportTicket } from '../../core/models/lims.models';
 
 @Component({
@@ -91,6 +92,7 @@ import { SupportTicket } from '../../core/models/lims.models';
 })
 export class SupportComponent implements OnInit {
   private api = inject(ApiService);
+  private toast = inject(ToastService);
   private cdr = inject(ChangeDetectorRef);
 
   tickets: SupportTicket[] = [];
@@ -116,26 +118,31 @@ export class SupportComponent implements OnInit {
   }
 
   createTicket(): void {
-    if (!this.newTicket.subject || !this.newTicket.description) return;
+    if (!this.newTicket.subject || !this.newTicket.description) {
+      this.toast.warning('Please enter subject and problem description.');
+      return;
+    }
     this.api.createSupportTicket(this.newTicket).subscribe({
       next: () => {
         this.showNewTicketModal = false;
+        this.toast.success('Support ticket submitted successfully!');
         this.loadTickets();
       },
-      error: (err) => alert('Error creating support ticket.')
+      error: () => this.toast.error('Error creating support ticket.')
     });
   }
 
   sendReply(ticketId: string): void {
     const msg = this.replyMessages[ticketId];
-    if (!msg) return;
+    if (!msg || !msg.trim()) return;
 
-    this.api.addTicketReply({ ticketId, message: msg }).subscribe({
+    this.api.addTicketReply({ ticketId, message: msg.trim() }).subscribe({
       next: () => {
         this.replyMessages[ticketId] = '';
+        this.toast.success('Reply sent successfully!');
         this.loadTickets();
       },
-      error: (err) => alert('Error sending reply.')
+      error: () => this.toast.error('Error sending reply.')
     });
   }
 }

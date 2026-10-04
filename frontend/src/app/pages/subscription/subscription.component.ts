@@ -2,6 +2,7 @@ import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
+import { ToastService } from '../../core/services/toast.service';
 import { SubscriptionPlan } from '../../core/models/lims.models';
 
 @Component({
@@ -85,6 +86,7 @@ import { SubscriptionPlan } from '../../core/models/lims.models';
 })
 export class SubscriptionComponent implements OnInit {
   private api = inject(ApiService);
+  private toast = inject(ToastService);
   private cdr = inject(ChangeDetectorRef);
 
   plans: SubscriptionPlan[] = [];
@@ -116,16 +118,16 @@ export class SubscriptionComponent implements OnInit {
 
         this.api.verifySubscriptionPayment(mockVerify).subscribe({
           next: () => {
-            alert(`Payment of ₹${order.amount} successful! Plan ${plan.planName} activated.`);
+            this.toast.success(`Payment of ₹${order.amount} successful! Plan ${plan.planName} activated.`);
             this.api.getMySubscription().subscribe(s => {
               this.mySub = s;
               this.cdr.detectChanges();
             });
           },
-          error: (err) => alert(err.error?.message || 'Payment verification failed.')
+          error: (err) => this.toast.error(err.error?.message || 'Payment verification failed.')
         });
       },
-      error: (err) => alert('Error creating Razorpay order.')
+      error: () => this.toast.error('Error creating Razorpay order.')
     });
   }
 }

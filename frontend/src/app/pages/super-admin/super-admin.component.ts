@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ApiService } from '../../core/services/api.service';
+import { ToastService } from '../../core/services/toast.service';
 
 @Component({
   selector: 'app-super-admin',
@@ -96,6 +97,7 @@ import { ApiService } from '../../core/services/api.service';
 })
 export class SuperAdminComponent implements OnInit {
   private api = inject(ApiService);
+  private toast = inject(ToastService);
   private cdr = inject(ChangeDetectorRef);
 
   adminStats: any = null;
@@ -121,9 +123,10 @@ export class SuperAdminComponent implements OnInit {
     this.api.updateLabStatus(lab.id, newState).subscribe({
       next: () => {
         lab.isActive = newState;
+        this.toast.info(`Lab ${lab.labName} is now ${newState ? 'Active' : 'Disabled'}.`);
         this.cdr.detectChanges();
       },
-      error: (err) => alert('Error updating lab status.')
+      error: () => this.toast.error('Error updating lab status.')
     });
   }
 }

@@ -2,6 +2,7 @@ import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
+import { ToastService } from '../../core/services/toast.service';
 
 @Component({
   selector: 'app-staff',
@@ -106,6 +107,7 @@ import { ApiService } from '../../core/services/api.service';
 })
 export class StaffComponent implements OnInit {
   private api = inject(ApiService);
+  private toast = inject(ToastService);
   private cdr = inject(ChangeDetectorRef);
 
   staffList: any[] = [];
@@ -133,20 +135,27 @@ export class StaffComponent implements OnInit {
   }
 
   createStaff(): void {
-    if (!this.newStaff.fullName || !this.newStaff.email || !this.newStaff.password) return;
+    if (!this.newStaff.fullName || !this.newStaff.email || !this.newStaff.password) {
+      this.toast.warning('Please enter staff name, email, and temporary password.');
+      return;
+    }
     this.api.createStaff(this.newStaff).subscribe({
       next: () => {
         this.showAddModal = false;
+        this.toast.success(`Staff member ${this.newStaff.fullName} created successfully!`);
         this.loadStaff();
       },
-      error: (err) => alert(err.error?.message || 'Error creating staff.')
+      error: (err) => this.toast.error(err.error?.message || 'Error creating staff.')
     });
   }
 
   toggleStatus(id: string): void {
     this.api.toggleStaffStatus(id).subscribe({
-      next: () => this.loadStaff(),
-      error: (err) => alert(err.error?.message || 'Error updating status.')
+      next: () => {
+        this.toast.info('Staff status updated successfully.');
+        this.loadStaff();
+      },
+      error: (err) => this.toast.error(err.error?.message || 'Error updating status.')
     });
   }
 }

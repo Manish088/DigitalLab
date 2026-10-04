@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
+import { ToastService } from '../../core/services/toast.service';
 
 @Component({
   selector: 'app-result-entry',
@@ -31,12 +32,6 @@ import { ApiService } from '../../core/services/api.service';
             Back to Case List
           </a>
         </div>
-      </div>
-
-      <!-- Toast Notification -->
-      <div *ngIf="toastMessage" class="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center shadow-sm">
-        <i class="fa-solid fa-circle-check text-emerald-600 mr-2 text-base"></i>
-        {{ toastMessage }}
       </div>
 
       <!-- Main Content when caseDetails is loaded -->
@@ -253,6 +248,7 @@ import { ApiService } from '../../core/services/api.service';
 })
 export class ResultEntryComponent implements OnInit {
   public api = inject(ApiService);
+  private toast = inject(ToastService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
@@ -266,7 +262,6 @@ export class ResultEntryComponent implements OnInit {
   approving = false;
   showApproveModal = false;
   errorMessage = '';
-  toastMessage = '';
 
   ngOnInit(): void {
     this.route.paramMap.subscribe(params => {
@@ -436,18 +431,14 @@ export class ResultEntryComponent implements OnInit {
     this.api.saveInvestigationResults(payload).subscribe({
       next: () => {
         this.saving = false;
-        this.toastMessage = 'Results saved successfully!';
+        this.toast.success('Investigation results saved successfully!');
         this.cdr.detectChanges();
-        setTimeout(() => {
-          this.toastMessage = '';
-          this.cdr.detectChanges();
-        }, 4000);
         this.loadInvestigationDetails();
       },
       error: (err) => {
         this.saving = false;
         this.cdr.detectChanges();
-        alert(err.error?.message || 'Error saving results.');
+        this.toast.error(err.error?.message || 'Error saving results.');
       }
     });
   }
@@ -483,19 +474,15 @@ export class ResultEntryComponent implements OnInit {
           next: () => {
             this.approving = false;
             this.showApproveModal = false;
-            this.toastMessage = 'Results saved & Report verified & digitally approved!';
+            this.toast.success('Report verified & digitally approved with Doctor Signature!');
             this.cdr.detectChanges();
-            setTimeout(() => {
-              this.toastMessage = '';
-              this.cdr.detectChanges();
-            }, 4000);
             this.loadInvestigationDetails();
           },
           error: (err) => {
             this.approving = false;
             this.showApproveModal = false;
             this.cdr.detectChanges();
-            this.toastMessage = err.error?.message || 'Error approving report.';
+            this.toast.error(err.error?.message || 'Error approving report.');
           }
         });
       },
@@ -503,7 +490,7 @@ export class ResultEntryComponent implements OnInit {
         this.approving = false;
         this.showApproveModal = false;
         this.cdr.detectChanges();
-        this.toastMessage = err.error?.message || 'Error saving results before approval.';
+        this.toast.error(err.error?.message || 'Error saving results before approval.');
       }
     });
   }

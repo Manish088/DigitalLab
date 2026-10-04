@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
+import { ToastService } from '../../core/services/toast.service';
 import { DoctorReferral } from '../../core/models/lims.models';
 
 @Component({
@@ -271,6 +272,7 @@ import { DoctorReferral } from '../../core/models/lims.models';
 })
 export class CaseListComponent implements OnInit {
   api = inject(ApiService);
+  private toast = inject(ToastService);
   private cdr = inject(ChangeDetectorRef);
 
   cases: any[] = [];
@@ -352,9 +354,10 @@ export class CaseListComponent implements OnInit {
     this.api.settleDuePayment(this.settleModalCase.id, this.settleData).subscribe({
       next: () => {
         this.settleModalCase = null;
+        this.toast.success(`Due payment of ₹${this.settleData.amount} settled successfully!`);
         this.loadCases();
       },
-      error: (err) => alert(err.error?.message || 'Error settling due payment.')
+      error: (err) => this.toast.error(err.error?.message || 'Error settling due payment.')
     });
   }
 
