@@ -211,6 +211,42 @@ import { ApiService } from '../../core/services/api.service';
             </div>
           </div>
         </div>
+
+        <!-- Custom Report Approval Confirmation Modal Popup -->
+        <div *ngIf="showApproveModal" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 transform transition-all animate-in fade-in zoom-in-95 duration-200">
+            <div class="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center mb-4 mx-auto shadow-inner">
+              <i class="fa-solid fa-stamp text-2xl"></i>
+            </div>
+            
+            <div class="text-center space-y-2">
+              <h3 class="text-lg font-bold text-slate-900 font-heading">Verify & Approve Report?</h3>
+              <p class="text-xs text-slate-500 leading-relaxed">
+                Are you sure you want to verify and digitally approve this laboratory report for
+                <strong class="text-slate-800">{{ caseDetails?.patient?.fullName }}</strong> (Case: <span class="font-mono text-brand-600 font-bold">{{ caseDetails?.caseNumber }}</span>)?
+              </p>
+              <div class="p-3 bg-emerald-50/80 rounded-xl border border-emerald-100 text-emerald-800 text-[11px] text-left space-y-1">
+                <div class="flex items-center font-bold text-emerald-900">
+                  <i class="fa-solid fa-circle-check text-emerald-600 mr-1.5"></i> Digital Signatures Applied
+                </div>
+                <div class="text-slate-600">The PDF report will be verified, doctor digital signature will be embedded, and status will update to <strong class="text-emerald-700">Approved</strong>.</div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 mt-6">
+              <button type="button" (click)="showApproveModal = false" [disabled]="approving"
+                class="w-full py-2.5 rounded-xl border border-slate-300 text-slate-700 font-semibold text-xs hover:bg-slate-50 transition-colors">
+                Cancel
+              </button>
+              <button type="button" (click)="confirmApproveReport()" [disabled]="approving"
+                class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 transition-all flex items-center justify-center">
+                <i *ngIf="approving" class="fa-solid fa-spinner fa-spin mr-1.5"></i>
+                <i *ngIf="!approving" class="fa-solid fa-check-double mr-1.5"></i>
+                {{ approving ? 'Approving...' : 'Yes, Approve Now' }}
+              </button>
+            </div>
+          </div>
+        </div>
       </ng-container>
     </div>
   `
@@ -228,6 +264,7 @@ export class ResultEntryComponent implements OnInit {
   loading = true;
   saving = false;
   approving = false;
+  showApproveModal = false;
   errorMessage = '';
   toastMessage = '';
 
@@ -416,8 +453,12 @@ export class ResultEntryComponent implements OnInit {
   }
 
   approveReport(): void {
-    if (!confirm('Are you sure you want to verify and digitally approve this laboratory report?')) return;
+    if (this.caseDetails?.status === 'Approved') return;
+    this.showApproveModal = true;
+    this.cdr.detectChanges();
+  }
 
+  confirmApproveReport(): void {
     this.approving = true;
     this.cdr.detectChanges();
 
@@ -439,8 +480,9 @@ export class ResultEntryComponent implements OnInit {
     this.api.saveInvestigationResults(payload).subscribe({
       next: () => {
         this.api.approveReport(this.caseId).subscribe({
-          next: (approveRes) => {
+          next: () => {
             this.approving = false;
+            this.showApproveModal = false;
             this.toastMessage = 'Results saved & Report verified & digitally approved!';
             this.cdr.detectChanges();
             setTimeout(() => {
@@ -451,15 +493,17 @@ export class ResultEntryComponent implements OnInit {
           },
           error: (err) => {
             this.approving = false;
+            this.showApproveModal = false;
             this.cdr.detectChanges();
-            alert(err.error?.message || 'Error approving report.');
+            this.toastMessage = err.error?.message || 'Error approving report.';
           }
         });
       },
       error: (err) => {
         this.approving = false;
+        this.showApproveModal = false;
         this.cdr.detectChanges();
-        alert(err.error?.message || 'Error saving results before approval.');
+        this.toastMessage = err.error?.message || 'Error saving results before approval.';
       }
     });
   }

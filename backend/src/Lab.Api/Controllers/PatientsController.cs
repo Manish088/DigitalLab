@@ -28,9 +28,21 @@ public class PatientsController : ControllerBase
         if (!string.IsNullOrWhiteSpace(search))
         {
             var s = search.Trim().ToLower();
-            query = query.Where(p => p.FullName.ToLower().Contains(s) ||
-                                     p.Uhid.ToLower().Contains(s) ||
-                                     (p.Phone != null && p.Phone.Contains(s)));
+            var digitsOnly = new string(search.Where(char.IsDigit).ToArray());
+
+            if (!string.IsNullOrEmpty(digitsOnly) && digitsOnly.Length >= 3)
+            {
+                query = query.Where(p => p.FullName.ToLower().Contains(s) ||
+                                         p.Uhid.ToLower().Contains(s) ||
+                                         (p.Phone != null && (p.Phone.Contains(s) || 
+                                                              p.Phone.Replace(" ", "").Replace("-", "").Replace("+91", "").Contains(digitsOnly))));
+            }
+            else
+            {
+                query = query.Where(p => p.FullName.ToLower().Contains(s) ||
+                                         p.Uhid.ToLower().Contains(s) ||
+                                         (p.Phone != null && p.Phone.Contains(s)));
+            }
         }
 
         var list = await query
