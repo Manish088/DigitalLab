@@ -1,5 +1,6 @@
 using Lab.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace Lab.Application.Common.Interfaces;
 
@@ -23,7 +24,9 @@ public interface IApplicationDbContext
     DbSet<SupportTicketReply> SupportTicketReplies { get; }
     DbSet<SubscriptionPlan> SubscriptionPlans { get; }
     DbSet<TenantSubscription> TenantSubscriptions { get; }
+    DbSet<SystemSetting> SystemSettings { get; }
 
+    EntityEntry<TEntity> Entry<TEntity>(TEntity entity) where TEntity : class;
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
 
@@ -40,6 +43,7 @@ public interface IPdfReportService
 {
     Task<byte[]> GeneratePatientReportPdfAsync(Guid caseOrderId, bool isLetterheadMode = true);
     Task<byte[]> GenerateInvoicePdfAsync(Guid caseOrderId);
+    Task<byte[]> GenerateThermalReceiptPdfAsync(Guid caseOrderId, int widthMm = 80);
 }
 
 public interface IBarcodeService

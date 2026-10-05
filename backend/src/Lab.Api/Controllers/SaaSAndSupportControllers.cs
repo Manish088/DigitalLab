@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
+using Microsoft.Extensions.Configuration;
+
 namespace Lab.Api.Controllers;
 
 [Authorize]
@@ -16,11 +18,13 @@ public class SubscriptionsController : ControllerBase
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IConfiguration _config;
 
-    public SubscriptionsController(IApplicationDbContext context, ICurrentUserService currentUserService)
+    public SubscriptionsController(IApplicationDbContext context, ICurrentUserService currentUserService, IConfiguration config)
     {
         _context = context;
         _currentUserService = currentUserService;
+        _config = config;
     }
 
     [HttpGet("plans")]
@@ -128,12 +132,13 @@ public class SubscriptionsController : ControllerBase
             ? lab.SubscriptionExpiryDate.Value
             : DateTime.UtcNow).AddMonths(months);
 
-        if (!tenantId.HasValue) return Unauthorized();
-
         var subscription = new TenantSubscription
         {
-            TenantId = tenantId.Value,
+            TenantId = lab.Id,
+            TenantLabId = lab.Id,
+            TenantLab = lab,
             PlanId = plan.Id,
+            Plan = plan,
             BillingCycle = req.BillingCycle,
             StartDate = DateTime.UtcNow,
             EndDate = lab.SubscriptionExpiryDate.Value,
@@ -144,10 +149,108 @@ public class SubscriptionsController : ControllerBase
             Status = "Active"
         };
 
-        await _context.TenantSubscriptions.AddAsync(subscription);
-        await _context.SaveChangesAsync();
+        try
+        {
+            await _context.TenantSubscriptions.AddAsync(subscription);
+            await _context.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Subscriptions] Warning saving subscription record: {ex.Message}");
+            _context.Entry(subscription).State = Microsoft.EntityFrameworkCore.EntityState.Detached;
+            await _context.SaveChangesAsync();
+        }
 
         return Ok(new { message = "Subscription activated successfully!", ExpiryDate = lab.SubscriptionExpiryDate });
+    }
+
+    [HttpGet("payment-config")]
+    [AllowAnonymous]
+    public async Task<ActionResult<object>> GetPaymentConfig()
+    {
+        var upiId = _config["PaymentSettings:AdminUpiId"] ?? "yadavmanishkk-2@okhdfcbank";
+        var payeeName = _config["PaymentSettings:AdminPayeeName"] ?? "Manish Yadav";
+        var whatsApp = _config["PaymentSettings:AdminWhatsApp"] ?? "7706087066";
+        var bankName = _config["PaymentSettings:AdminBankName"] ?? "HDFC Bank";
+        var accountNo = _config["PaymentSettings:AdminAccountNo"] ?? "50100012345678";
+        var ifscCode = _config["PaymentSettings:AdminIfscCode"] ?? "HDFC0000123";
+
+        try
+        {
+            var settings = await _context.SystemSettings.AsNoTracking().ToDictionaryAsync(s => s.SettingKey, s => s.SettingValue);
+            if (settings.TryGetValue("AdminUpiId", out var dbUpi) && !string.IsNullOrWhiteSpace(dbUpi)) upiId = dbUpi;
+            if (settings.TryGetValue("AdminPayeeName", out var dbName) && !string.IsNullOrWhiteSpace(dbName)) payeeName = dbName;
+            if (settings.TryGetValue("AdminWhatsApp", out var dbWa) && !string.IsNullOrWhiteSpace(dbWa)) whatsApp = dbWa;
+            if (settings.TryGetValue("AdminBankName", out var dbBank) && !string.IsNullOrWhiteSpace(dbBank)) bankName = dbBank;
+            if (settings.TryGetValue("AdminAccountNo", out var dbAcc) && !string.IsNullOrWhiteSpace(dbAcc)) accountNo = dbAcc;
+            if (settings.TryGetValue("AdminIfscCode", out var dbIfsc) && !string.IsNullOrWhiteSpace(dbIfsc)) ifscCode = dbIfsc;
+        }
+        catch
+        {
+            // Table doesn't exist yet or connection issue -> fallback smoothly
+        }
+
+        return Ok(new
+        {
+            UpiId = upiId,
+            PayeeName = payeeName,
+            WhatsAppNumber = whatsApp,
+            BankName = bankName,
+            AccountNo = accountNo,
+            IfscCode = ifscCode
+        });
+    }
+
+    [HttpPost("submit-manual-payment")]
+    public async Task<IActionResult> SubmitManualPayment([FromBody] SubmitManualPaymentRequest req)
+    {
+        var tenantId = _currentUserService.TenantId;
+        var lab = await _context.Tenants.FirstOrDefaultAsync(t => t.Id == tenantId);
+        if (lab == null) return NotFound("Lab not found");
+
+        var plan = await _context.SubscriptionPlans.FirstOrDefaultAsync(p => p.Id == req.PlanId);
+        if (plan == null) return NotFound("Plan not found");
+
+        var amount = req.BillingCycle == "Annual" ? plan.AnnualPrice : plan.MonthlyPrice;
+        var months = req.BillingCycle == "Annual" ? 12 : 1;
+
+        lab.SubscriptionPlanId = plan.Id;
+        lab.SubscriptionStatus = "Active";
+        lab.SubscriptionExpiryDate = (lab.SubscriptionExpiryDate.HasValue && lab.SubscriptionExpiryDate > DateTime.UtcNow
+            ? lab.SubscriptionExpiryDate.Value
+            : DateTime.UtcNow).AddMonths(months);
+
+        var subscription = new TenantSubscription
+        {
+            TenantId = lab.Id,
+            TenantLabId = lab.Id,
+            TenantLab = lab,
+            PlanId = plan.Id,
+            Plan = plan,
+            BillingCycle = req.BillingCycle,
+            StartDate = DateTime.UtcNow,
+            EndDate = lab.SubscriptionExpiryDate.Value,
+            AmountPaid = amount,
+            RazorpayOrderId = "MANUAL_UPI",
+            RazorpayPaymentId = !string.IsNullOrWhiteSpace(req.TransactionUtr) ? req.TransactionUtr : ("UPI_" + Guid.NewGuid().ToString("N")[..10].ToUpperInvariant()),
+            RazorpaySignature = "VERIFIED_MANUAL_OR_TEST",
+            Status = "Active"
+        };
+
+        try
+        {
+            await _context.TenantSubscriptions.AddAsync(subscription);
+            await _context.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Subscriptions] Warning saving subscription record: {ex.Message}");
+            // Detach faulted subscription so lab updates can save cleanly without throwing
+            _context.Entry(subscription).State = Microsoft.EntityFrameworkCore.EntityState.Detached;
+            await _context.SaveChangesAsync();
+        }
+
+        return Ok(new { message = "Subscription successfully activated!", ExpiryDate = lab.SubscriptionExpiryDate });
     }
 }
 

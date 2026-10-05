@@ -98,20 +98,27 @@ import { TestMaster, TestCategory } from '../../core/models/lims.models';
               <i class="fa-solid fa-circle-check mr-1.5 text-emerald-600"></i> Report Approved & Locked ✓
             </span>
 
-            <!-- View PDF Report (Standard with Header) -->
-            <button type="button" (click)="printReportPdf(true)"
+            <!-- Send on WhatsApp Button (Only after approved) -->
+            <button *ngIf="caseDetails.status === 'Approved'" type="button" (click)="shareReportOnWhatsApp()"
+              class="inline-flex items-center px-3.5 py-2 rounded-xl text-sm font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition-all cursor-pointer shadow-sm shadow-emerald-600/20"
+              title="Share Report Link directly to Patient on WhatsApp">
+              <i class="fa-brands fa-whatsapp mr-1.5 text-base"></i> Send on WhatsApp
+            </button>
+
+            <!-- View PDF Report (Standard with Header) - Only after approved -->
+            <button *ngIf="caseDetails.status === 'Approved'" type="button" (click)="printReportPdf(true)"
               class="inline-flex items-center px-3.5 py-2 rounded-xl text-sm font-semibold bg-brand-50 hover:bg-brand-100 text-brand-800 transition-all cursor-pointer shadow-sm border border-brand-200">
               <i class="fa-solid fa-file-pdf mr-1.5 text-brand-600"></i> Print Report PDF
             </button>
 
-            <!-- View PDF Report (Pre-printed Letterhead Mode) -->
-            <button type="button" (click)="printReportPdf(false)"
+            <!-- View PDF Report (Pre-printed Letterhead Mode) - Only after approved -->
+            <button *ngIf="caseDetails.status === 'Approved'" type="button" (click)="printReportPdf(false)"
               class="inline-flex items-center px-3 py-2 rounded-xl text-xs font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all cursor-pointer shadow-sm"
               title="Print on pre-printed laboratory letterhead stationary">
               <i class="fa-solid fa-print mr-1 text-slate-500"></i> Letterhead Mode
             </button>
 
-            <!-- View Invoice / Bill -->
+            <!-- View Invoice / Bill (Always available for payment / billing) -->
             <button type="button" (click)="printInvoicePdf()"
               class="inline-flex items-center px-3.5 py-2 rounded-xl text-sm font-semibold bg-slate-100 hover:bg-slate-200 text-slate-800 transition-all cursor-pointer shadow-sm">
               <i class="fa-solid fa-file-invoice mr-1.5 text-emerald-600"></i> Print Bill
@@ -464,6 +471,122 @@ import { TestMaster, TestCategory } from '../../core/models/lims.models';
             </div>
           </div>
         </div>
+
+        <!-- Thermal POS Receipt Modal (58mm / 80mm) -->
+        <div *ngIf="showThermalModal && caseDetails" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4 max-h-[92vh] flex flex-col animate-in fade-in zoom-in-95 duration-200">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div class="flex items-center space-x-2">
+                <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-base">
+                  <i class="fa-solid fa-receipt"></i>
+                </div>
+                <div>
+                  <h3 class="text-sm font-bold text-slate-900 font-heading">Thermal POS Receipt (Slip)</h3>
+                  <p class="text-[11px] text-slate-400">POS Thermal Roll Printer (58mm / 80mm)</p>
+                </div>
+              </div>
+              <button (click)="showThermalModal = false" class="text-slate-400 hover:text-slate-600">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+
+            <!-- Roll Size Selector Tabs -->
+            <div class="flex items-center justify-center space-x-2 p-1 bg-slate-100 rounded-xl">
+              <button type="button" (click)="thermalRollWidth = 80" [class]="thermalRollWidth === 80 ? 'bg-white text-slate-900 shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900 font-medium'" class="flex-1 py-1.5 px-3 rounded-lg text-xs transition-all flex items-center justify-center space-x-1.5 cursor-pointer">
+                <i class="fa-solid fa-scroll"></i>
+                <span>80 mm (Standard POS)</span>
+              </button>
+              <button type="button" (click)="thermalRollWidth = 58" [class]="thermalRollWidth === 58 ? 'bg-white text-slate-900 shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900 font-medium'" class="flex-1 py-1.5 px-3 rounded-lg text-xs transition-all flex items-center justify-center space-x-1.5 cursor-pointer">
+                <i class="fa-solid fa-scroll"></i>
+                <span>58 mm (Compact Roll)</span>
+              </button>
+            </div>
+
+            <!-- Live Thermal Paper Preview Screen -->
+            <div class="overflow-y-auto flex-1 p-3 bg-slate-100 rounded-2xl flex justify-center border border-slate-200/60">
+              <div [style.width]="thermalRollWidth === 58 ? '230px' : '310px'" class="bg-white p-4 shadow-md border border-slate-300 text-black font-mono text-[11px] space-y-2 transition-all select-none" id="printable-thermal-receipt-detail">
+                <div class="text-center font-bold text-xs uppercase leading-tight">{{ currentLabName }}</div>
+                <div class="text-center text-[9px] text-slate-600">{{ currentLabAddress }}</div>
+                <div class="text-center text-[9px] text-slate-600">Ph: {{ currentLabPhone }}</div>
+                <div *ngIf="currentLabGstin" class="text-center text-[9px] font-bold text-slate-800">GSTIN: {{ currentLabGstin }}</div>
+                
+                <div class="border-b border-dashed border-black my-1"></div>
+                <div class="text-center font-bold text-[10px] uppercase">{{ currentLabGstin ? 'TAX INVOICE / RECEIPT' : 'CASH BILL / RECEIPT' }}</div>
+                <div class="border-b border-dashed border-black my-1"></div>
+                
+                <div class="text-[10px] space-y-0.5">
+                  <div class="flex justify-between">
+                    <span>Bill: <strong>{{ caseDetails.caseNumber }}</strong></span>
+                    <span>{{ caseDetails.orderDate | date:'dd/MM/yy hh:mm a' }}</span>
+                  </div>
+                  <div>Pt: <strong>{{ caseDetails.patientName }}</strong> ({{ caseDetails.patientAgeGender || (caseDetails.patient?.ageYears + ' Y / ' + getGenderDisplay(caseDetails.patient?.gender)) }})</div>
+                  <div>Mob: {{ caseDetails.patientPhone || caseDetails.patient?.phone || 'N/A' }}</div>
+                  <div>Dr: {{ caseDetails.doctorName || caseDetails.referringDoctor?.doctorName || 'Direct / Self' }}</div>
+                </div>
+
+                <div class="border-b border-dashed border-black my-1"></div>
+
+                <!-- Tests list -->
+                <div class="space-y-1 text-[10px]">
+                  <div class="font-bold flex justify-between border-b border-slate-200 pb-0.5">
+                    <span>Particulars</span>
+                    <span>Qty</span>
+                  </div>
+                  <div *ngFor="let itm of caseDetails.items; let idx = index" class="flex justify-between">
+                    <span class="truncate pr-1">{{ idx + 1 }}. {{ itm.testName }}</span>
+                    <span class="font-semibold shrink-0">1</span>
+                  </div>
+                </div>
+
+                <div class="border-b border-dashed border-black my-1"></div>
+
+                <!-- Financials -->
+                <div class="text-[10px] space-y-0.5">
+                  <div class="flex justify-between">
+                    <span>Gross Total:</span>
+                    <span>₹{{ caseDetails.totalAmount | number:'1.2-2' }}</span>
+                  </div>
+                  <div *ngIf="caseDetails.discountAmount > 0" class="flex justify-between text-rose-600">
+                    <span>Discount:</span>
+                    <span>-₹{{ caseDetails.discountAmount | number:'1.2-2' }}</span>
+                  </div>
+                  <div class="flex justify-between font-bold text-[11px] pt-0.5 border-t border-slate-200">
+                    <span>Net Payable:</span>
+                    <span>₹{{ caseDetails.netAmount | number:'1.2-2' }}</span>
+                  </div>
+                  <div class="flex justify-between font-bold text-emerald-800">
+                    <span>Paid Amount:</span>
+                    <span>₹{{ caseDetails.paidAmount | number:'1.2-2' }}</span>
+                  </div>
+                  <div class="flex justify-between font-bold" [class.text-rose-600]="caseDetails.dueAmount > 0">
+                    <span>Balance Due:</span>
+                    <span>₹{{ caseDetails.dueAmount | number:'1.2-2' }}</span>
+                  </div>
+                </div>
+
+                <div class="border-b border-dashed border-black my-1"></div>
+
+                <div class="text-center text-[9px] space-y-0.5">
+                  <div>Barcode: <strong>{{ caseDetails.barcode }}</strong></div>
+                  <div>Thank You! Get Well Soon.</div>
+                  <div class="text-[8px] text-slate-500">*** Computer Generated POS Slip ***</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="grid grid-cols-2 gap-2 pt-1">
+              <button type="button" (click)="printThermalDirect()" class="py-2.5 px-3 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs shadow-md shadow-amber-600/20 flex items-center justify-center space-x-1.5 cursor-pointer">
+                <i class="fa-solid fa-print"></i>
+                <span>Direct Thermal Print</span>
+              </button>
+              <a [href]="api.getThermalReceiptPdfUrl(caseDetails.id, thermalRollWidth)" target="_blank" class="py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow flex items-center justify-center space-x-1.5 text-center">
+                <i class="fa-solid fa-file-pdf"></i>
+                <span>Open Thermal PDF</span>
+              </a>
+            </div>
+          </div>
+        </div>
       </ng-container>
     </div>
   `
@@ -488,6 +611,14 @@ export class ResultEntryComponent implements OnInit {
   highlightEmptyFields = false;
   errorMessage = '';
 
+  // Thermal POS Receipt State
+  showThermalModal = false;
+  thermalRollWidth: 80 | 58 = 80;
+  currentLabName = 'CITY CARE DIAGNOSTICS & PATHOLOGY';
+  currentLabAddress = 'Civil Lines, Azamgarh';
+  currentLabPhone = '7706087066';
+  currentLabGstin = '';
+
   // Add Tests Modal State
   showAddTestsModal = false;
   catalogTests: TestMaster[] = [];
@@ -510,6 +641,16 @@ export class ResultEntryComponent implements OnInit {
       } else {
         this.loading = false;
         this.errorMessage = 'No Case ID found in URL route.';
+        this.cdr.detectChanges();
+      }
+    });
+
+    this.api.getLetterheadConfig().subscribe(cfg => {
+      if (cfg) {
+        this.currentLabName = cfg.labName || this.currentLabName;
+        this.currentLabAddress = [cfg.address, cfg.city].filter(Boolean).join(', ') || this.currentLabAddress;
+        this.currentLabPhone = cfg.phone || this.currentLabPhone;
+        this.currentLabGstin = cfg.gstin || '';
         this.cdr.detectChanges();
       }
     });
@@ -595,6 +736,91 @@ export class ResultEntryComponent implements OnInit {
     if (targetId) {
       window.open(this.api.getInvoicePdfUrl(targetId), '_blank');
     }
+  }
+
+  openThermalSlipModal(): void {
+    if (!this.caseDetails) return;
+    this.showThermalModal = true;
+    this.cdr.detectChanges();
+  }
+
+  printThermalDirect(): void {
+    const printContent = document.getElementById('printable-thermal-receipt-detail');
+    if (!printContent) return;
+
+    const printWindow = window.open('', '', 'width=450,height=650');
+    if (!printWindow) {
+      window.print();
+      return;
+    }
+
+    const widthCss = this.thermalRollWidth === 58 ? '58mm' : '80mm';
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>POS Receipt - ${this.caseDetails?.caseNumber || 'Bill'}</title>
+          <style>
+            @page {
+              size: ${widthCss} auto;
+              margin: 1mm;
+            }
+            body {
+              font-family: 'Courier New', Courier, monospace, -apple-system, sans-serif;
+              font-size: ${this.thermalRollWidth === 58 ? '10px' : '11px'};
+              line-height: 1.25;
+              margin: 0;
+              padding: 2px;
+              color: #000;
+              width: ${widthCss};
+            }
+            .text-center { text-align: center; }
+            .font-bold { font-weight: bold; }
+            .uppercase { text-transform: uppercase; }
+            .border-dashed { border-bottom: 1px dashed #000; margin: 4px 0; }
+            .flex { display: flex; justify-content: space-between; align-items: flex-start; }
+            .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 70%; }
+          </style>
+        </head>
+        <body>
+          ${printContent.innerHTML}
+          <script>
+            window.onload = function() {
+              window.print();
+              setTimeout(function() { window.close(); }, 600);
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  }
+
+  shareReportOnWhatsApp(): void {
+    if (!this.caseDetails) return;
+    if (this.caseDetails.status !== 'Approved' && this.caseDetails.status !== 5) {
+      this.toast.warning('Report has not been approved yet. WhatsApp report can only be sent after verification & approval.');
+      return;
+    }
+
+    const rawPhone = (this.caseDetails.patientPhone || this.caseDetails.patient?.phone || '').replace(/\D/g, '');
+    const patientName = this.caseDetails.patientName || this.caseDetails.patient?.fullName || 'Patient';
+    const caseNo = this.caseDetails.caseNumber || '';
+    const origin = window.location.origin;
+    const downloadUrl = `${origin}/report/download/${this.caseDetails.publicAccessToken}`;
+
+    const message = `*Namaste ${patientName} Ji*,\n\nAapki Diagnostic Test Report ready aur verify ho chuki hai (Case No: *${caseNo}*).\n\n📄 *Apni Verified Report Download karein:*\n${downloadUrl}\n\n_Thank you for choosing our Laboratory!_`;
+
+    if (!rawPhone || rawPhone.length < 10) {
+      this.toast.warning(`Patient phone number is missing or invalid: ${this.caseDetails.patientPhone || this.caseDetails.patient?.phone || 'N/A'}`);
+      window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+      return;
+    }
+
+    const targetPhone = rawPhone.length === 10 ? `91${rawPhone}` : rawPhone;
+    const waUrl = `https://wa.me/${targetPhone}?text=${encodeURIComponent(message)}`;
+    window.open(waUrl, '_blank');
+    this.toast.success(`Opening WhatsApp for ${patientName}...`);
   }
 
   getItemStatus(item: any): { text: string; color: string } {

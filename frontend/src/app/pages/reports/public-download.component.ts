@@ -10,10 +10,14 @@ import { ApiService } from '../../core/services/api.service';
   template: `
     <div class="min-h-screen bg-slate-900 flex flex-col justify-center items-center p-4">
       <div class="max-w-md w-full bg-white rounded-3xl p-8 shadow-2xl space-y-6 text-center border border-slate-100 relative overflow-hidden">
-        <!-- Top Verified Badge Banner -->
-        <div class="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold">
+        <!-- Top Status Banner -->
+        <div *ngIf="reportData?.status === 'Approved'" class="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold">
           <i class="fa-solid fa-circle-check text-emerald-500"></i>
           <span>Verified Digital Laboratory Report</span>
+        </div>
+        <div *ngIf="reportData && reportData.status !== 'Approved'" class="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-xs font-bold">
+          <i class="fa-solid fa-clock-rotate-left text-amber-600"></i>
+          <span>Report Under Lab Processing</span>
         </div>
 
         <div *ngIf="loading" class="py-12 space-y-3">
@@ -50,13 +54,17 @@ import { ApiService } from '../../core/services/api.service';
               <span class="text-slate-500">Case Number:</span>
               <span class="font-mono font-bold text-slate-900">{{ reportData.caseNumber }}</span>
             </div>
-            <div class="flex justify-between">
+            <div *ngIf="reportData.status === 'Approved'" class="flex justify-between">
               <span class="text-slate-500">Verified On:</span>
-              <strong class="text-slate-900">{{ reportData.approvedAt ? (reportData.approvedAt | date:'dd MMM yyyy, hh:mm a') : 'Under Process' }}</strong>
+              <strong class="text-slate-900">{{ reportData.approvedAt | date:'dd MMM yyyy, hh:mm a' }}</strong>
             </div>
-            <div class="flex justify-between">
+            <div *ngIf="reportData.status === 'Approved'" class="flex justify-between">
               <span class="text-slate-500">Verified By:</span>
               <strong class="text-emerald-700">{{ reportData.approvedByName || 'Pathology Incharge' }}</strong>
+            </div>
+            <div *ngIf="reportData.status !== 'Approved'" class="flex justify-between">
+              <span class="text-slate-500">Current Status:</span>
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">Testing / Doctor Verification In Progress</span>
             </div>
           </div>
 
@@ -70,11 +78,19 @@ import { ApiService } from '../../core/services/api.service';
             </div>
           </div>
 
-          <!-- Download Action Button -->
-          <a [href]="api.getPublicReportDownloadUrl(token)" target="_blank"
-            class="block w-full py-3.5 px-4 text-center rounded-2xl font-black text-sm bg-gradient-to-r from-brand-600 to-cyan-600 text-white shadow-xl shadow-brand-500/25 hover:from-brand-500 hover:to-cyan-500 transition-all">
-            <i class="fa-solid fa-file-arrow-down mr-2 text-base"></i> Download Verified PDF Report
-          </a>
+          <!-- Download Action Button (Only if approved) -->
+          <div *ngIf="reportData.status === 'Approved'">
+            <a [href]="api.getPublicReportDownloadUrl(token)" target="_blank"
+              class="block w-full py-3.5 px-4 text-center rounded-2xl font-black text-sm bg-gradient-to-r from-brand-600 to-cyan-600 text-white shadow-xl shadow-brand-500/25 hover:from-brand-500 hover:to-cyan-500 transition-all">
+              <i class="fa-solid fa-file-arrow-down mr-2 text-base"></i> Download Verified PDF Report
+            </a>
+          </div>
+
+          <!-- Processing Notice if not approved -->
+          <div *ngIf="reportData.status !== 'Approved'" class="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs space-y-1 text-center font-medium">
+            <i class="fa-solid fa-flask-vial text-amber-600 text-lg mb-1 block"></i>
+            <div>Aapke samples lab me process ho rahe hain. Report verify aur approve hone ke baad PDF report yahan download ke liye uplabdh ho jayegi.</div>
+          </div>
 
           <div class="text-center text-[10px] text-slate-400">
             Powered by DigitLab Cloud Pathology Information System

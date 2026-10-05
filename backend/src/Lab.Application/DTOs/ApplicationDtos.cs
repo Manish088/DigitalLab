@@ -23,7 +23,13 @@ public record DashboardStatsDto(
     int TotalDoctors,
     int TotalAgents,
     List<DailyRevenueDto> RevenueTrend,
-    List<RecentCaseItemDto> RecentCases
+    List<RecentCaseItemDto> RecentCases,
+    decimal TodayCashCollection = 0,
+    decimal TodayUpiCollection = 0,
+    decimal TodayCardCollection = 0,
+    decimal TodayBilledAmount = 0,
+    decimal TodayDiscountGiven = 0,
+    decimal TodayDueCreated = 0
 );
 
 public record DailyRevenueDto(string Date, decimal Revenue, int CasesCount);
@@ -296,6 +302,30 @@ public record DoctorPayoutRequest(
     string? Remarks
 );
 
+public record DoctorPayoutRecordDto(
+    Guid Id,
+    Guid DoctorId,
+    string DoctorName,
+    string DoctorCode,
+    string? Degree,
+    string? Specialization,
+    string? ClinicHospitalName,
+    string? Phone,
+    string PayoutNumber,
+    DateTime PayoutDate,
+    DateTime PeriodStartDate,
+    DateTime PeriodEndDate,
+    int TotalCasesCount,
+    decimal TotalBillingVolume,
+    decimal TotalCommissionEarned,
+    decimal PaidAmount,
+    decimal RemainingDue,
+    PaymentMethod PaymentMethod,
+    string? TransactionReference,
+    string? Remarks
+);
+
+
 // Letterhead & Branding DTOs
 public record LetterheadConfigDto(
     string LabName,
@@ -350,6 +380,7 @@ public record SubscriptionPlanDto(
 public record CreateRazorpayOrderRequest(Guid PlanId, string BillingCycle, string? PromoCode);
 public record RazorpayOrderResponse(string OrderId, string KeyId, decimal Amount, string Currency, string LabName);
 public record VerifyRazorpayPaymentRequest(string RazorpayOrderId, string RazorpayPaymentId, string RazorpaySignature, Guid PlanId, string BillingCycle);
+public record SubmitManualPaymentRequest(Guid PlanId, string BillingCycle, string? TransactionUtr, string? Remarks);
 
 // Support Ticket DTOs
 public record SupportTicketDto(

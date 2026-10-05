@@ -46,6 +46,22 @@ public class DashboardController : ControllerBase
         var totalDoctors = await _context.Doctors.CountAsync(d => d.IsActive);
         var totalAgents = await _context.CollectionAgents.CountAsync(a => a.IsActive);
 
+        // Daily Counter Reconciliation Breakdown for Today
+        var todayTxns = await _context.PaymentTransactions
+            .Where(t => t.TransactionDate >= today)
+            .ToListAsync();
+
+        var todayCaseList = await _context.CaseOrders
+            .Where(c => c.OrderDate >= today)
+            .ToListAsync();
+
+        var todayCashCollection = todayTxns.Where(t => t.PaymentMethod == PaymentMethod.Cash).Sum(t => t.Amount);
+        var todayUpiCollection = todayTxns.Where(t => t.PaymentMethod == PaymentMethod.UPI).Sum(t => t.Amount);
+        var todayCardCollection = todayTxns.Where(t => t.PaymentMethod == PaymentMethod.Card || t.PaymentMethod == PaymentMethod.NetBanking).Sum(t => t.Amount);
+        var todayBilledAmount = todayCaseList.Sum(c => c.NetAmount);
+        var todayDiscountGiven = todayCaseList.Sum(c => c.DiscountAmount);
+        var todayDueCreated = todayCaseList.Sum(c => c.DueAmount);
+
         // 7 Days Revenue Trend
         var revenueTrend = new List<DailyRevenueDto>();
         for (int i = 6; i >= 0; i--)
@@ -93,7 +109,13 @@ public class DashboardController : ControllerBase
             totalDoctors,
             totalAgents,
             revenueTrend,
-            recentCases
+            recentCases,
+            todayCashCollection,
+            todayUpiCollection,
+            todayCardCollection,
+            todayBilledAmount,
+            todayDiscountGiven,
+            todayDueCreated
         ));
     }
 }

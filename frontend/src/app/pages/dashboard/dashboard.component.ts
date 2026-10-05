@@ -95,6 +95,94 @@ declare var Chart: any;
         </div>
       </div>
 
+      <!-- Today's Counter Closing & Cash Reconciliation Card -->
+      <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6 rounded-3xl text-white shadow-xl border border-slate-700/60 relative overflow-hidden" *ngIf="stats">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-700/80 pb-4">
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center text-lg shadow-inner">
+              <i class="fa-solid fa-cash-register"></i>
+            </div>
+            <div>
+              <div class="flex items-center space-x-2">
+                <h3 class="text-base font-bold font-heading">Today's Counter Closing & Reconciliation</h3>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-400/20 text-emerald-300 border border-emerald-400/30">LIVE RECONCILIATION</span>
+              </div>
+              <p class="text-xs text-slate-400">Cash in drawer, UPI/QR, Cards, and Balance Dues for counter closeout.</p>
+            </div>
+          </div>
+          <div class="flex items-center space-x-2">
+            <a routerLink="/transactions" class="px-3.5 py-1.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold transition-all border border-slate-600">
+              <i class="fa-solid fa-list-check mr-1.5"></i> Detailed Day Ledger
+            </a>
+          </div>
+        </div>
+
+        <!-- 4 Column Reconciliation Metrics -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-5">
+          <!-- 1. Cash in Counter -->
+          <div class="bg-slate-800/80 p-4 rounded-2xl border border-emerald-500/30 relative">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-slate-300">Cash in Drawer</span>
+              <div class="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs">
+                <i class="fa-solid fa-money-bill-wave"></i>
+              </div>
+            </div>
+            <div class="text-2xl font-black text-emerald-400 mt-2">₹{{ (stats.todayCashCollection || 0) | number:'1.2-2' }}</div>
+            <div class="text-[11px] text-slate-400 mt-1">Physical Cash at Desk</div>
+          </div>
+
+          <!-- 2. UPI / QR Code -->
+          <div class="bg-slate-800/80 p-4 rounded-2xl border border-blue-500/30 relative">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-slate-300">UPI / QR Code</span>
+              <div class="w-7 h-7 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center text-xs">
+                <i class="fa-solid fa-qrcode"></i>
+              </div>
+            </div>
+            <div class="text-2xl font-black text-blue-400 mt-2">₹{{ (stats.todayUpiCollection || 0) | number:'1.2-2' }}</div>
+            <div class="text-[11px] text-slate-400 mt-1">GPay / PhonePe / Paytm</div>
+          </div>
+
+          <!-- 3. Card / Net Banking -->
+          <div class="bg-slate-800/80 p-4 rounded-2xl border border-purple-500/30 relative">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-slate-300">Card / Online</span>
+              <div class="w-7 h-7 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center text-xs">
+                <i class="fa-solid fa-credit-card"></i>
+              </div>
+            </div>
+            <div class="text-2xl font-black text-purple-400 mt-2">₹{{ (stats.todayCardCollection || 0) | number:'1.2-2' }}</div>
+            <div class="text-[11px] text-slate-400 mt-1">POS Card & Net Banking</div>
+          </div>
+
+          <!-- 4. Today's Uncollected Due -->
+          <div class="bg-slate-800/80 p-4 rounded-2xl border border-amber-500/30 relative">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-slate-300">Today's Due Left</span>
+              <div class="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center text-xs">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+              </div>
+            </div>
+            <div class="text-2xl font-black text-amber-400 mt-2">₹{{ (stats.todayDueCreated || 0) | number:'1.2-2' }}</div>
+            <div class="text-[11px] text-slate-400 mt-1">Unpaid Balance from Today</div>
+          </div>
+        </div>
+
+        <!-- Quick Summary Bar at Bottom -->
+        <div class="mt-4 pt-3 border-t border-slate-700/60 flex flex-wrap items-center justify-between text-xs text-slate-400 gap-2">
+          <div class="flex items-center space-x-4">
+            <span>Today's Total Billed: <strong class="text-white">₹{{ (stats.todayBilledAmount || 0) | number:'1.2-2' }}</strong></span>
+            <span>•</span>
+            <span>Total Cash+UPI Inflow: <strong class="text-emerald-400">₹{{ (stats.todayCollection || 0) | number:'1.2-2' }}</strong></span>
+            <span>•</span>
+            <span>Discount Given: <strong class="text-rose-400">₹{{ (stats.todayDiscountGiven || 0) | number:'1.2-2' }}</strong></span>
+          </div>
+          <div class="text-slate-400 font-mono text-[11px]">
+            Reconciled across {{ stats.todayCases }} cases
+          </div>
+        </div>
+      </div>
+
       <!-- Secondary KPIs Strip -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3" *ngIf="stats">
         <div class="bg-slate-900 text-white p-4 rounded-xl flex items-center justify-between">
@@ -218,6 +306,46 @@ export class DashboardComponent implements OnInit {
         this.stats = res;
         this.cdr.detectChanges();
         setTimeout(() => this.renderChart(), 100);
+
+        // Fetch Live Transactions to guarantee dynamic Counter Closing values even before backend restart
+        this.api.getTransactions().subscribe({
+          next: (txRes) => {
+            if (txRes && this.stats) {
+              if (txRes.todayClosing && (txRes.todayClosing.todayCash > 0 || txRes.todayClosing.todayUpi > 0 || txRes.todayClosing.todayBilled > 0)) {
+                this.stats.todayCashCollection = txRes.todayClosing.todayCash;
+                this.stats.todayUpiCollection = txRes.todayClosing.todayUpi;
+                this.stats.todayCardCollection = txRes.todayClosing.todayCard;
+                this.stats.todayBilledAmount = txRes.todayClosing.todayBilled;
+                this.stats.todayDiscountGiven = txRes.todayClosing.todayDiscount;
+                this.stats.todayDueCreated = txRes.todayClosing.todayDueCreated;
+              } else if (txRes.transactions && txRes.transactions.length > 0) {
+                const today = new Date().toDateString();
+                const todayTxns = txRes.transactions.filter((t: any) => new Date(t.transactionDate).toDateString() === today);
+
+                const cashSum = todayTxns
+                  .filter((t: any) => t.paymentMethod === 'Cash' || t.paymentMethod === '1' || t.paymentMethod === 1)
+                  .reduce((sum: number, t: any) => sum + (Number(t.amount) || 0), 0);
+
+                const upiSum = todayTxns
+                  .filter((t: any) => t.paymentMethod === 'UPI' || t.paymentMethod === 'Upi' || t.paymentMethod === '2' || t.paymentMethod === 2)
+                  .reduce((sum: number, t: any) => sum + (Number(t.amount) || 0), 0);
+
+                const cardSum = todayTxns
+                  .filter((t: any) => t.paymentMethod === 'Card' || t.paymentMethod === 'NetBanking' || t.paymentMethod === 3 || t.paymentMethod === 4)
+                  .reduce((sum: number, t: any) => sum + (Number(t.amount) || 0), 0);
+
+                this.stats.todayCashCollection = cashSum;
+                this.stats.todayUpiCollection = upiSum;
+                this.stats.todayCardCollection = cardSum;
+                if (!this.stats.todayBilledAmount) {
+                  this.stats.todayBilledAmount = cashSum + upiSum + cardSum;
+                }
+              }
+              this.cdr.detectChanges();
+            }
+          },
+          error: (err) => console.error('Error fetching transactions for dashboard counter:', err)
+        });
       },
       error: (err) => console.error(err)
     });

@@ -118,11 +118,40 @@ public class TransactionsController : ControllerBase
 
         var totalCollection = list.Sum(t => t.Amount);
 
+        // Calculate Today's Day-End Counter Closing Breakdown
+        var today = DateTime.UtcNow.Date;
+        var todayTxns = await _context.PaymentTransactions
+            .Where(t => t.TransactionDate >= today)
+            .ToListAsync();
+
+        var todayCases = await _context.CaseOrders
+            .Where(c => c.OrderDate >= today)
+            .ToListAsync();
+
+        var todayCash = todayTxns.Where(t => t.PaymentMethod == PaymentMethod.Cash).Sum(t => t.Amount);
+        var todayUpi = todayTxns.Where(t => t.PaymentMethod == PaymentMethod.UPI).Sum(t => t.Amount);
+        var todayCard = todayTxns.Where(t => t.PaymentMethod == PaymentMethod.Card || t.PaymentMethod == PaymentMethod.NetBanking).Sum(t => t.Amount);
+        var todayTotalCollection = todayTxns.Sum(t => t.Amount);
+        var todayBilled = todayCases.Sum(c => c.NetAmount);
+        var todayDiscount = todayCases.Sum(c => c.DiscountAmount);
+        var todayDueCreated = todayCases.Sum(c => c.DueAmount);
+
         return Ok(new
         {
             totalCollection,
             count = list.Count,
-            transactions = list
+            transactions = list,
+            todayClosing = new
+            {
+                todayCash,
+                todayUpi,
+                todayCard,
+                todayTotalCollection,
+                todayBilled,
+                todayDiscount,
+                todayDueCreated,
+                todayCasesCount = todayCases.Count
+            }
         });
     }
 }

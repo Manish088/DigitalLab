@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using Lab.Domain.Common;
 using Lab.Domain.Enums;
 
@@ -51,10 +52,15 @@ public class SubscriptionPlan : BaseEntity
 public class TenantSubscription : BaseEntity
 {
     public Guid TenantId { get; set; }
-    public TenantLab TenantLab { get; set; } = null!;
+    public Guid? TenantLabId { get; set; }
+
+    [ForeignKey(nameof(TenantId))]
+    public TenantLab? TenantLab { get; set; }
 
     public Guid PlanId { get; set; }
-    public SubscriptionPlan Plan { get; set; } = null!;
+
+    [ForeignKey(nameof(PlanId))]
+    public SubscriptionPlan? Plan { get; set; }
 
     public string BillingCycle { get; set; } = "Monthly"; // Monthly, Annual
     public DateTime StartDate { get; set; } = DateTime.UtcNow;
@@ -67,4 +73,11 @@ public class TenantSubscription : BaseEntity
     public string? RazorpaySignature { get; set; }
     public string Status { get; set; } = "Active"; // Active, Expired, Cancelled
     public string? InvoicePdfUrl { get; set; }
+}
+
+public class SystemSetting : BaseEntity
+{
+    public string SettingKey { get; set; } = string.Empty;
+    public string SettingValue { get; set; } = string.Empty;
+    public string? Description { get; set; }
 }

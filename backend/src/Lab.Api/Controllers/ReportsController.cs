@@ -1,4 +1,5 @@
 using Lab.Application.Common.Interfaces;
+using Lab.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -40,6 +41,17 @@ public class ReportsController : ControllerBase
         var disposition = download ? "attachment" : "inline";
         Response.Headers.Append("Content-Disposition", $"{disposition}; filename=TaxInvoice_{caseOrderId}.pdf");
         return File(pdfBytes, "application/pdf", download ? $"TaxInvoice_{caseOrderId}.pdf" : null);
+    }
+
+    [AllowAnonymous]
+    [HttpGet("thermal-receipt/{caseOrderId}")]
+    [Produces("application/pdf")]
+    public async Task<IActionResult> DownloadThermalReceiptPdf(Guid caseOrderId, [FromQuery] int width = 80, [FromQuery] bool download = false)
+    {
+        var pdfBytes = await _pdfReportService.GenerateThermalReceiptPdfAsync(caseOrderId, width);
+        var disposition = download ? "attachment" : "inline";
+        Response.Headers.Append("Content-Disposition", $"{disposition}; filename=ThermalReceipt_{caseOrderId}.pdf");
+        return File(pdfBytes, "application/pdf", download ? $"ThermalReceipt_{caseOrderId}.pdf" : null);
     }
 
     // Public QR Code token-based access (No login needed!)
@@ -89,6 +101,9 @@ public class ReportsController : ControllerBase
 
         if (caseOrder == null)
             return NotFound(new { message = "Report link is invalid or expired." });
+
+        if (caseOrder.Status != CaseStatus.Approved)
+            return BadRequest(new { message = "Report is currently under lab testing/processing and has not been approved yet." });
 
         var pdfBytes = await _pdfReportService.GeneratePatientReportPdfAsync(caseOrder.Id, false);
         Response.Headers.Append("Content-Disposition", $"inline; filename=Report_{caseOrder.CaseNumber}.pdf");

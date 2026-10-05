@@ -353,3 +353,26 @@ BEGIN
     );
 END
 GO
+
+-- 12. SYSTEM SETTINGS MASTER TABLE
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'SystemSettings')
+BEGIN
+    CREATE TABLE SystemSettings (
+        Id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+        SettingKey NVARCHAR(100) NOT NULL UNIQUE,
+        SettingValue NVARCHAR(MAX) NOT NULL,
+        Description NVARCHAR(500) NULL,
+        CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        UpdatedAt DATETIME2 NULL,
+        CreatedBy NVARCHAR(100) NULL,
+        UpdatedBy NVARCHAR(100) NULL,
+        IsDeleted BIT NOT NULL DEFAULT 0
+    );
+
+    INSERT INTO SystemSettings (Id, SettingKey, SettingValue, Description)
+    VALUES 
+        (NEWID(), 'AdminUpiId', 'yadavmanishkk-2@okhdfcbank', 'UPI VPA ID for Direct SaaS Subscription Payments'),
+        (NEWID(), 'AdminPayeeName', 'Manish Yadav', 'Payee / Account Holder Name displayed on UPI checkout'),
+        (NEWID(), 'AdminWhatsApp', '7706087066', 'WhatsApp Number for Payment Screenshots & Proofs');
+END
+GO

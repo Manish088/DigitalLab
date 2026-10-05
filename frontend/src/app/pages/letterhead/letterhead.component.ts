@@ -61,13 +61,19 @@ import { LetterheadConfig } from '../../core/models/lims.models';
               </div>
 
               <div>
-                <label class="block font-semibold text-slate-700 mb-1">GSTIN Number</label>
-                <input type="text" [(ngModel)]="config.gstin" placeholder="07AAAAA0000A1Z5" class="w-full px-3 py-2 border border-slate-300 rounded-xl">
+                <label class="block font-semibold text-slate-700 mb-1">
+                  GSTIN Number <span class="text-[11px] font-normal text-slate-400">(Optional)</span>
+                </label>
+                <input type="text" [(ngModel)]="config.gstin" placeholder="Optional (leave blank if not available)" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs">
+                <p class="text-[10px] text-slate-400 mt-1">Diagnostics are GST exempt. Leave blank if not registered.</p>
               </div>
 
               <div>
-                <label class="block font-semibold text-slate-700 mb-1">NABL Accreditation No</label>
-                <input type="text" [(ngModel)]="config.nablNumber" placeholder="NABL-MC-9812" class="w-full px-3 py-2 border border-slate-300 rounded-xl">
+                <label class="block font-semibold text-slate-700 mb-1">
+                  NABL / ISO Accreditation No <span class="text-[11px] font-normal text-slate-400">(Optional)</span>
+                </label>
+                <input type="text" [(ngModel)]="config.nablNumber" placeholder="Optional (e.g. NABL-MC-9812)" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs">
+                <p class="text-[10px] text-slate-400 mt-1">Leave blank if lab is standard / non-accredited.</p>
               </div>
             </div>
           </div>
@@ -167,10 +173,13 @@ import { LetterheadConfig } from '../../core/models/lims.models';
                   <p class="text-[10px] text-slate-500 italic">{{ config.tagline }}</p>
                   <p class="text-[9px] text-slate-600 mt-1">{{ config.address }} • Phone: {{ config.phone }}</p>
                 </div>
-                <div class="text-right text-[9px]">
+                <div class="text-right text-[9px] space-y-1">
                   <span *ngIf="config.nablNumber" class="inline-block px-1.5 py-0.5 bg-brand-50 text-brand-700 font-bold rounded border border-brand-200">
                     NABL: {{ config.nablNumber }}
                   </span>
+                  <div *ngIf="config.gstin" class="text-[8px] text-slate-500 font-medium">
+                    GSTIN: {{ config.gstin }}
+                  </div>
                 </div>
               </div>
             </div>

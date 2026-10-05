@@ -119,10 +119,10 @@ public class PdfReportService : IPdfReportService
                                     c.Item().Text(lab.Tagline).FontSize(7.5f).Italic().FontColor("#64748b");
                                 c.Item().Text($"{labAddress}").FontSize(7.5f).FontColor("#475569");
                                 c.Item().Text($"Ph: {labPhone} | Email: {labEmail}").FontSize(7.5f).FontColor("#475569");
-                                if (!string.IsNullOrEmpty(lab?.NablNumber))
-                                    c.Item().Text($"NABL Acc. No: {lab.NablNumber} | ISO 15189:2022 Certified Lab").FontSize(7.5f).Bold().FontColor(primaryColor);
-                                else
-                                    c.Item().Text("ISO 15189:2022 Standard Compliant Automated Diagnostic Laboratory").FontSize(7.5f).Bold().FontColor(primaryColor);
+                                if (!string.IsNullOrWhiteSpace(lab?.NablNumber))
+                                    c.Item().Text($"NABL Acc. No: {lab.NablNumber}").FontSize(7.5f).Bold().FontColor(primaryColor);
+                                else if (!string.IsNullOrWhiteSpace(lab?.Gstin))
+                                    c.Item().Text($"GSTIN: {lab.Gstin}").FontSize(7.5f).FontColor("#475569");
                             });
 
                             table.Cell().Column(c =>
@@ -390,7 +390,7 @@ public class PdfReportService : IPdfReportService
                             c.Item().Text("Online Report Verification:").FontSize(7.5f).Bold().FontColor("#475569");
                             c.Item().Text($"Token: {caseOrder.PublicAccessToken}").FontSize(6.5f).FontColor("#94a3b8");
                             c.Item().Text($"Report Generated: {DateTime.Now:dd-MMM-yyyy hh:mm tt}").FontSize(6.5f).FontColor("#64748b");
-                            c.Item().Text("Note: Tests performed on automated calibrated analyzers in accordance with NABL ISO 15189 guidelines.").FontSize(6f).Italic().FontColor("#94a3b8");
+                            c.Item().Text("Note: Tests performed on automated calibrated analyzers with standard quality controls.").FontSize(6f).Italic().FontColor("#94a3b8");
                             c.Item().Text("Partial reproduction of this report is not permitted without laboratory approval.").FontSize(5.5f).Italic().FontColor("#94a3b8");
                         });
 
@@ -517,7 +517,7 @@ public class PdfReportService : IPdfReportService
                             c.Item().Text(t =>
                             {
                                 t.AlignRight();
-                                t.Span("TAX INVOICE / RECEIPT").FontSize(11).Bold().FontColor("#1e293b");
+                                t.Span(!string.IsNullOrWhiteSpace(lab?.Gstin) ? "TAX INVOICE / RECEIPT" : "DIAGNOSTIC BILL / RECEIPT").FontSize(11).Bold().FontColor("#1e293b");
                             });
                             c.Item().PaddingTop(2).Text(t =>
                             {
@@ -679,6 +679,148 @@ public class PdfReportService : IPdfReportService
                     });
 
                     row.RelativeItem().AlignRight().Text($"{labName} | Billing System").FontSize(7.5f).FontColor("#94a3b8");
+                });
+            });
+        });
+
+        return document.GeneratePdf();
+    }
+
+    public async Task<byte[]> GenerateThermalReceiptPdfAsync(Guid caseOrderId, int widthMm = 80)
+    {
+        var caseOrder = await _context.CaseOrders
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Include(c => c.Patient)
+            .Include(c => c.ReferringDoctor)
+            .Include(c => c.Items).ThenInclude(i => i.Test)
+            .Include(c => c.Transactions)
+            .FirstOrDefaultAsync(c => c.Id == caseOrderId);
+
+        if (caseOrder == null)
+            throw new KeyNotFoundException($"Case order {caseOrderId} not found");
+
+        var lab = await _context.Tenants
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Id == caseOrder.TenantId);
+
+        var labName = !string.IsNullOrWhiteSpace(lab?.LabName) ? lab.LabName : "CITY CARE DIAGNOSTICS & PATHOLOGY";
+        var labPhone = !string.IsNullOrWhiteSpace(lab?.Phone) ? lab.Phone : "7706087066";
+        var labAddressParts = new[] { lab?.Address, lab?.City }
+            .Where(s => !string.IsNullOrWhiteSpace(s));
+        var labAddress = labAddressParts.Any() ? string.Join(", ", labAddressParts) : "Civil Lines, Azamgarh";
+
+        float actualWidth = widthMm <= 58 ? 58f : 80f;
+        float baseHeight = actualWidth <= 58 ? 160f : 140f;
+        float pageHeight = baseHeight + (caseOrder.Items.Count * 9f) + (caseOrder.Transactions.Count * 7f);
+        if (pageHeight < 120f) pageHeight = 120f;
+
+        var document = Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.Size(actualWidth, pageHeight, Unit.Millimetre);
+                page.MarginTop(3, Unit.Millimetre);
+                page.MarginBottom(3, Unit.Millimetre);
+                page.MarginLeft(2.5f, Unit.Millimetre);
+                page.MarginRight(2.5f, Unit.Millimetre);
+                page.PageColor(Colors.White);
+                page.DefaultTextStyle(x => x.FontFamily(Fonts.Arial).FontSize(actualWidth <= 58 ? 6.5f : 7.5f).FontColor("#000000"));
+
+                page.Content().Column(col =>
+                {
+                    // 1. Lab Header
+                    col.Item().AlignCenter().Text(labName.ToUpperInvariant()).FontSize(actualWidth <= 58 ? 8.5f : 10f).Bold();
+                    col.Item().AlignCenter().Text(labAddress).FontSize(actualWidth <= 58 ? 6f : 6.8f);
+                    col.Item().AlignCenter().Text($"Ph: {labPhone}").FontSize(actualWidth <= 58 ? 6f : 6.8f);
+                    if (!string.IsNullOrEmpty(lab?.Gstin))
+                        col.Item().AlignCenter().Text($"GSTIN: {lab.Gstin}").FontSize(actualWidth <= 58 ? 6f : 6.8f).Bold();
+
+                    col.Item().PaddingVertical(1).LineHorizontal(0.6f).LineColor("#000000");
+
+                    // Title
+                    col.Item().AlignCenter().Text(!string.IsNullOrWhiteSpace(lab?.Gstin) ? "TAX INVOICE / RECEIPT" : "CASH BILL / RECEIPT").FontSize(actualWidth <= 58 ? 7f : 8f).Bold();
+                    col.Item().PaddingBottom(1).LineHorizontal(0.6f).LineColor("#000000");
+
+                    // 2. Bill & Patient Meta
+                    col.Item().Row(r =>
+                    {
+                        r.RelativeItem().Text($"Bill: {caseOrder.CaseNumber}").Bold();
+                        r.RelativeItem().AlignRight().Text($"{caseOrder.OrderDate:dd/MM/yy hh:mm tt}").FontSize(actualWidth <= 58 ? 5.5f : 6.5f);
+                    });
+
+                    col.Item().Text($"Patient: {caseOrder.Patient.FullName}").Bold();
+                    col.Item().Text($"Age/Sex: {caseOrder.Patient.AgeYears} Y / {caseOrder.Patient.Gender} | Mob: {caseOrder.Patient.Phone ?? "N/A"}");
+                    col.Item().Text($"UHID: {caseOrder.Patient.Uhid} | Dr: {caseOrder.ReferringDoctor?.DoctorName ?? "Self"}");
+
+                    col.Item().PaddingVertical(1).LineHorizontal(0.6f).LineColor("#000000");
+
+                    // 3. Test Items
+                    col.Item().Table(table =>
+                    {
+                        table.ColumnsDefinition(cols =>
+                        {
+                            cols.RelativeColumn(3.2f);
+                            cols.RelativeColumn(1.3f);
+                        });
+
+                        table.Header(h =>
+                        {
+                            h.Cell().Text("Particular / Test").Bold();
+                            h.Cell().AlignRight().Text("Amt (Rs)").Bold();
+                        });
+
+                        int idx = 1;
+                        foreach (var itm in caseOrder.Items)
+                        {
+                            table.Cell().Text($"{idx++}. {itm.Test?.TestName ?? "Investigation"}");
+                            table.Cell().AlignRight().Text($"{itm.NetAmount:F2}");
+                        }
+                    });
+
+                    col.Item().PaddingVertical(1).LineHorizontal(0.6f).LineColor("#000000");
+
+                    // 4. Financials
+                    col.Item().Row(r =>
+                    {
+                        r.RelativeItem().Text("Gross Total:");
+                        r.RelativeItem().AlignRight().Text($"Rs. {caseOrder.TotalAmount:F2}");
+                    });
+
+                    if (caseOrder.DiscountAmount > 0)
+                    {
+                        col.Item().Row(r =>
+                        {
+                            r.RelativeItem().Text("Discount:");
+                            r.RelativeItem().AlignRight().Text($"-Rs. {caseOrder.DiscountAmount:F2}");
+                        });
+                    }
+
+                    col.Item().Row(r =>
+                    {
+                        r.RelativeItem().Text("Net Payable:").Bold();
+                        r.RelativeItem().AlignRight().Text($"Rs. {caseOrder.NetAmount:F2}").Bold();
+                    });
+
+                    col.Item().Row(r =>
+                    {
+                        r.RelativeItem().Text("Paid Amount:").Bold();
+                        r.RelativeItem().AlignRight().Text($"Rs. {caseOrder.PaidAmount:F2}").Bold();
+                    });
+
+                    col.Item().Row(r =>
+                    {
+                        r.RelativeItem().Text("Balance Due:").Bold();
+                        r.RelativeItem().AlignRight().Text($"Rs. {caseOrder.DueAmount:F2}").Bold();
+                    });
+
+                    col.Item().PaddingVertical(1).LineHorizontal(0.6f).LineColor("#000000");
+
+                    // 5. Footer & Barcode text
+                    col.Item().AlignCenter().Text($"Barcode: {caseOrder.Barcode}").Bold();
+                    col.Item().AlignCenter().Text("Thank You! Get Well Soon.").Italic();
+                    col.Item().AlignCenter().Text("*** Computer Generated POS Slip ***").FontSize(actualWidth <= 58 ? 5f : 6f);
                 });
             });
         });

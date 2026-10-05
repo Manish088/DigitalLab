@@ -103,6 +103,79 @@ public static class DbInitializer
             await context.SaveChangesAsync();
         }
 
+        // 3.1 Seed System Settings (UPI, WhatsApp, Admin details)
+        try
+        {
+            if (context.Database.IsSqlServer())
+            {
+                await context.Database.ExecuteSqlRawAsync(@"
+                    IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'SystemSettings')
+                    BEGIN
+                        CREATE TABLE SystemSettings (
+                            Id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+                            SettingKey NVARCHAR(100) NOT NULL UNIQUE,
+                            SettingValue NVARCHAR(MAX) NOT NULL,
+                            Description NVARCHAR(500) NULL,
+                            CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+                            UpdatedAt DATETIME2 NULL,
+                            CreatedBy NVARCHAR(100) NULL,
+                            UpdatedBy NVARCHAR(100) NULL,
+                            IsDeleted BIT NOT NULL DEFAULT 0
+                        );
+                    END
+                ");
+            }
+            else if (context.Database.IsSqlite())
+            {
+                await context.Database.ExecuteSqlRawAsync(@"
+                    CREATE TABLE IF NOT EXISTS SystemSettings (
+                        Id TEXT PRIMARY KEY,
+                        SettingKey TEXT NOT NULL UNIQUE,
+                        SettingValue TEXT NOT NULL,
+                        Description TEXT NULL,
+                        CreatedAt TEXT NOT NULL,
+                        UpdatedAt TEXT NULL,
+                        CreatedBy TEXT NULL,
+                        UpdatedBy TEXT NULL,
+                        IsDeleted INTEGER NOT NULL DEFAULT 0
+                    );
+                ");
+            }
+
+            var defaultSettings = new Dictionary<string, (string Value, string Description)>
+            {
+                { "AdminUpiId", ("yadavmanishkk-2@okhdfcbank", "UPI VPA ID for Direct SaaS Subscription Payments") },
+                { "AdminPayeeName", ("Manish Yadav", "Payee / Account Holder Name displayed on UPI checkout") },
+                { "AdminWhatsApp", ("7706087066", "WhatsApp Number for Payment Screenshots & Proofs") },
+                { "AdminBankName", ("", "Bank Name for Direct NEFT / RTGS Transfer") },
+                { "AdminAccountNo", ("", "Bank Account Number for Wire Transfer") },
+                { "AdminIfscCode", ("", "Bank IFSC Code") }
+            };
+
+            foreach (var kvp in defaultSettings)
+            {
+                var setting = await context.SystemSettings.FirstOrDefaultAsync(s => s.SettingKey == kvp.Key);
+                if (setting == null)
+                {
+                    await context.SystemSettings.AddAsync(new SystemSetting
+                    {
+                        SettingKey = kvp.Key,
+                        SettingValue = kvp.Value.Value,
+                        Description = kvp.Value.Description
+                    });
+                }
+                else if (kvp.Key == "AdminUpiId" && setting.SettingValue != kvp.Value.Value)
+                {
+                    setting.SettingValue = kvp.Value.Value;
+                }
+            }
+            await context.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[DbInitializer] SystemSettings warning: {ex.Message}");
+        }
+
         // 4. Seed Demo Lab Tenant
         var demoLab = await context.Tenants.FirstOrDefaultAsync(t => t.LabCode == "DEMO01");
         if (demoLab == null)

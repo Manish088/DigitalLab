@@ -8,6 +8,7 @@ import {
   TestMaster,
   TestCategory,
   DoctorReferral,
+  DoctorPayoutRecord,
   CollectionAgent,
   LetterheadConfig,
   SubscriptionPlan,
@@ -115,6 +116,10 @@ export class ApiService {
     return `${this.baseUrl}/reports/invoice/${caseOrderId}`;
   }
 
+  getThermalReceiptPdfUrl(caseOrderId: string, width: number = 80): string {
+    return `${this.baseUrl}/reports/thermal-receipt/${caseOrderId}?width=${width}`;
+  }
+
   getBarcodeSvgUrl(caseOrderId: string): string {
     return `${this.baseUrl}/cases/${caseOrderId}/barcode-svg`;
   }
@@ -158,8 +163,14 @@ export class ApiService {
     return this.http.post<DoctorReferral>(`${this.baseUrl}/doctors`, doctor);
   }
 
-  recordDoctorPayout(data: any): Observable<any> {
-    return this.http.post(`${this.baseUrl}/doctors/payout`, data);
+  recordDoctorPayout(data: any): Observable<DoctorPayoutRecord> {
+    return this.http.post<DoctorPayoutRecord>(`${this.baseUrl}/doctors/payout`, data);
+  }
+
+  getDoctorPayouts(doctorId?: string): Observable<DoctorPayoutRecord[]> {
+    let params = new HttpParams();
+    if (doctorId) params = params.set('doctorId', doctorId);
+    return this.http.get<DoctorPayoutRecord[]>(`${this.baseUrl}/doctors/payouts`, { params });
   }
 
   // Collection Agents
@@ -207,6 +218,10 @@ export class ApiService {
     return this.http.get<SubscriptionPlan[]>(`${this.baseUrl}/subscriptions/plans`);
   }
 
+  getPaymentConfig(): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/subscriptions/payment-config`);
+  }
+
   getMySubscription(): Observable<any> {
     return this.http.get<any>(`${this.baseUrl}/subscriptions/my-subscription`);
   }
@@ -217,6 +232,10 @@ export class ApiService {
 
   verifySubscriptionPayment(data: any): Observable<any> {
     return this.http.post(`${this.baseUrl}/subscriptions/verify-payment`, data);
+  }
+
+  submitManualPayment(data: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/subscriptions/submit-manual-payment`, data);
   }
 
   // Support Tickets

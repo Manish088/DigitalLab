@@ -95,6 +95,12 @@ export interface DashboardStats {
   totalAgents: number;
   revenueTrend: { date: string; revenue: number; casesCount: number }[];
   recentCases: RecentCaseItem[];
+  todayCashCollection?: number;
+  todayUpiCollection?: number;
+  todayCardCollection?: number;
+  todayBilledAmount?: number;
+  todayDiscountGiven?: number;
+  todayDueCreated?: number;
 }
 
 export interface RecentCaseItem {
@@ -276,6 +282,30 @@ export interface DoctorReferral {
   totalCommissionPaid: number;
   pendingCommissionDue: number;
 }
+
+export interface DoctorPayoutRecord {
+  id: string;
+  doctorId: string;
+  doctorName: string;
+  doctorCode: string;
+  degree?: string;
+  specialization?: string;
+  clinicHospitalName?: string;
+  phone?: string;
+  payoutNumber: string;
+  payoutDate: string;
+  periodStartDate: string;
+  periodEndDate: string;
+  totalCasesCount: number;
+  totalBillingVolume: number;
+  totalCommissionEarned: number;
+  paidAmount: number;
+  remainingDue: number;
+  paymentMethod: number;
+  transactionReference?: string;
+  remarks?: string;
+}
+
 
 export interface CollectionAgent {
   id: string;

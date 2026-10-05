@@ -36,6 +36,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>, IApplica
     public DbSet<SupportTicketReply> SupportTicketReplies => Set<SupportTicketReply>();
     public DbSet<SubscriptionPlan> SubscriptionPlans => Set<SubscriptionPlan>();
     public DbSet<TenantSubscription> TenantSubscriptions => Set<TenantSubscription>();
+    public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -112,6 +113,12 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>, IApplica
             .WithMany()
             .HasForeignKey(d => d.DoctorId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<TenantSubscription>()
+            .HasOne(s => s.TenantLab)
+            .WithMany()
+            .HasForeignKey(s => s.TenantId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder.Entity<TenantSubscription>()
             .HasOne(s => s.Plan)
