@@ -13,13 +13,13 @@ import { DoctorReferral, CollectionAgent, TestMaster, TestCategory, Gender, Prio
   template: `
     <div class="space-y-6">
       <!-- Page Header -->
-      <div class="flex items-center justify-between">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h2 class="text-xl font-bold text-slate-900 font-heading">New Patient Registration & Case Billing</h2>
+          <h2 class="text-lg sm:text-xl font-bold text-slate-900 font-heading">New Patient Registration & Case Billing</h2>
           <p class="text-xs text-slate-500">Register patient, select tests, calculate pricing & generate sample barcodes.</p>
         </div>
         <button (click)="submitCase()" [disabled]="submitting || selectedTests.length === 0"
-          class="inline-flex items-center px-5 py-2.5 rounded-xl font-bold text-sm bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30 transition-all disabled:opacity-50">
+          class="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30 transition-all disabled:opacity-50 cursor-pointer">
           <i *ngIf="submitting" class="fa-solid fa-spinner fa-spin mr-2"></i>
           <i *ngIf="!submitting" class="fa-solid fa-check-double mr-2"></i>
           {{ submitting ? 'Creating Bill...' : 'Create & Generate Bill' }}

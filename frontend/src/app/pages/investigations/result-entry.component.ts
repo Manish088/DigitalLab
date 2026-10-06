@@ -152,19 +152,19 @@ import { TestMaster, TestCategory } from '../../core/models/lims.models';
         <div class="space-y-6" *ngFor="let item of caseDetails.items">
           <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
             <!-- Item Department & Test Name Header -->
-            <div class="bg-slate-900 text-white p-4 flex items-center justify-between">
-              <div class="flex items-center space-x-2">
+            <div class="bg-slate-900 text-white p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div class="flex flex-wrap items-center gap-1.5 sm:space-x-2">
                 <span class="px-2 py-0.5 rounded bg-brand-500/20 text-brand-300 text-xs font-semibold uppercase">{{ item.categoryName }}</span>
-                <h3 class="font-bold text-sm font-heading">{{ item.testName }} ({{ item.testCode }})</h3>
+                <h3 class="font-bold text-xs sm:text-sm font-heading">{{ item.testName }} ({{ item.testCode }})</h3>
                 <span [class]="getItemStatus(item).color" class="px-2 py-0.5 rounded-full text-[10px] font-bold">
                   {{ getItemStatus(item).text }}
                 </span>
                 <button *ngIf="caseDetails.status !== 'Approved' && caseDetails.items.length > 1" (click)="removeTest(item)"
-                  class="ml-2 text-rose-300 hover:text-rose-100 hover:bg-rose-900/50 p-1 rounded transition-colors" title="Remove this test from case">
+                  class="ml-1 text-rose-300 hover:text-rose-100 hover:bg-rose-900/50 p-1 rounded transition-colors" title="Remove this test from case">
                   <i class="fa-solid fa-trash-can text-xs"></i>
                 </button>
               </div>
-              <div class="text-xs text-slate-400">
+              <div class="text-[11px] sm:text-xs text-slate-400">
                 Sample: <strong class="text-slate-200">{{ item.sampleType || 'Whole Blood' }}</strong> ({{ item.containerVialType || 'EDTA' }})
               </div>
             </div>
@@ -349,8 +349,8 @@ import { TestMaster, TestCategory } from '../../core/models/lims.models';
         </div>
 
         <!-- Add More Tests Modal Popup -->
-        <div *ngIf="showAddTestsModal" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div class="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-slate-100 transform transition-all animate-in fade-in zoom-in-95 duration-200 space-y-4">
+        <div *ngIf="showAddTestsModal" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div class="bg-white rounded-2xl sm:rounded-3xl max-w-2xl w-full p-4 sm:p-6 shadow-2xl border border-slate-100 transform transition-all animate-in fade-in zoom-in-95 duration-200 space-y-4">
             
             <div class="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
@@ -473,8 +473,8 @@ import { TestMaster, TestCategory } from '../../core/models/lims.models';
         </div>
 
         <!-- Thermal POS Receipt Modal (58mm / 80mm) -->
-        <div *ngIf="showThermalModal && caseDetails" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4 max-h-[92vh] flex flex-col animate-in fade-in zoom-in-95 duration-200">
+        <div *ngIf="showThermalModal && caseDetails" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
+          <div class="bg-white rounded-2xl sm:rounded-3xl max-w-md w-full p-4 sm:p-6 shadow-2xl border border-slate-100 space-y-4 max-h-[92vh] flex flex-col animate-in fade-in zoom-in-95 duration-200">
             <div class="flex items-center justify-between border-b border-slate-100 pb-3">
               <div class="flex items-center space-x-2">
                 <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-base">

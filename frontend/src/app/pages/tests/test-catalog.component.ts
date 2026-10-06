@@ -104,8 +104,8 @@ interface NewParamModel {
       </div>
 
       <!-- Add New Investigation Modal -->
-      <div *ngIf="showAddModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl max-w-3xl w-full p-6 shadow-2xl border border-slate-100 space-y-5 max-h-[90vh] flex flex-col">
+      <div *ngIf="showAddModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+        <div class="bg-white rounded-2xl sm:rounded-3xl max-w-3xl w-full p-4 sm:p-6 shadow-2xl border border-slate-100 space-y-4 max-h-[90vh] flex flex-col">
           <div class="flex items-center justify-between border-b border-slate-100 pb-3">
             <div>
               <h3 class="text-base font-bold text-slate-900 font-heading flex items-center">
@@ -247,37 +247,64 @@ interface NewParamModel {
       </div>
 
       <!-- Parameters & Reference Range Modal -->
-      <div *ngIf="selectedTestForModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-100 space-y-4 max-h-[85vh] flex flex-col">
-          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-            <div>
-              <h3 class="text-sm font-bold text-slate-900 font-heading">{{ selectedTestForModal.testName }} ({{ selectedTestForModal.testCode }})</h3>
-              <p class="text-xs text-slate-500">Parameters & Normal Reference Intervals</p>
+      <div *ngIf="selectedTestForModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+        <div class="bg-white rounded-2xl sm:rounded-3xl max-w-lg w-full p-4 sm:p-6 shadow-2xl border border-slate-100 space-y-4 max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-200">
+          <!-- Modal Header -->
+          <div class="flex items-start justify-between border-b border-slate-100 pb-3 gap-2 shrink-0">
+            <div class="min-w-0 flex-1">
+              <h3 class="text-xs sm:text-sm font-bold text-slate-900 font-heading break-words leading-snug">
+                {{ selectedTestForModal.testName }}
+                <span class="text-[11px] font-mono font-normal text-slate-500">({{ selectedTestForModal.testCode }})</span>
+              </h3>
+              <p class="text-[11px] text-slate-500 mt-0.5">Parameters & Normal Reference Intervals</p>
             </div>
-            <button (click)="selectedTestForModal = null" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+            <button (click)="selectedTestForModal = null" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg shrink-0 cursor-pointer">
+              <i class="fa-solid fa-xmark text-base"></i>
+            </button>
           </div>
 
-          <div class="overflow-y-auto flex-1 space-y-3">
-            <div *ngFor="let p of selectedTestForModal.parameters" class="p-3 bg-slate-50 rounded-xl border border-slate-200/80 text-xs space-y-2">
-              <div class="flex justify-between font-bold text-slate-900">
-                <span>{{ p.parameterName }}</span>
-                <span class="font-mono text-slate-500">Unit: {{ p.unit || 'N/A' }}</span>
+          <!-- Parameters & Normal Ranges List -->
+          <div class="overflow-y-auto flex-1 space-y-2.5 pr-0.5">
+            <div *ngIf="!selectedTestForModal.parameters || selectedTestForModal.parameters.length === 0" class="p-6 text-center text-xs text-slate-400">
+              No parameters configured for this investigation.
+            </div>
+
+            <div *ngFor="let p of selectedTestForModal.parameters" class="p-3 bg-slate-50 rounded-xl border border-slate-200/80 space-y-2">
+              <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                <span class="font-bold text-xs text-slate-900 break-words">{{ p.parameterName }}</span>
+                <span *ngIf="p.unit" class="font-mono text-[10px] text-slate-600 bg-white px-2 py-0.5 rounded border border-slate-200 self-start sm:self-auto shrink-0">
+                  Unit: <strong class="text-slate-800">{{ p.unit }}</strong>
+                </span>
               </div>
-              <div class="space-y-1">
-                <div *ngFor="let r of p.normalRanges" class="flex justify-between text-[11px] text-slate-600 bg-white p-1.5 rounded border border-slate-100">
-                  <span>{{ r.ageDisplayGroup || (r.applicableGender === 1 ? 'Male' : (r.applicableGender === 2 ? 'Female' : 'All')) }}</span>
-                  <strong class="text-slate-800">{{ r.textualRange || (r.minNormalValue + ' - ' + r.maxNormalValue) }}</strong>
+
+              <!-- Ranges List -->
+              <div *ngIf="p.normalRanges && p.normalRanges.length > 0" class="space-y-1">
+                <div *ngFor="let r of p.normalRanges" class="flex flex-col sm:flex-row sm:items-center justify-between gap-0.5 text-[11px] text-slate-600 bg-white p-2 rounded-lg border border-slate-100">
+                  <span class="text-slate-500 text-[10px] font-medium">
+                    {{ r.ageDisplayGroup || (r.applicableGender === 1 ? 'Adult Male' : (r.applicableGender === 2 ? 'Adult Female' : 'All Genders / Ages')) }}
+                  </span>
+                  <strong class="text-slate-900 font-mono text-xs break-all">
+                    {{ r.textualRange || (r.minNormalValue + ' - ' + r.maxNormalValue + (p.unit ? ' ' + p.unit : '')) }}
+                  </strong>
                 </div>
               </div>
+
+              <div *ngIf="!p.normalRanges || p.normalRanges.length === 0" class="text-[10px] text-slate-400 italic bg-white p-1.5 rounded border border-slate-100">
+                Qualitative / Observation Parameter
+              </div>
             </div>
           </div>
 
-          <button (click)="selectedTestForModal = null" class="w-full py-2 bg-slate-900 text-white rounded-xl text-xs font-bold">
-            Close
-          </button>
+          <!-- Close Button -->
+          <div class="pt-2 shrink-0 border-t border-slate-100">
+            <button type="button" (click)="selectedTestForModal = null" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow transition-colors cursor-pointer">
+              Close
+            </button>
+          </div>
         </div>
       </div>
     </div>
+
   `
 })
 export class TestCatalogComponent implements OnInit {

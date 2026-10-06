@@ -237,8 +237,8 @@ import { DoctorReferral, TestMaster, TestCategory } from '../../core/models/lims
       </div>
 
       <!-- Settle Due Modal -->
-      <div *ngIf="settleModalCase" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+      <div *ngIf="settleModalCase" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
+        <div class="bg-white rounded-2xl sm:rounded-3xl max-w-md w-full p-4 sm:p-6 shadow-2xl border border-slate-100 space-y-4 animate-in fade-in zoom-in-95 duration-200">
           <div class="flex items-center justify-between border-b border-slate-100 pb-3">
             <h3 class="text-sm font-bold text-slate-900 font-heading">Quick Due Payment Settlement</h3>
             <button (click)="settleModalCase = null" class="text-slate-400 hover:text-slate-600">
@@ -288,8 +288,8 @@ import { DoctorReferral, TestMaster, TestCategory } from '../../core/models/lims
       </div>
 
       <!-- Barcode Sticker Modal -->
-      <div *ngIf="barcodeModalCase" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 text-center space-y-4">
+      <div *ngIf="barcodeModalCase" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-4 sm:p-6 shadow-2xl border border-slate-100 text-center space-y-4 animate-in fade-in zoom-in-95 duration-200">
           <div class="flex items-center justify-between border-b border-slate-100 pb-2">
             <h3 class="text-xs font-bold text-slate-900 font-heading uppercase tracking-wider">Sample Tube Barcode Label</h3>
             <button (click)="barcodeModalCase = null" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
@@ -310,8 +310,8 @@ import { DoctorReferral, TestMaster, TestCategory } from '../../core/models/lims
       </div>
 
       <!-- Thermal POS Receipt Modal (58mm / 80mm) -->
-      <div *ngIf="thermalModalCase" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4 max-h-[92vh] flex flex-col animate-in fade-in zoom-in-95 duration-200">
+      <div *ngIf="thermalModalCase" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
+        <div class="bg-white rounded-2xl sm:rounded-3xl max-w-md w-full p-4 sm:p-6 shadow-2xl border border-slate-100 space-y-4 max-h-[92vh] flex flex-col animate-in fade-in zoom-in-95 duration-200">
           <div class="flex items-center justify-between border-b border-slate-100 pb-3">
             <div class="flex items-center space-x-2">
               <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-base">
@@ -426,8 +426,8 @@ import { DoctorReferral, TestMaster, TestCategory } from '../../core/models/lims
       </div>
 
       <!-- Add More Tests Modal Popup -->
-      <div *ngIf="addTestsModalCase" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-slate-100 transform transition-all animate-in fade-in zoom-in-95 duration-200 space-y-4">
+      <div *ngIf="addTestsModalCase" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+        <div class="bg-white rounded-2xl sm:rounded-3xl max-w-2xl w-full p-4 sm:p-6 shadow-2xl border border-slate-100 transform transition-all animate-in fade-in zoom-in-95 duration-200 space-y-4">
           
           <div class="flex items-center justify-between border-b border-slate-100 pb-3">
             <div>
