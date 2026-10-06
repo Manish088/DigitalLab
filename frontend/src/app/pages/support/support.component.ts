@@ -55,11 +55,11 @@ import { SupportTicket } from '../../core/models/lims.models';
       </div>
 
       <!-- New Ticket Modal -->
-      <div *ngIf="showNewTicketModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+      <div *ngIf="showNewTicketModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+        <div class="bg-white rounded-2xl max-w-md w-full p-4 sm:p-6 shadow-2xl border border-slate-100 space-y-4 max-h-[92vh] overflow-y-auto">
           <div class="flex items-center justify-between border-b border-slate-100 pb-2">
             <h3 class="text-sm font-bold text-slate-900 font-heading">Raise Support Ticket</h3>
-            <button (click)="showNewTicketModal = false" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+            <button (click)="showNewTicketModal = false" class="text-slate-400 hover:text-slate-600 cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
           </div>
 
           <div class="space-y-3 text-xs">
@@ -82,7 +82,7 @@ import { SupportTicket } from '../../core/models/lims.models';
             </div>
           </div>
 
-          <button (click)="createTicket()" class="w-full py-2.5 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl text-xs shadow-md">
+          <button (click)="createTicket()" class="w-full py-2.5 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl text-xs shadow-md cursor-pointer">
             Submit Ticket
           </button>
         </div>

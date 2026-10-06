@@ -12,13 +12,13 @@ import { LetterheadConfig } from '../../core/models/lims.models';
   template: `
     <div class="space-y-6" *ngIf="config">
       <!-- Page Header -->
-      <div class="flex items-center justify-between">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h2 class="text-xl font-bold text-slate-900 font-heading">Letterhead & Brand Customizer</h2>
           <p class="text-xs text-slate-500">Customize A4 margins, pre-printed stationery spacing, header/footer images, and pathologist digital signatures.</p>
         </div>
         <button (click)="saveConfig()" [disabled]="saving"
-          class="inline-flex items-center px-4 py-2 rounded-xl text-sm font-bold bg-brand-600 hover:bg-brand-500 text-white shadow-md shadow-brand-500/20 transition-all disabled:opacity-50">
+          class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2.5 rounded-xl text-sm font-bold bg-brand-600 hover:bg-brand-500 text-white shadow-md shadow-brand-500/20 transition-all disabled:opacity-50 cursor-pointer">
           <i *ngIf="saving" class="fa-solid fa-spinner fa-spin mr-1.5"></i>
           <i *ngIf="!saving" class="fa-solid fa-floppy-disk mr-1.5"></i>
           Save Settings

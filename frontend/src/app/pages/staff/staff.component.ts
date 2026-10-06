@@ -60,8 +60,8 @@ import { ToastService } from '../../core/services/toast.service';
       </div>
 
       <!-- Add Staff Modal -->
-      <div *ngIf="showAddModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+      <div *ngIf="showAddModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+        <div class="bg-white rounded-2xl max-w-md w-full p-4 sm:p-6 shadow-2xl border border-slate-100 space-y-4 max-h-[92vh] overflow-y-auto">
           <div class="flex items-center justify-between border-b border-slate-100 pb-2">
             <h3 class="text-sm font-bold text-slate-900 font-heading">Add Staff Account</h3>
             <button (click)="showAddModal = false" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
@@ -76,7 +76,7 @@ import { ToastService } from '../../core/services/toast.service';
               <label class="block font-semibold text-slate-700 mb-1">Email / Login ID *</label>
               <input type="email" [(ngModel)]="newStaff.email" placeholder="pooja@citylab.com" class="w-full px-3 py-2 border rounded-xl">
             </div>
-            <div class="grid grid-cols-2 gap-2">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>
                 <label class="block font-semibold text-slate-700 mb-1">Role *</label>
                 <select [(ngModel)]="newStaff.role" class="w-full px-3 py-2 border rounded-xl">
@@ -97,7 +97,7 @@ import { ToastService } from '../../core/services/toast.service';
             </div>
           </div>
 
-          <button (click)="createStaff()" class="w-full py-2.5 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl text-xs shadow-md">
+          <button (click)="createStaff()" class="w-full py-2.5 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl text-xs shadow-md cursor-pointer">
             Create Account
           </button>
         </div>

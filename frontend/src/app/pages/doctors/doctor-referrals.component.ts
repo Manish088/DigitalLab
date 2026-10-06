@@ -205,8 +205,8 @@ import { DoctorReferral, DoctorPayoutRecord, LetterheadConfig } from '../../core
       </div>
 
       <!-- Add Doctor Modal -->
-      <div *ngIf="showAddModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+      <div *ngIf="showAddModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+        <div class="bg-white rounded-2xl max-w-md w-full p-4 sm:p-6 shadow-2xl border border-slate-100 space-y-4 max-h-[92vh] overflow-y-auto">
           <div class="flex items-center justify-between border-b border-slate-100 pb-2">
             <h3 class="text-sm font-bold text-slate-900 font-heading">Register Referring Doctor</h3>
             <button (click)="showAddModal = false" class="text-slate-400 hover:text-slate-600 cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
@@ -217,7 +217,7 @@ import { DoctorReferral, DoctorPayoutRecord, LetterheadConfig } from '../../core
               <label class="block font-semibold text-slate-700 mb-1">Doctor Full Name *</label>
               <input type="text" [(ngModel)]="newDoc.doctorName" placeholder="Dr. S. K. Gupta" class="w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none">
             </div>
-            <div class="grid grid-cols-2 gap-2">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>
                 <label class="block font-semibold text-slate-700 mb-1">Specialization</label>
                 <input type="text" [(ngModel)]="newDoc.specialization" placeholder="Cardiologist" class="w-full px-3 py-2 border rounded-xl">
@@ -244,8 +244,8 @@ import { DoctorReferral, DoctorPayoutRecord, LetterheadConfig } from '../../core
       </div>
 
       <!-- Record Payout Modal -->
-      <div *ngIf="payoutDoc" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+      <div *ngIf="payoutDoc" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+        <div class="bg-white rounded-3xl max-w-md w-full p-4 sm:p-6 shadow-2xl border border-slate-100 space-y-4 max-h-[92vh] overflow-y-auto">
           <div class="flex items-center justify-between border-b border-slate-100 pb-3">
             <div>
               <h3 class="text-sm font-bold text-slate-900 font-heading">Record Commission Payout</h3>
@@ -277,7 +277,7 @@ import { DoctorReferral, DoctorPayoutRecord, LetterheadConfig } from '../../core
                 class="w-full px-3 py-2 text-base border border-slate-300 rounded-xl font-bold text-emerald-600 focus:ring-2 focus:ring-brand-500 focus:outline-none">
             </div>
 
-            <div class="grid grid-cols-2 gap-2">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>
                 <label class="block font-semibold text-slate-700 mb-1">Period From</label>
                 <input type="date" [(ngModel)]="payoutPeriodFrom" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-xl text-xs">
@@ -305,12 +305,12 @@ import { DoctorReferral, DoctorPayoutRecord, LetterheadConfig } from '../../core
             </div>
           </div>
 
-          <div class="flex space-x-2 pt-2">
-            <button (click)="payoutDoc = null" class="flex-1 py-2.5 border border-slate-300 rounded-xl text-xs font-semibold hover:bg-slate-50 cursor-pointer">
+          <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 pt-2">
+            <button (click)="payoutDoc = null" class="w-full sm:flex-1 py-2.5 border border-slate-300 rounded-xl text-xs font-semibold hover:bg-slate-50 cursor-pointer">
               Cancel
             </button>
             <button (click)="submitPayout()" [disabled]="submittingPayout || payoutData.paidAmount <= 0"
-              class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-emerald-600/30 flex items-center justify-center space-x-1.5 cursor-pointer disabled:opacity-50">
+              class="w-full sm:flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-emerald-600/30 flex items-center justify-center space-x-1.5 cursor-pointer disabled:opacity-50">
               <i *ngIf="submittingPayout" class="fa-solid fa-circle-notch fa-spin"></i>
               <span *ngIf="!submittingPayout">Confirm & Generate Voucher</span>
             </button>
@@ -319,8 +319,8 @@ import { DoctorReferral, DoctorPayoutRecord, LetterheadConfig } from '../../core
       </div>
 
       <!-- Live Settlement Voucher Modal Popup -->
-      <div *ngIf="activeVoucher" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-        <div class="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-slate-100 space-y-4 max-h-[94vh] flex flex-col animate-in fade-in zoom-in-95 duration-200">
+      <div *ngIf="activeVoucher" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+        <div class="bg-white rounded-3xl max-w-2xl w-full p-4 sm:p-6 shadow-2xl border border-slate-100 space-y-4 max-h-[94vh] flex flex-col animate-in fade-in zoom-in-95 duration-200">
           
           <!-- Top Bar -->
           <div class="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0">
@@ -337,9 +337,9 @@ import { DoctorReferral, DoctorPayoutRecord, LetterheadConfig } from '../../core
           </div>
 
           <!-- Printable Preview Container -->
-          <div class="overflow-y-auto flex-1 p-4 bg-slate-50 rounded-2xl border border-slate-200/70 text-slate-800 space-y-4">
+          <div class="overflow-y-auto flex-1 p-3 sm:p-4 bg-slate-50 rounded-2xl border border-slate-200/70 text-slate-800 space-y-4">
             <!-- Voucher Card Layout -->
-            <div class="bg-white p-5 rounded-xl border border-slate-300 shadow-sm space-y-4 text-xs">
+            <div class="bg-white p-4 sm:p-5 rounded-xl border border-slate-300 shadow-sm space-y-4 text-xs">
               <!-- Lab Header -->
               <div class="text-center border-b-2 border-slate-800 pb-3 space-y-0.5">
                 <div class="text-base font-black uppercase text-slate-900 tracking-wide">{{ labConfig?.labName || 'CITY CARE DIAGNOSTICS & PATHOLOGY' }}</div>
@@ -424,11 +424,11 @@ import { DoctorReferral, DoctorPayoutRecord, LetterheadConfig } from '../../core
           </div>
 
           <!-- Bottom Action Buttons -->
-          <div class="flex items-center justify-between gap-3 pt-2 shrink-0 border-t border-slate-100">
-            <button (click)="activeVoucher = null" class="py-2.5 px-4 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-semibold cursor-pointer">
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-2 shrink-0 border-t border-slate-100">
+            <button (click)="activeVoucher = null" class="w-full sm:w-auto py-2.5 px-4 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-semibold cursor-pointer text-center">
               Close Preview
             </button>
-            <button (click)="printVoucher(activeVoucher)" class="py-2.5 px-6 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-lg flex items-center space-x-2 cursor-pointer">
+            <button (click)="printVoucher(activeVoucher)" class="w-full sm:w-auto py-2.5 px-6 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-lg flex items-center justify-center space-x-2 cursor-pointer">
               <i class="fa-solid fa-print text-amber-400"></i>
               <span>Print Official Settlement Voucher (A4)</span>
             </button>
