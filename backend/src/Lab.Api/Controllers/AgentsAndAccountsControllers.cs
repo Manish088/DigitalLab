@@ -84,8 +84,14 @@ public class TransactionsController : ControllerBase
     public async Task<ActionResult<object>> GetTransactions(
         [FromQuery] DateTime? fromDate,
         [FromQuery] DateTime? toDate,
-        [FromQuery] PaymentMethod? paymentMethod)
+        [FromQuery] PaymentMethod? paymentMethod,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10)
     {
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 10;
+        if (pageSize > 200) pageSize = 200;
+
         var query = _context.PaymentTransactions
             .Include(t => t.CaseOrder).ThenInclude(c => c.Patient)
             .AsQueryable();
@@ -99,8 +105,14 @@ public class TransactionsController : ControllerBase
         if (paymentMethod.HasValue)
             query = query.Where(t => t.PaymentMethod == paymentMethod.Value);
 
+        var totalCount = await query.CountAsync();
+        var totalCollection = await query.SumAsync(t => (decimal?)t.Amount) ?? 0m;
+        var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+
         var list = await query
             .OrderByDescending(t => t.TransactionDate)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(t => new
             {
                 t.Id,
@@ -115,8 +127,6 @@ public class TransactionsController : ControllerBase
                 PatientName = t.CaseOrder.Patient.FullName
             })
             .ToListAsync();
-
-        var totalCollection = list.Sum(t => t.Amount);
 
         // Calculate Today's Day-End Counter Closing Breakdown
         var today = DateTime.UtcNow.Date;
@@ -139,7 +149,10 @@ public class TransactionsController : ControllerBase
         return Ok(new
         {
             totalCollection,
-            count = list.Count,
+            count = totalCount,
+            page,
+            pageSize,
+            totalPages,
             transactions = list,
             todayClosing = new
             {
@@ -249,6 +262,59 @@ public class LetterheadController : ControllerBase
 
         await _context.SaveChangesAsync();
         return Ok(new { message = "Letterhead and branding settings updated." });
+    }
+
+    [HttpPost("upload")]
+    public async Task<IActionResult> UploadAsset([FromForm] IFormFile file, [FromForm] string assetType)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest(new { message = "No file was uploaded." });
+
+        var tenantId = _currentUserService.TenantId;
+        var lab = await _context.Tenants.FirstOrDefaultAsync(t => t.Id == tenantId);
+        if (lab == null) return NotFound(new { message = "Laboratory tenant not found." });
+
+        var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+        if (!Directory.Exists(uploadsFolder))
+        {
+            Directory.CreateDirectory(uploadsFolder);
+        }
+
+        var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+        var allowedExts = new[] { ".png", ".jpg", ".jpeg", ".webp", ".svg" };
+        if (!allowedExts.Contains(ext))
+        {
+            return BadRequest(new { message = "Invalid image format. Allowed formats: PNG, JPG, JPEG, WEBP, SVG." });
+        }
+
+        var fileName = $"{tenantId}_{assetType.ToLowerInvariant()}_{DateTime.UtcNow.Ticks}{ext}";
+        var filePath = Path.Combine(uploadsFolder, fileName);
+
+        using (var stream = new FileStream(filePath, FileMode.Create))
+        {
+            await file.CopyToAsync(stream);
+        }
+
+        var relativeUrl = $"/uploads/{fileName}";
+
+        switch (assetType.ToLowerInvariant())
+        {
+            case "header":
+                lab.HeaderImageUrl = relativeUrl;
+                break;
+            case "logo":
+                lab.LogoUrl = relativeUrl;
+                break;
+            case "footer":
+                lab.FooterImageUrl = relativeUrl;
+                break;
+            case "signature":
+                lab.DigitalSignatureUrl = relativeUrl;
+                break;
+        }
+
+        await _context.SaveChangesAsync();
+        return Ok(new { url = relativeUrl, assetType = assetType, message = $"{assetType} uploaded successfully." });
     }
 }
 

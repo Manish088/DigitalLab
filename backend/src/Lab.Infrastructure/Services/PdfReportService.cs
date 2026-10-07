@@ -102,59 +102,82 @@ public class PdfReportService : IPdfReportService
                 // 1. Header Section
                 if (isLetterheadMode)
                 {
+                    var headerImageBytes = LoadImageBytes(lab?.HeaderImageUrl);
+                    var logoImageBytes = LoadImageBytes(lab?.LogoUrl);
+
                     page.Header().Column(col =>
                     {
-                        col.Item().Table(table =>
+                        if (headerImageBytes != null)
                         {
-                            table.ColumnsDefinition(cols =>
+                            col.Item().PaddingBottom(4).Image(headerImageBytes).FitWidth();
+                        }
+                        else
+                        {
+                            col.Item().Table(table =>
                             {
-                                cols.RelativeColumn(2.8f); // Lab details on left
-                                cols.RelativeColumn(2.2f); // Diagnostic report title & barcode on right
-                            });
-
-                            table.Cell().Column(c =>
-                            {
-                                c.Item().Text(labName.ToUpperInvariant()).FontSize(13).Bold().FontColor(primaryColor);
-                                if (!string.IsNullOrEmpty(lab?.Tagline))
-                                    c.Item().Text(lab.Tagline).FontSize(7.5f).Italic().FontColor("#64748b");
-                                c.Item().Text($"{labAddress}").FontSize(7.5f).FontColor("#475569");
-                                c.Item().Text($"Ph: {labPhone} | Email: {labEmail}").FontSize(7.5f).FontColor("#475569");
-                                if (!string.IsNullOrWhiteSpace(lab?.NablNumber))
-                                    c.Item().Text($"NABL Acc. No: {lab.NablNumber}").FontSize(7.5f).Bold().FontColor(primaryColor);
-                                else if (!string.IsNullOrWhiteSpace(lab?.Gstin))
-                                    c.Item().Text($"GSTIN: {lab.Gstin}").FontSize(7.5f).FontColor("#475569");
-                            });
-
-                            table.Cell().Column(c =>
-                            {
-                                c.Item().AlignRight().Border(1).BorderColor(primaryColor).Background("#f0fdfa").PaddingVertical(2).PaddingHorizontal(8)
-                                    .Text("DIAGNOSTIC REPORT").FontSize(9.5f).Bold().FontColor(primaryColor);
-
-                                c.Item().PaddingTop(2).Text(t =>
+                                table.ColumnsDefinition(cols =>
                                 {
-                                    t.AlignRight();
-                                    t.Span("Case ID: ").FontSize(8f);
-                                    t.Span(caseOrder.CaseNumber).Bold().FontSize(8.5f).FontColor("#0f172a");
+                                    if (logoImageBytes != null)
+                                    {
+                                        cols.ConstantColumn(45); // Logo column
+                                        cols.RelativeColumn(2.6f); // Lab details on left
+                                    }
+                                    else
+                                    {
+                                        cols.RelativeColumn(2.8f); // Lab details on left
+                                    }
+                                    cols.RelativeColumn(2.2f); // Diagnostic report title & barcode on right
                                 });
 
-                                c.Item().Text(t =>
+                                if (logoImageBytes != null)
                                 {
-                                    t.AlignRight();
-                                    t.Span("Barcode: ").FontSize(7.5f);
-                                    t.Span(caseOrder.Barcode).FontSize(7.5f).FontColor("#475569");
+                                    table.Cell().PaddingRight(4).Image(logoImageBytes).FitArea();
+                                }
+
+                                table.Cell().Column(c =>
+                                {
+                                    c.Item().Text(labName.ToUpperInvariant()).FontSize(13).Bold().FontColor(primaryColor);
+                                    if (!string.IsNullOrEmpty(lab?.Tagline))
+                                        c.Item().Text(lab.Tagline).FontSize(7.5f).Italic().FontColor("#64748b");
+                                    c.Item().Text($"{labAddress}").FontSize(7.5f).FontColor("#475569");
+                                    c.Item().Text($"Ph: {labPhone} | Email: {labEmail}").FontSize(7.5f).FontColor("#475569");
+                                    if (!string.IsNullOrWhiteSpace(lab?.NablNumber))
+                                        c.Item().Text($"NABL Acc. No: {lab.NablNumber}").FontSize(7.5f).Bold().FontColor(primaryColor);
+                                    else if (!string.IsNullOrWhiteSpace(lab?.Gstin))
+                                        c.Item().Text($"GSTIN: {lab.Gstin}").FontSize(7.5f).FontColor("#475569");
                                 });
 
-                                c.Item().Text(t =>
+                                table.Cell().Column(c =>
                                 {
-                                    t.AlignRight();
-                                    t.Span("Priority: ").FontSize(7.5f);
-                                    t.Span(caseOrder.Priority.ToString()).Bold().FontSize(7.5f)
-                                        .FontColor(caseOrder.Priority == PriorityLevel.STAT || caseOrder.Priority == PriorityLevel.Urgent ? "#dc2626" : "#475569");
+                                    c.Item().AlignRight().Border(1).BorderColor(primaryColor).Background("#f0fdfa").PaddingVertical(2).PaddingHorizontal(8)
+                                        .Text("DIAGNOSTIC REPORT").FontSize(9.5f).Bold().FontColor(primaryColor);
+
+                                    c.Item().PaddingTop(2).Text(t =>
+                                    {
+                                        t.AlignRight();
+                                        t.Span("Case ID: ").FontSize(8f);
+                                        t.Span(caseOrder.CaseNumber).Bold().FontSize(8.5f).FontColor("#0f172a");
+                                    });
+
+                                    c.Item().Text(t =>
+                                    {
+                                        t.AlignRight();
+                                        t.Span("Barcode: ").FontSize(7.5f);
+                                        t.Span(caseOrder.Barcode).FontSize(7.5f).FontColor("#475569");
+                                    });
+
+                                    c.Item().Text(t =>
+                                    {
+                                        t.AlignRight();
+                                        t.Span("Priority: ").FontSize(7.5f);
+                                        t.Span(caseOrder.Priority.ToString()).Bold().FontSize(7.5f)
+                                            .FontColor(caseOrder.Priority == PriorityLevel.STAT || caseOrder.Priority == PriorityLevel.Urgent ? "#dc2626" : "#475569");
+                                    });
                                 });
                             });
-                        });
 
-                        col.Item().PaddingTop(3).LineHorizontal(1.5f).LineColor(primaryColor);
+                            col.Item().PaddingTop(3).LineHorizontal(1.5f).LineColor(primaryColor);
+                        }
                     });
                 }
                 else
@@ -376,75 +399,124 @@ public class PdfReportService : IPdfReportService
                         }
                     });
 
-                    // Verification & Signature Section
-                    col.Item().PaddingTop(8).Table(table =>
+                    // Verification & Signature Section (Dynamic or Removed if not configured)
+                    var isSignatureEnabled = lab?.ShowDigitalSignature ?? true;
+                    var dynamicDoctorName = !string.IsNullOrWhiteSpace(lab?.PathologistName) 
+                        ? lab.PathologistName.Trim() 
+                        : (!string.IsNullOrWhiteSpace(caseOrder.ApprovedByName) ? caseOrder.ApprovedByName.Trim() : null);
+
+                    var hasValidDoctorSignature = isSignatureEnabled && !string.IsNullOrWhiteSpace(dynamicDoctorName);
+
+                    if (hasValidDoctorSignature)
                     {
-                        table.ColumnsDefinition(cols =>
+                        col.Item().PaddingTop(8).Table(table =>
                         {
-                            cols.RelativeColumn(1.2f); // Online Verification Token & ISO Note
-                            cols.RelativeColumn(1.8f); // Doctor Signature
-                        });
+                            table.ColumnsDefinition(cols =>
+                            {
+                                cols.RelativeColumn(1.2f); // Online Verification Token & ISO Note
+                                cols.RelativeColumn(1.8f); // Doctor Signature
+                            });
 
-                        table.Cell().Column(c =>
+                            table.Cell().Column(c =>
+                            {
+                                c.Item().Text("Online Report Verification:").FontSize(7.5f).Bold().FontColor("#475569");
+                                c.Item().Text($"Token: {caseOrder.PublicAccessToken}").FontSize(6.5f).FontColor("#94a3b8");
+                                c.Item().Text($"Report Generated: {DateTime.Now:dd-MMM-yyyy hh:mm tt}").FontSize(6.5f).FontColor("#64748b");
+                                c.Item().Text("Note: Tests performed on automated calibrated analyzers with standard quality controls.").FontSize(6f).Italic().FontColor("#94a3b8");
+                                c.Item().Text("Partial reproduction of this report is not permitted without laboratory approval.").FontSize(5.5f).Italic().FontColor("#94a3b8");
+                            });
+
+                            table.Cell().Column(c =>
+                            {
+                                var sigImageBytes = LoadImageBytes(lab?.DigitalSignatureUrl);
+                                if (sigImageBytes != null)
+                                {
+                                    c.Item().AlignRight().Height(24).PaddingBottom(2).Image(sigImageBytes).FitArea();
+                                }
+
+                                c.Item().Text(t =>
+                                {
+                                    t.AlignRight();
+                                    t.Span("Verified & Digitally Signed By:").FontSize(7.5f).Italic().FontColor("#475569");
+                                });
+
+                                c.Item().PaddingTop(2).Text(t =>
+                                {
+                                    t.AlignRight();
+                                    t.Span(dynamicDoctorName).Bold().FontSize(8.5f).FontColor("#0f172a");
+                                });
+
+                                if (!string.IsNullOrWhiteSpace(lab?.PathologistDegree))
+                                {
+                                    c.Item().Text(t =>
+                                    {
+                                        t.AlignRight();
+                                        t.Span(lab.PathologistDegree.Trim()).FontSize(7f).FontColor("#64748b");
+                                    });
+                                }
+
+                                if (!string.IsNullOrWhiteSpace(lab?.PathologistRegNo))
+                                {
+                                    c.Item().Text(t =>
+                                    {
+                                        t.AlignRight();
+                                        t.Span($"Reg. No: {lab.PathologistRegNo.Trim()}").FontSize(7f).Bold().FontColor(primaryColor);
+                                    });
+                                }
+
+                                c.Item().Text(t =>
+                                {
+                                    t.AlignRight();
+                                    t.Span("Consultant Pathologist").FontSize(7f).Italic().FontColor("#475569");
+                                });
+                            });
+                        });
+                    }
+                    else
+                    {
+                        // Signature disabled or not configured: render verification token note only
+                        col.Item().PaddingTop(8).Table(table =>
                         {
-                            c.Item().Text("Online Report Verification:").FontSize(7.5f).Bold().FontColor("#475569");
-                            c.Item().Text($"Token: {caseOrder.PublicAccessToken}").FontSize(6.5f).FontColor("#94a3b8");
-                            c.Item().Text($"Report Generated: {DateTime.Now:dd-MMM-yyyy hh:mm tt}").FontSize(6.5f).FontColor("#64748b");
-                            c.Item().Text("Note: Tests performed on automated calibrated analyzers with standard quality controls.").FontSize(6f).Italic().FontColor("#94a3b8");
-                            c.Item().Text("Partial reproduction of this report is not permitted without laboratory approval.").FontSize(5.5f).Italic().FontColor("#94a3b8");
-                        });
-
-                        table.Cell().Column(c =>
-                        {
-                            c.Item().Text(t =>
+                            table.ColumnsDefinition(cols =>
                             {
-                                t.AlignRight();
-                                t.Span("Verified & Digitally Signed By:").FontSize(7.5f).Italic().FontColor("#475569");
+                                cols.RelativeColumn(1f);
                             });
 
-                            c.Item().PaddingTop(2).Text(t =>
+                            table.Cell().Column(c =>
                             {
-                                t.AlignRight();
-                                t.Span(lab?.PathologistName ?? "Dr. Ananya Sen, MD").Bold().FontSize(8.5f).FontColor("#0f172a");
-                            });
-
-                            c.Item().Text(t =>
-                            {
-                                t.AlignRight();
-                                t.Span(lab?.PathologistDegree ?? "MBBS, MD (Pathology)").FontSize(7f).FontColor("#64748b");
-                            });
-
-                            c.Item().Text(t =>
-                            {
-                                t.AlignRight();
-                                t.Span($"Reg. No: {lab?.PathologistRegNo ?? "MCI-48291"}").FontSize(7f).Bold().FontColor(primaryColor);
-                            });
-
-                            c.Item().Text(t =>
-                            {
-                                t.AlignRight();
-                                t.Span("Consultant Pathologist").FontSize(7f).Italic().FontColor("#475569");
+                                c.Item().Text("Online Report Verification:").FontSize(7.5f).Bold().FontColor("#475569");
+                                c.Item().Text($"Token: {caseOrder.PublicAccessToken}  |  Report Generated: {DateTime.Now:dd-MMM-yyyy hh:mm tt}").FontSize(6.5f).FontColor("#64748b");
+                                c.Item().Text("Note: Tests performed on automated calibrated analyzers with standard quality controls. Partial reproduction of this report is not permitted without laboratory approval.").FontSize(6f).Italic().FontColor("#94a3b8");
                             });
                         });
-                    });
+                    }
 
                     col.Item().PaddingTop(5).AlignCenter().Text("--- End of Diagnostic Report ---").FontSize(7.5f).Bold().FontColor("#94a3b8");
                 });
 
                 // 3. Footer
-                page.Footer().Row(row =>
+                var footerImageBytes = isLetterheadMode ? LoadImageBytes(lab?.FooterImageUrl) : null;
+                page.Footer().Column(col =>
                 {
-                    row.RelativeItem().Text(t =>
+                    if (footerImageBytes != null)
                     {
-                        t.DefaultTextStyle(x => x.FontSize(7.5f).FontColor("#94a3b8"));
-                        t.Span("Page ");
-                        t.CurrentPageNumber();
-                        t.Span(" of ");
-                        t.TotalPages();
-                    });
+                        col.Item().PaddingBottom(2).Image(footerImageBytes).FitWidth();
+                    }
 
-                    row.RelativeItem().AlignCenter().Text($"Verified Diagnostic Report | Case: {caseOrder.CaseNumber}").FontSize(7f).FontColor("#94a3b8");
-                    row.RelativeItem().AlignRight().Text($"{labName} | Automated LIMS").FontSize(7.5f).FontColor("#94a3b8");
+                    col.Item().Row(row =>
+                    {
+                        row.RelativeItem().Text(t =>
+                        {
+                            t.DefaultTextStyle(x => x.FontSize(7.5f).FontColor("#94a3b8"));
+                            t.Span("Page ");
+                            t.CurrentPageNumber();
+                            t.Span(" of ");
+                            t.TotalPages();
+                        });
+
+                        row.RelativeItem().AlignCenter().Text($"Verified Diagnostic Report | Case: {caseOrder.CaseNumber}").FontSize(7f).FontColor("#94a3b8");
+                        row.RelativeItem().AlignRight().Text($"{labName} | Automated LIMS").FontSize(7.5f).FontColor("#94a3b8");
+                    });
                 });
             });
         });
@@ -826,5 +898,52 @@ public class PdfReportService : IPdfReportService
         });
 
         return document.GeneratePdf();
+    }
+
+    private static byte[]? LoadImageBytes(string? imageSource)
+    {
+        if (string.IsNullOrWhiteSpace(imageSource)) return null;
+
+        try
+        {
+            // 1. Check if Base64 Data URL (e.g. data:image/png;base64,....)
+            if (imageSource.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
+            {
+                var commaIdx = imageSource.IndexOf(',');
+                if (commaIdx >= 0)
+                {
+                    var base64Part = imageSource.Substring(commaIdx + 1);
+                    return Convert.FromBase64String(base64Part);
+                }
+            }
+
+            // 2. Check if local wwwroot path (e.g. /uploads/image.png)
+            if (imageSource.StartsWith("/") || imageSource.StartsWith("\\"))
+            {
+                var localPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", imageSource.TrimStart('/', '\\'));
+                if (File.Exists(localPath))
+                {
+                    return File.ReadAllBytes(localPath);
+                }
+            }
+
+            // 3. Check if direct file path
+            if (File.Exists(imageSource))
+            {
+                return File.ReadAllBytes(imageSource);
+            }
+
+            // 4. Check if raw Base64 string without data prefix
+            if (imageSource.Length > 100 && !imageSource.Contains(' ') && !imageSource.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+            {
+                return Convert.FromBase64String(imageSource);
+            }
+        }
+        catch
+        {
+            // Ignore format/loading errors gracefully to prevent report crash
+        }
+
+        return null;
     }
 }

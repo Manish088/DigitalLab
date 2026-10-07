@@ -1,7 +1,7 @@
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
 import { DoctorReferral, CollectionAgent, TestMaster, TestCategory, Gender, PriorityLevel, PaymentMethod, Patient } from '../../core/models/lims.models';
@@ -9,20 +9,45 @@ import { DoctorReferral, CollectionAgent, TestMaster, TestCategory, Gender, Prio
 @Component({
   selector: 'app-add-case',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   template: `
     <div class="space-y-6">
+      <!-- Subscription Expiry Alert Banner -->
+      <div *ngIf="isSubExpired" class="p-5 bg-rose-50 border-2 border-rose-300 rounded-2xl shadow-sm text-rose-900 animate-in fade-in duration-200">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div class="flex items-start space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center text-rose-600 shrink-0 font-bold text-lg">
+              <i class="fa-solid fa-ban"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-sm text-rose-900 font-heading flex items-center gap-2">
+                <span>⚠️ Laboratory Subscription {{ subStatus === 'Suspended' ? 'Suspended' : 'Expired' }}</span>
+                <span class="px-2 py-0.5 text-[10px] uppercase font-black bg-rose-200 text-rose-800 rounded-md">Billing Blocked</span>
+              </h3>
+              <p class="text-xs text-rose-700 mt-1">
+                Your laboratory subscription expired on <span class="font-bold">{{ subExpiryDate ? (subExpiryDate | date:'dd MMM yyyy') : 'an earlier date' }}</span>. New patient case registration and bill generation are disabled until your plan is renewed.
+              </p>
+            </div>
+          </div>
+          <a routerLink="/subscription"
+            class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-md shadow-rose-600/30 transition-colors shrink-0">
+            <i class="fa-solid fa-bolt mr-2"></i> Renew Subscription Plan
+          </a>
+        </div>
+      </div>
+
       <!-- Page Header -->
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h2 class="text-lg sm:text-xl font-bold text-slate-900 font-heading">New Patient Registration & Case Billing</h2>
           <p class="text-xs text-slate-500">Register patient, select tests, calculate pricing & generate sample barcodes.</p>
         </div>
-        <button (click)="submitCase()" [disabled]="submitting || selectedTests.length === 0"
+        <button (click)="submitCase()" [disabled]="submitting || selectedTests.length === 0 || isSubExpired"
+          [class.opacity-50]="isSubExpired"
           class="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30 transition-all disabled:opacity-50 cursor-pointer">
           <i *ngIf="submitting" class="fa-solid fa-spinner fa-spin mr-2"></i>
           <i *ngIf="!submitting" class="fa-solid fa-check-double mr-2"></i>
-          {{ submitting ? 'Creating Bill...' : 'Create & Generate Bill' }}
+          {{ isSubExpired ? 'Subscription Expired' : (submitting ? 'Creating Bill...' : 'Create & Generate Bill') }}
         </button>
       </div>
 
@@ -83,7 +108,7 @@ import { DoctorReferral, CollectionAgent, TestMaster, TestCategory, Gender, Prio
               </label>
               <div class="relative">
                 <input type="text" [(ngModel)]="patientSearchQuery" (input)="onPatientSearchInput(patientSearchQuery, 'searchBar')"
-                  placeholder="🔍 Type Mobile No (e.g. 8866102960), UHID (PAT-2026-0001) or Name..."
+                  placeholder="🔍 Type Mobile No (e.g. 7706087066), UHID (PAT-2026-0001) or Name..."
                   class="w-full pl-9 pr-8 py-2 text-xs border border-brand-200 bg-brand-50/40 rounded-xl focus:ring-2 focus:ring-brand-500 focus:bg-white focus:outline-none placeholder:text-slate-400">
                 <i *ngIf="searchingPatients && activeSearchContext === 'searchBar'" class="fa-solid fa-circle-notch fa-spin absolute right-3 top-2.5 text-brand-600 text-xs"></i>
                 <button *ngIf="patientSearchQuery && !searchingPatients" type="button" (click)="patientSearchQuery = ''; showPatientDropdown = false"
@@ -191,7 +216,7 @@ import { DoctorReferral, CollectionAgent, TestMaster, TestCategory, Gender, Prio
                   </span>
                 </label>
                 <div class="relative">
-                  <input type="tel" [(ngModel)]="patient.phone" (input)="onPhoneChange(patient.phone)" (blur)="onPhoneBlur()" placeholder="9876543210"
+                  <input type="tel" [(ngModel)]="patient.phone" (input)="onPhoneChange(patient.phone)" (blur)="onPhoneBlur()" placeholder="7706087066"
                     class="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none">
                   <i *ngIf="searchingPatients && activeSearchContext === 'phone'" class="fa-solid fa-circle-notch fa-spin absolute right-3 top-3 text-emerald-600 text-xs"></i>
                 </div>
@@ -452,10 +477,13 @@ import { DoctorReferral, CollectionAgent, TestMaster, TestCategory, Gender, Prio
               </div>
             </div>
 
-            <button (click)="submitCase()" [disabled]="submitting || selectedTests.length === 0"
-              class="w-full py-3 rounded-xl font-bold text-sm bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30 transition-all disabled:opacity-50">
+            <button (click)="submitCase()" [disabled]="submitting || selectedTests.length === 0 || isSubExpired"
+              [class.opacity-50]="isSubExpired"
+              class="w-full py-3 rounded-xl font-bold text-sm bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30 transition-all disabled:opacity-50 cursor-pointer">
               <i *ngIf="submitting" class="fa-solid fa-spinner fa-spin mr-2"></i>
-              {{ submitting ? 'Processing Bill...' : 'Create Case & Print Bill' }}
+              <i *ngIf="!submitting && !isSubExpired" class="fa-solid fa-receipt mr-2"></i>
+              <i *ngIf="isSubExpired" class="fa-solid fa-lock mr-2"></i>
+              {{ isSubExpired ? 'Subscription Expired - Renew Plan' : (submitting ? 'Processing Bill...' : 'Create Case & Print Bill') }}
             </button>
           </div>
         </div>
@@ -479,6 +507,12 @@ export class AddCaseComponent implements OnInit {
   selectedCategory = '';
   loadingTests = false;
   submitting = false;
+
+  // Subscription Validity State
+  isSubExpired = false;
+  subStatus = '';
+  subExpiryDate: string | null = null;
+  subPlanName = '';
 
   // Existing Patient Search / Auto-fill State
   patientSearchQuery = '';
@@ -514,7 +548,30 @@ export class AddCaseComponent implements OnInit {
   transactionRef = '';
 
   ngOnInit(): void {
+    this.loadSubscriptionStatus();
     this.loadMasters();
+  }
+
+  loadSubscriptionStatus(): void {
+    this.api.getMySubscription().subscribe({
+      next: (sub) => {
+        this.subStatus = sub?.subscriptionStatus || '';
+        this.subExpiryDate = sub?.subscriptionExpiryDate || null;
+        this.subPlanName = sub?.currentPlan?.planName || '';
+
+        const isPastDate = sub?.subscriptionExpiryDate ? new Date(sub.subscriptionExpiryDate) < new Date() : false;
+        this.isSubExpired = sub?.isExpired || this.subStatus === 'Expired' || this.subStatus === 'Suspended' || isPastDate;
+        
+        if (this.isSubExpired) {
+          const expDateStr = this.subExpiryDate ? new Date(this.subExpiryDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'earlier';
+          this.toast.error(`⚠️ Laboratory Subscription Expired (Ended on ${expDateStr}). Redirecting to Subscription renewal...`);
+          this.router.navigate(['/subscription']);
+          return;
+        }
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Error fetching subscription status:', err)
+    });
   }
 
   loadMasters(): void {
@@ -797,6 +854,15 @@ export class AddCaseComponent implements OnInit {
 
   submitCase(): void {
     this.validationError = '';
+
+    if (this.isSubExpired) {
+      const expDateStr = this.subExpiryDate ? new Date(this.subExpiryDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'earlier';
+      this.validationError = `Laboratory Subscription Expired: Your plan expired on ${expDateStr}. Please renew your subscription to register new patients and generate bills.`;
+      this.toast.error('Subscription Expired. Please renew your plan from the Subscription page.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
     if (!this.patient.fullName || !this.patient.fullName.trim()) {
       this.validationError = 'Please enter Patient Full Name before creating bill.';
       this.toast.warning('Please enter Patient Full Name.');
@@ -850,7 +916,12 @@ export class AddCaseComponent implements OnInit {
       error: (err) => {
         this.submitting = false;
         this.cdr.detectChanges();
-        const errDetail = err.error?.message || (err.error?.errors ? JSON.stringify(err.error.errors) : 'Error creating case bill.');
+        let errDetail = err.error?.message || (err.error?.errors ? JSON.stringify(err.error.errors) : '');
+        if (!errDetail) {
+          errDetail = err.status === 0 
+            ? 'Server is temporarily restarting or unreachable. Please try again in 5 seconds.' 
+            : 'Error creating case bill. Please try again.';
+        }
         this.validationError = errDetail;
         this.toast.error(errDetail);
         window.scrollTo({ top: 0, behavior: 'smooth' });

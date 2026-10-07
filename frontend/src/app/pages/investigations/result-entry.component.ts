@@ -37,6 +37,27 @@ import { TestMaster, TestCategory } from '../../core/models/lims.models';
 
       <!-- Main Content when caseDetails is loaded -->
       <ng-container *ngIf="caseDetails && !loading">
+        <!-- Subscription Expired Warning Banner -->
+        <div *ngIf="isSubExpired" class="bg-gradient-to-r from-rose-500/10 via-rose-500/5 to-transparent border border-rose-300 p-4 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm animate-in fade-in duration-200">
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-rose-600/30">
+              <i class="fa-solid fa-triangle-exclamation text-lg"></i>
+            </div>
+            <div>
+              <div class="text-xs font-bold text-rose-950 flex items-center space-x-2">
+                <span>Laboratory Subscription Expired</span>
+                <span class="px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 text-[10px] font-black border border-rose-200">LOCKED</span>
+              </div>
+              <div class="text-[11px] text-rose-800 mt-0.5">
+                Your subscription plan has expired. Result entry, verification, PDF reports, bill printing, and WhatsApp sharing are disabled until renewal.
+              </div>
+            </div>
+          </div>
+          <a routerLink="/subscription" class="px-3.5 py-2 rounded-xl bg-rose-600 text-white hover:bg-rose-500 font-bold text-xs shadow-sm transition-all flex items-center shrink-0">
+            <i class="fa-solid fa-crown mr-1.5 text-amber-300"></i> Renew Plan Now
+          </a>
+        </div>
+
         <!-- Top Patient & Case Status Banner -->
         <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div class="space-y-1">
@@ -73,12 +94,16 @@ import { TestMaster, TestCategory } from '../../core/models/lims.models';
           <div class="flex flex-wrap items-center gap-2">
             <!-- Add More Tests Button (Available before approval) -->
             <button *ngIf="caseDetails.status !== 'Approved'" (click)="openAddTestsModal()"
+              [class.opacity-40]="isSubExpired"
+              [class.cursor-not-allowed]="isSubExpired"
               class="inline-flex items-center px-4 py-2 rounded-xl text-sm font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/20 transition-all cursor-pointer">
               <i class="fa-solid fa-plus-circle mr-1.5"></i> Add Tests
             </button>
 
             <!-- Save Button (Only when not approved) -->
-            <button *ngIf="caseDetails.status !== 'Approved'" (click)="saveResults()" [disabled]="saving"
+            <button *ngIf="caseDetails.status !== 'Approved'" (click)="saveResults()" [disabled]="saving || isSubExpired"
+              [class.opacity-40]="isSubExpired"
+              [class.cursor-not-allowed]="isSubExpired"
               class="inline-flex items-center px-4 py-2 rounded-xl text-sm font-semibold bg-brand-600 hover:bg-brand-500 text-white shadow-md shadow-brand-500/20 transition-all disabled:opacity-50">
               <i *ngIf="saving" class="fa-solid fa-spinner fa-spin mr-1.5"></i>
               <i *ngIf="!saving" class="fa-solid fa-floppy-disk mr-1.5"></i>
@@ -86,7 +111,9 @@ import { TestMaster, TestCategory } from '../../core/models/lims.models';
             </button>
 
             <!-- Approve Report Button / Approved Badge -->
-            <button *ngIf="caseDetails.status !== 'Approved'" (click)="approveReport()" [disabled]="approving"
+            <button *ngIf="caseDetails.status !== 'Approved'" (click)="approveReport()" [disabled]="approving || isSubExpired"
+              [class.opacity-40]="isSubExpired"
+              [class.cursor-not-allowed]="isSubExpired"
               class="inline-flex items-center px-4 py-2 rounded-xl text-sm font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20 transition-all disabled:opacity-50">
               <i *ngIf="approving" class="fa-solid fa-spinner fa-spin mr-1.5"></i>
               <i *ngIf="!approving" class="fa-solid fa-stamp mr-1.5"></i>
@@ -100,6 +127,8 @@ import { TestMaster, TestCategory } from '../../core/models/lims.models';
 
             <!-- Send on WhatsApp Button (Only after approved) -->
             <button *ngIf="caseDetails.status === 'Approved'" type="button" (click)="shareReportOnWhatsApp()"
+              [class.opacity-40]="isSubExpired"
+              [class.cursor-not-allowed]="isSubExpired"
               class="inline-flex items-center px-3.5 py-2 rounded-xl text-sm font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition-all cursor-pointer shadow-sm shadow-emerald-600/20"
               title="Share Report Link directly to Patient on WhatsApp">
               <i class="fa-brands fa-whatsapp mr-1.5 text-base"></i> Send on WhatsApp
@@ -107,12 +136,16 @@ import { TestMaster, TestCategory } from '../../core/models/lims.models';
 
             <!-- View PDF Report (Standard with Header) - Only after approved -->
             <button *ngIf="caseDetails.status === 'Approved'" type="button" (click)="printReportPdf(true)"
+              [class.opacity-40]="isSubExpired"
+              [class.cursor-not-allowed]="isSubExpired"
               class="inline-flex items-center px-3.5 py-2 rounded-xl text-sm font-semibold bg-brand-50 hover:bg-brand-100 text-brand-800 transition-all cursor-pointer shadow-sm border border-brand-200">
               <i class="fa-solid fa-file-pdf mr-1.5 text-brand-600"></i> Print Report PDF
             </button>
 
             <!-- View PDF Report (Pre-printed Letterhead Mode) - Only after approved -->
             <button *ngIf="caseDetails.status === 'Approved'" type="button" (click)="printReportPdf(false)"
+              [class.opacity-40]="isSubExpired"
+              [class.cursor-not-allowed]="isSubExpired"
               class="inline-flex items-center px-3 py-2 rounded-xl text-xs font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all cursor-pointer shadow-sm"
               title="Print on pre-printed laboratory letterhead stationary">
               <i class="fa-solid fa-print mr-1 text-slate-500"></i> Letterhead Mode
@@ -120,6 +153,8 @@ import { TestMaster, TestCategory } from '../../core/models/lims.models';
 
             <!-- View Invoice / Bill (Always available for payment / billing) -->
             <button type="button" (click)="printInvoicePdf()"
+              [class.opacity-40]="isSubExpired"
+              [class.cursor-not-allowed]="isSubExpired"
               class="inline-flex items-center px-3.5 py-2 rounded-xl text-sm font-semibold bg-slate-100 hover:bg-slate-200 text-slate-800 transition-all cursor-pointer shadow-sm">
               <i class="fa-solid fa-file-invoice mr-1.5 text-emerald-600"></i> Print Bill
             </button>
@@ -611,6 +646,11 @@ export class ResultEntryComponent implements OnInit {
   highlightEmptyFields = false;
   errorMessage = '';
 
+  // Subscription Validity
+  isSubExpired = false;
+  subStatus = '';
+  subExpiryDate: string | null = null;
+
   // Thermal POS Receipt State
   showThermalModal = false;
   thermalRollWidth: 80 | 58 = 80;
@@ -634,6 +674,8 @@ export class ResultEntryComponent implements OnInit {
   addingTests = false;
 
   ngOnInit(): void {
+    this.loadSubscriptionStatus();
+
     this.route.paramMap.subscribe(params => {
       this.caseId = this.id || params.get('id') || this.route.snapshot.params['id'] || '';
       if (this.caseId) {
@@ -654,6 +696,29 @@ export class ResultEntryComponent implements OnInit {
         this.cdr.detectChanges();
       }
     });
+  }
+
+  loadSubscriptionStatus(): void {
+    this.api.getMySubscription().subscribe({
+      next: (sub) => {
+        this.subStatus = sub?.subscriptionStatus || '';
+        this.subExpiryDate = sub?.subscriptionExpiryDate || null;
+        const isPastDate = sub?.subscriptionExpiryDate ? new Date(sub.subscriptionExpiryDate) < new Date() : false;
+        this.isSubExpired = sub?.isExpired || this.subStatus === 'Expired' || this.subStatus === 'Suspended' || isPastDate;
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Error fetching subscription status:', err)
+    });
+  }
+
+  showSubscriptionExpiredAlert(actionName?: string): void {
+    const expDateStr = this.subExpiryDate 
+      ? new Date(this.subExpiryDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) 
+      : 'earlier';
+    
+    const actionText = actionName ? `to ${actionName}` : 'to perform this action';
+    this.toast.error(`⚠️ Laboratory Subscription Expired (Ended on ${expDateStr}). Please renew your plan ${actionText}.`);
+    this.router.navigate(['/subscription']);
   }
 
   loadInvestigationDetails(): void {
@@ -726,12 +791,20 @@ export class ResultEntryComponent implements OnInit {
   }
 
   printReportPdf(letterheadMode: boolean = true): void {
+    if (this.isSubExpired) {
+      this.showSubscriptionExpiredAlert('download or print diagnostic test reports');
+      return;
+    }
     const targetId = this.caseDetails?.id || this.caseId;
     if (!targetId) return;
     window.open(this.api.getReportPdfUrl(targetId, letterheadMode), '_blank');
   }
 
   printInvoicePdf(): void {
+    if (this.isSubExpired) {
+      this.showSubscriptionExpiredAlert('download or print tax invoices and bills');
+      return;
+    }
     const targetId = this.caseDetails?.id || this.caseId;
     if (targetId) {
       window.open(this.api.getInvoicePdfUrl(targetId), '_blank');
@@ -739,6 +812,10 @@ export class ResultEntryComponent implements OnInit {
   }
 
   openThermalSlipModal(): void {
+    if (this.isSubExpired) {
+      this.showSubscriptionExpiredAlert('generate POS thermal receipts');
+      return;
+    }
     if (!this.caseDetails) return;
     this.showThermalModal = true;
     this.cdr.detectChanges();
@@ -797,6 +874,10 @@ export class ResultEntryComponent implements OnInit {
   }
 
   shareReportOnWhatsApp(): void {
+    if (this.isSubExpired) {
+      this.showSubscriptionExpiredAlert('share diagnostic report links via WhatsApp');
+      return;
+    }
     if (!this.caseDetails) return;
     if (this.caseDetails.status !== 'Approved' && this.caseDetails.status !== 5) {
       this.toast.warning('Report has not been approved yet. WhatsApp report can only be sent after verification & approval.');
@@ -873,6 +954,11 @@ export class ResultEntryComponent implements OnInit {
   }
 
   saveResults(): void {
+    if (this.isSubExpired) {
+      this.showSubscriptionExpiredAlert('save diagnostic test results');
+      return;
+    }
+
     if (this.caseDetails?.status === 'Approved') {
       this.toast.warning('This report is approved and locked.');
       return;
@@ -928,6 +1014,11 @@ export class ResultEntryComponent implements OnInit {
   }
 
   approveReport(): void {
+    if (this.isSubExpired) {
+      this.showSubscriptionExpiredAlert('verify and approve diagnostic reports');
+      return;
+    }
+
     if (this.caseDetails?.status === 'Approved') return;
 
     // Check if all parameters across all tests have values entered
@@ -997,6 +1088,11 @@ export class ResultEntryComponent implements OnInit {
   }
 
   confirmUnlockReport(): void {
+    if (this.isSubExpired) {
+      this.showSubscriptionExpiredAlert('modify or unlock diagnostic reports');
+      return;
+    }
+
     this.unlocking = true;
     this.cdr.detectChanges();
     this.api.unlockReport(this.caseId).subscribe({
@@ -1018,6 +1114,11 @@ export class ResultEntryComponent implements OnInit {
 
   // Add Tests Logic
   openAddTestsModal(): void {
+    if (this.isSubExpired) {
+      this.showSubscriptionExpiredAlert('add additional tests to this case');
+      return;
+    }
+
     if (this.caseDetails?.status === 'Approved') {
       this.toast.warning('Cannot add tests to an already approved report.');
       return;

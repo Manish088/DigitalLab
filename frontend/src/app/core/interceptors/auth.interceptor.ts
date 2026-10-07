@@ -16,6 +16,12 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     headers = headers.set('X-Tenant-Id', currentUser.tenantId);
   }
 
+  // Real-Time Enforcement: Prevent browser/network disk caching
+  headers = headers
+    .set('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0')
+    .set('Pragma', 'no-cache')
+    .set('Expires', '0');
+
   const clonedReq = req.clone({ headers });
   return next(clonedReq);
 };

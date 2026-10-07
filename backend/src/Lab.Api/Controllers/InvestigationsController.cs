@@ -145,6 +145,13 @@ public class InvestigationsController : ControllerBase
 
         if (caseOrder == null) return NotFound(new { message = "Case order not found." });
 
+        var labTenant = await _context.Tenants.IgnoreQueryFilters().FirstOrDefaultAsync(t => t.Id == caseOrder.TenantId);
+        var isExpired = labTenant != null && (labTenant.SubscriptionStatus == "Expired" || labTenant.SubscriptionStatus == "Suspended" || (labTenant.SubscriptionExpiryDate.HasValue && labTenant.SubscriptionExpiryDate.Value < DateTime.UtcNow));
+        if (isExpired)
+        {
+            return StatusCode(403, new { message = "Laboratory subscription has expired. Please renew your plan to enter diagnostic test results." });
+        }
+
         if (caseOrder.Status == CaseStatus.Approved)
         {
             return BadRequest(new { message = "This diagnostic report is already approved and locked. Results cannot be modified without unlocking the report." });
@@ -295,6 +302,13 @@ public class InvestigationsController : ControllerBase
 
         if (caseOrder == null) return NotFound(new { message = "Case order not found." });
 
+        var labTenant = await _context.Tenants.IgnoreQueryFilters().FirstOrDefaultAsync(t => t.Id == caseOrder.TenantId);
+        var isExpired = labTenant != null && (labTenant.SubscriptionStatus == "Expired" || labTenant.SubscriptionStatus == "Suspended" || (labTenant.SubscriptionExpiryDate.HasValue && labTenant.SubscriptionExpiryDate.Value < DateTime.UtcNow));
+        if (isExpired)
+        {
+            return StatusCode(403, new { message = "Laboratory subscription has expired. Please renew your plan to approve diagnostic reports." });
+        }
+
         if (!caseOrder.Items.Any())
         {
             return BadRequest(new { message = "Cannot approve a case with no tests." });
@@ -319,8 +333,14 @@ public class InvestigationsController : ControllerBase
             });
         }
 
+        var approverName = !string.IsNullOrWhiteSpace(_currentUserService.FullName)
+            ? _currentUserService.FullName
+            : (!string.IsNullOrWhiteSpace(labTenant?.PathologistName) 
+                ? labTenant.PathologistName 
+                : (!string.IsNullOrWhiteSpace(_currentUserService.Email) ? _currentUserService.Email : "Lab Administrator"));
+
         caseOrder.Status = CaseStatus.Approved;
-        caseOrder.ApprovedByName = _currentUserService.FullName ?? "Dr. Ananya Sen, MD";
+        caseOrder.ApprovedByName = approverName;
         caseOrder.ApprovedByUserId = _currentUserService.UserId;
         caseOrder.ApprovedAt = DateTime.UtcNow;
 
@@ -343,6 +363,13 @@ public class InvestigationsController : ControllerBase
             .FirstOrDefaultAsync(c => c.Id == caseOrderId);
 
         if (caseOrder == null) return NotFound(new { message = "Case order not found." });
+
+        var labTenant = await _context.Tenants.IgnoreQueryFilters().FirstOrDefaultAsync(t => t.Id == caseOrder.TenantId);
+        var isExpired = labTenant != null && (labTenant.SubscriptionStatus == "Expired" || labTenant.SubscriptionStatus == "Suspended" || (labTenant.SubscriptionExpiryDate.HasValue && labTenant.SubscriptionExpiryDate.Value < DateTime.UtcNow));
+        if (isExpired)
+        {
+            return StatusCode(403, new { message = "Laboratory subscription has expired. Please renew your plan to modify or unlock diagnostic reports." });
+        }
 
         if (caseOrder.Status != CaseStatus.Approved)
             return BadRequest(new { message = "Report is not currently in Approved status." });

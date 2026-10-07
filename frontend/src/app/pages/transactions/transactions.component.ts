@@ -116,15 +116,15 @@ import { ToastService } from '../../core/services/toast.service';
         <div class="flex flex-wrap items-center gap-3 text-xs">
           <div>
             <label class="block text-[10px] text-slate-400 font-semibold mb-0.5">From Date</label>
-            <input type="date" [(ngModel)]="fromDate" (change)="loadTransactions()" class="px-2.5 py-1.5 border rounded-lg text-xs">
+            <input type="date" [(ngModel)]="fromDate" (change)="onFilterChange()" class="px-2.5 py-1.5 border rounded-lg text-xs">
           </div>
           <div>
             <label class="block text-[10px] text-slate-400 font-semibold mb-0.5">To Date</label>
-            <input type="date" [(ngModel)]="toDate" (change)="loadTransactions()" class="px-2.5 py-1.5 border rounded-lg text-xs">
+            <input type="date" [(ngModel)]="toDate" (change)="onFilterChange()" class="px-2.5 py-1.5 border rounded-lg text-xs">
           </div>
           <div>
             <label class="block text-[10px] text-slate-400 font-semibold mb-0.5">Payment Method</label>
-            <select [(ngModel)]="selectedPaymentMethod" (change)="loadTransactions()" class="px-2.5 py-1.5 border rounded-lg text-xs">
+            <select [(ngModel)]="selectedPaymentMethod" (change)="onFilterChange()" class="px-2.5 py-1.5 border rounded-lg text-xs">
               <option value="">All Payment Modes</option>
               <option [value]="1">Cash Counter</option>
               <option [value]="2">UPI / QR Code</option>
@@ -206,6 +206,61 @@ import { ToastService } from '../../core/services/toast.service';
             </tbody>
           </table>
         </div>
+
+        <!-- Pagination Footer Bar -->
+        <div *ngIf="count > 0" class="px-4 py-3 bg-slate-50 border-t border-slate-200/80 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs">
+          <!-- Left: Showing range & Rows per page -->
+          <div class="flex flex-wrap items-center gap-3 text-slate-500">
+            <span>
+              Showing <strong class="text-slate-900 font-semibold">{{ startIndex }}</strong> - <strong class="text-slate-900 font-semibold">{{ endIndex }}</strong> of <strong class="text-slate-900 font-semibold">{{ count }}</strong> receipts
+            </span>
+            <span class="text-slate-300 hidden sm:inline">•</span>
+            <div class="flex items-center space-x-1.5">
+              <span class="text-[11px] text-slate-500">Per page:</span>
+              <select [(ngModel)]="pageSize" (change)="onPageSizeChange()" class="px-2 py-1 text-xs border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-brand-500 focus:outline-none font-medium cursor-pointer">
+                <option [ngValue]="10">10</option>
+                <option [ngValue]="20">20</option>
+                <option [ngValue]="50">50</option>
+                <option [ngValue]="100">100</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Right: Page Navigation -->
+          <div class="flex items-center space-x-1">
+            <button type="button" (click)="goToPage(1)" [disabled]="page === 1 || loading"
+              class="w-8 h-8 rounded-lg flex items-center justify-center border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-slate-600 cursor-pointer"
+              title="First Page">
+              <i class="fa-solid fa-angles-left text-xs"></i>
+            </button>
+            <button type="button" (click)="goToPage(page - 1)" [disabled]="page === 1 || loading"
+              class="w-8 h-8 rounded-lg flex items-center justify-center border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-slate-600 cursor-pointer"
+              title="Previous Page">
+              <i class="fa-solid fa-chevron-left text-xs"></i>
+            </button>
+
+            <!-- Page Number Pills -->
+            <ng-container *ngFor="let p of visiblePages">
+              <button *ngIf="p !== -1" type="button" (click)="goToPage(p)"
+                [class]="p === page ? 'bg-brand-600 text-white font-bold border-brand-600 shadow-sm' : 'bg-white text-slate-700 hover:bg-slate-100 border-slate-200'"
+                class="min-w-8 h-8 px-2 rounded-lg border text-xs flex items-center justify-center transition-all cursor-pointer">
+                {{ p }}
+              </button>
+              <span *ngIf="p === -1" class="px-1 text-slate-400 font-bold">...</span>
+            </ng-container>
+
+            <button type="button" (click)="goToPage(page + 1)" [disabled]="page === totalPages || loading"
+              class="w-8 h-8 rounded-lg flex items-center justify-center border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-slate-600 cursor-pointer"
+              title="Next Page">
+              <i class="fa-solid fa-chevron-right text-xs"></i>
+            </button>
+            <button type="button" (click)="goToPage(totalPages)" [disabled]="page === totalPages || loading"
+              class="w-8 h-8 rounded-lg flex items-center justify-center border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-slate-600 cursor-pointer"
+              title="Last Page">
+              <i class="fa-solid fa-angles-right text-xs"></i>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   `
@@ -226,6 +281,42 @@ export class TransactionsComponent implements OnInit {
   toDate = '';
   selectedPaymentMethod = '';
 
+  // Pagination State
+  page = 1;
+  pageSize = 10;
+  totalPages = 1;
+
+  get startIndex(): number {
+    if (this.count === 0) return 0;
+    return (this.page - 1) * this.pageSize + 1;
+  }
+
+  get endIndex(): number {
+    return Math.min(this.page * this.pageSize, this.count);
+  }
+
+  get visiblePages(): number[] {
+    const pages: number[] = [];
+    const total = this.totalPages;
+    const current = this.page;
+
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (current > 3) pages.push(-1);
+
+      const start = Math.max(2, current - 1);
+      const end = Math.min(total - 1, current + 1);
+
+      for (let i = start; i <= end; i++) pages.push(i);
+
+      if (current < total - 2) pages.push(-1);
+      pages.push(total);
+    }
+    return pages;
+  }
+
   get todayStr(): string {
     return new Date().toLocaleDateString('en-IN', {
       day: '2-digit',
@@ -241,6 +332,22 @@ export class TransactionsComponent implements OnInit {
     });
   }
 
+  onFilterChange(): void {
+    this.page = 1;
+    this.loadTransactions();
+  }
+
+  onPageSizeChange(): void {
+    this.page = 1;
+    this.loadTransactions();
+  }
+
+  goToPage(p: number): void {
+    if (p < 1 || p > this.totalPages || p === this.page) return;
+    this.page = p;
+    this.loadTransactions();
+  }
+
   loadTransactions(): void {
     this.loading = true;
     this.cdr.detectChanges();
@@ -248,12 +355,17 @@ export class TransactionsComponent implements OnInit {
     this.api.getTransactions(
       this.fromDate || undefined,
       this.toDate || undefined,
-      this.selectedPaymentMethod ? Number(this.selectedPaymentMethod) : undefined
+      this.selectedPaymentMethod ? Number(this.selectedPaymentMethod) : undefined,
+      this.page,
+      this.pageSize
     ).subscribe({
       next: (res) => {
         this.transactions = res.transactions || [];
         this.totalCollection = res.totalCollection || 0;
         this.count = res.count || 0;
+        this.page = res.page || 1;
+        this.pageSize = res.pageSize || 10;
+        this.totalPages = res.totalPages || Math.ceil(this.count / this.pageSize) || 1;
         if (res.todayClosing) {
           this.todayClosing = res.todayClosing;
         }

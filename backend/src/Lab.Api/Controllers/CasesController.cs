@@ -202,6 +202,44 @@ public class CasesController : ControllerBase
     {
         try
         {
+            // 0. Enforce Subscription & Tenant Validity
+            var tenantId = _currentUserService.TenantId;
+            var lab = await _context.Tenants.FirstOrDefaultAsync(t => t.Id == tenantId);
+            if (lab == null || !lab.IsActive)
+            {
+                return StatusCode(403, new { message = "Your laboratory account is suspended or inactive. Please contact Super Administrator." });
+            }
+
+            var isExpired = lab.SubscriptionStatus == "Expired" || 
+                            lab.SubscriptionStatus == "Suspended" || 
+                            (lab.SubscriptionExpiryDate.HasValue && lab.SubscriptionExpiryDate.Value < DateTime.UtcNow);
+
+            if (isExpired)
+            {
+                if (lab.SubscriptionStatus != "Suspended")
+                {
+                    lab.SubscriptionStatus = "Expired";
+                    await _context.SaveChangesAsync();
+                }
+                var expFormatted = lab.SubscriptionExpiryDate.HasValue ? lab.SubscriptionExpiryDate.Value.ToString("dd MMM yyyy") : "Expired";
+                return StatusCode(402, new { message = $"Your laboratory subscription expired on {expFormatted}. Please renew your plan to register new patients and create bills." });
+            }
+
+            // Monthly Case Quota Check
+            if (lab.SubscriptionPlanId.HasValue)
+            {
+                var plan = await _context.SubscriptionPlans.FirstOrDefaultAsync(p => p.Id == lab.SubscriptionPlanId.Value);
+                if (plan != null && plan.MaxCasesPerMonth > 0)
+                {
+                    var startOfMonth = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
+                    var casesThisMonth = await _context.CaseOrders.CountAsync(c => c.CreatedAt >= startOfMonth);
+                    if (casesThisMonth >= plan.MaxCasesPerMonth)
+                    {
+                        return StatusCode(402, new { message = $"You have reached your monthly quota limit of {plan.MaxCasesPerMonth} cases. Please upgrade your subscription plan to continue billing." });
+                    }
+                }
+            }
+
             Guid patientId;
 
             // 1. Resolve Patient
@@ -478,6 +516,29 @@ public class CasesController : ControllerBase
     {
         try
         {
+            // 0. Enforce Subscription & Tenant Validity
+            var tenantId = _currentUserService.TenantId;
+            var lab = await _context.Tenants.FirstOrDefaultAsync(t => t.Id == tenantId);
+            if (lab == null || !lab.IsActive)
+            {
+                return StatusCode(403, new { message = "Your laboratory account is suspended or inactive." });
+            }
+
+            var isExpired = lab.SubscriptionStatus == "Expired" || 
+                            lab.SubscriptionStatus == "Suspended" || 
+                            (lab.SubscriptionExpiryDate.HasValue && lab.SubscriptionExpiryDate.Value < DateTime.UtcNow);
+
+            if (isExpired)
+            {
+                if (lab.SubscriptionStatus != "Suspended")
+                {
+                    lab.SubscriptionStatus = "Expired";
+                    await _context.SaveChangesAsync();
+                }
+                var expFormatted = lab.SubscriptionExpiryDate.HasValue ? lab.SubscriptionExpiryDate.Value.ToString("dd MMM yyyy") : "Expired";
+                return StatusCode(402, new { message = $"Your laboratory subscription expired on {expFormatted}. Adding new tests and modifying case billing are disabled. Please renew your plan." });
+            }
+
             var caseOrder = await _context.CaseOrders
                 .Include(c => c.Patient)
                 .Include(c => c.Items).ThenInclude(i => i.Test)

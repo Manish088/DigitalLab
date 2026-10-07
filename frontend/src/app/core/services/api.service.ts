@@ -152,6 +152,18 @@ export class ApiService {
     return this.http.post(`${this.baseUrl}/tests`, test);
   }
 
+  updateTest(id: string, test: any): Observable<any> {
+    return this.http.put(`${this.baseUrl}/tests/${id}`, test);
+  }
+
+  updateTestPrice(id: string, price: number, costPrice?: number): Observable<any> {
+    return this.http.patch(`${this.baseUrl}/tests/${id}/price`, { price, costPrice });
+  }
+
+  deleteTest(id: string): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/tests/${id}`);
+  }
+
   // Doctors & Referral
   getDoctors(search?: string): Observable<DoctorReferral[]> {
     let params = new HttpParams();
@@ -183,8 +195,10 @@ export class ApiService {
   }
 
   // Transactions & Ledger
-  getTransactions(fromDate?: string, toDate?: string, paymentMethod?: number): Observable<any> {
-    let params = new HttpParams();
+  getTransactions(fromDate?: string, toDate?: string, paymentMethod?: number, page: number = 1, pageSize: number = 10): Observable<any> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('pageSize', pageSize.toString());
     if (fromDate) params = params.set('fromDate', fromDate);
     if (toDate) params = params.set('toDate', toDate);
     if (paymentMethod !== undefined && paymentMethod !== null) params = params.set('paymentMethod', paymentMethod.toString());
@@ -198,6 +212,13 @@ export class ApiService {
 
   updateLetterheadConfig(config: LetterheadConfig): Observable<any> {
     return this.http.put(`${this.baseUrl}/letterhead`, config);
+  }
+
+  uploadLetterheadAsset(file: File, assetType: string): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('assetType', assetType);
+    return this.http.post(`${this.baseUrl}/letterhead/upload`, formData);
   }
 
   // Staff
@@ -262,5 +283,65 @@ export class ApiService {
 
   updateLabStatus(id: string, isActive: boolean): Observable<any> {
     return this.http.put(`${this.baseUrl}/admin/labs/${id}/status`, isActive);
+  }
+
+  getSuperAdminTransactions(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/admin/transactions`);
+  }
+
+  approveSubscription(id: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/admin/approve-subscription/${id}`, {});
+  }
+
+  rejectSubscription(id: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/admin/reject-subscription/${id}`, {});
+  }
+
+  updateLabSubscription(id: string, data: any): Observable<any> {
+    return this.http.put(`${this.baseUrl}/admin/labs/${id}/subscription`, data);
+  }
+
+  impersonateLab(tenantId: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/admin/impersonate/${tenantId}`, {});
+  }
+
+  createLabByAdmin(data: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/admin/create-lab`, data);
+  }
+
+  resetLabPassword(data: { tenantId: string; newPassword?: string }): Observable<any> {
+    return this.http.post(`${this.baseUrl}/admin/reset-password`, data);
+  }
+
+  getGlobalAnnouncement(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/admin/announcement`);
+  }
+
+  saveGlobalAnnouncement(data: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/admin/announcement`, data);
+  }
+
+  getAdminPlans(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/admin/plans`);
+  }
+
+  createAdminPlan(data: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/admin/plans`, data);
+  }
+
+  updateAdminPlan(id: string, data: any): Observable<any> {
+    return this.http.put(`${this.baseUrl}/admin/plans/${id}`, data);
+  }
+
+  deleteAdminPlan(id: string): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/admin/plans/${id}`);
+  }
+
+  getAdminSupportTickets(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/admin/support-tickets`);
+  }
+
+  replyAdminTicket(id: string, data: { message: string; status?: string }): Observable<any> {
+    return this.http.post(`${this.baseUrl}/admin/support-tickets/${id}/reply`, data);
   }
 }

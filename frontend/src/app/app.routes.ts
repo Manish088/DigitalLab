@@ -16,7 +16,7 @@ import { StaffComponent } from './pages/staff/staff.component';
 import { SubscriptionComponent } from './pages/subscription/subscription.component';
 import { SupportComponent } from './pages/support/support.component';
 import { SuperAdminComponent } from './pages/super-admin/super-admin.component';
-import { authGuard, superAdminGuard } from './core/guards/auth.guard';
+import { authGuard, superAdminGuard, subscriptionActiveGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   { path: '', component: LandingPageComponent },
@@ -30,14 +30,14 @@ export const routes: Routes = [
     children: [
       { path: 'dashboard', component: DashboardComponent },
       { path: 'cases', component: CaseListComponent },
-      { path: 'cases/add', component: AddCaseComponent },
-      { path: 'investigations/:id', component: ResultEntryComponent },
-      { path: 'tests', component: TestCatalogComponent },
-      { path: 'doctors', component: DoctorReferralsComponent },
-      { path: 'agents', component: AgentsComponent },
-      { path: 'transactions', component: TransactionsComponent },
-      { path: 'letterhead', component: LetterheadComponent },
-      { path: 'staff', component: StaffComponent },
+      { path: 'cases/add', component: AddCaseComponent, canActivate: [subscriptionActiveGuard] },
+      { path: 'investigations/:id', component: ResultEntryComponent, canActivate: [subscriptionActiveGuard] },
+      { path: 'tests', component: TestCatalogComponent, canActivate: [subscriptionActiveGuard] },
+      { path: 'doctors', component: DoctorReferralsComponent, canActivate: [subscriptionActiveGuard] },
+      { path: 'agents', component: AgentsComponent, canActivate: [subscriptionActiveGuard] },
+      { path: 'transactions', component: TransactionsComponent, canActivate: [subscriptionActiveGuard] },
+      { path: 'letterhead', component: LetterheadComponent, canActivate: [subscriptionActiveGuard] },
+      { path: 'staff', component: StaffComponent, canActivate: [subscriptionActiveGuard] },
       { path: 'subscription', component: SubscriptionComponent },
       { path: 'support', component: SupportComponent },
       { path: 'admin-dashboard', component: SuperAdminComponent, canActivate: [superAdminGuard] }

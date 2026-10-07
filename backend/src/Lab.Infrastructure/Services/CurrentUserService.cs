@@ -43,6 +43,9 @@ public class CurrentUserService : ICurrentUserService
     public string? FullName =>
         _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Name);
 
+    public string? Email =>
+        _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Email);
+
     public bool IsSuperAdmin =>
         Role == "SuperAdmin";
 }

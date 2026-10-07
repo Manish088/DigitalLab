@@ -221,4 +221,126 @@ public class TestsController : ControllerBase
 
         return Ok(new { message = "Test created successfully.", testId = test.Id });
     }
+
+    [HttpPatch("{id}/price")]
+    public async Task<IActionResult> UpdateTestPrice(Guid id, [FromBody] UpdateTestPriceDto dto)
+    {
+        var test = await _context.Tests.FirstOrDefaultAsync(t => t.Id == id);
+        if (test == null) return NotFound(new { message = "Test not found." });
+
+        test.Price = dto.Price;
+        if (dto.CostPrice.HasValue)
+        {
+            test.CostPrice = dto.CostPrice.Value;
+        }
+
+        await _context.SaveChangesAsync();
+        return Ok(new { message = $"Price for \"{test.TestName}\" updated to ₹{test.Price}.", price = test.Price, costPrice = test.CostPrice });
+    }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateTest(Guid id, [FromBody] UpdateTestMasterDto dto)
+    {
+        var test = await _context.Tests
+            .Include(t => t.Parameters)
+            .FirstOrDefaultAsync(t => t.Id == id);
+
+        if (test == null) return NotFound(new { message = "Test not found." });
+
+        test.CategoryId = dto.CategoryId;
+        test.TestCode = dto.TestCode;
+        test.TestName = dto.TestName;
+        test.ShortName = dto.ShortName;
+        test.ItemType = dto.ItemType;
+        test.SampleType = dto.SampleType;
+        test.ContainerVialType = dto.ContainerVialType;
+        test.Price = dto.Price;
+        test.CostPrice = dto.CostPrice;
+        test.TatHours = dto.TatHours;
+        test.Methodology = dto.Methodology;
+        test.ClinicalSignificance = dto.ClinicalSignificance;
+        test.PreTestInstructions = dto.PreTestInstructions;
+        test.InterpretationTemplate = dto.InterpretationTemplate;
+        test.IsActive = dto.IsActive;
+
+        if (dto.Parameters != null && dto.Parameters.Any())
+        {
+            var oldParamIds = test.Parameters.Select(p => p.Id).ToList();
+            var oldRanges = await _context.ParameterNormalRanges.Where(r => oldParamIds.Contains(r.ParameterId)).ToListAsync();
+            _context.ParameterNormalRanges.RemoveRange(oldRanges);
+            _context.TestParameters.RemoveRange(test.Parameters);
+            await _context.SaveChangesAsync();
+
+            foreach (var pDto in dto.Parameters)
+            {
+                var param = new TestParameter
+                {
+                    TestId = test.Id,
+                    ParameterCode = pDto.ParameterCode,
+                    ParameterName = pDto.ParameterName,
+                    Unit = pDto.Unit,
+                    InputType = pDto.InputType,
+                    DefaultValue = pDto.DefaultValue,
+                    OptionsJson = pDto.OptionsJson,
+                    FormulaExpression = pDto.FormulaExpression,
+                    DisplayOrder = pDto.DisplayOrder,
+                    IsMandatory = pDto.IsMandatory,
+                    IsActive = true
+                };
+                await _context.TestParameters.AddAsync(param);
+                await _context.SaveChangesAsync();
+
+                if (pDto.NormalRanges != null)
+                {
+                    foreach (var rDto in pDto.NormalRanges)
+                    {
+                        var range = new ParameterNormalRange
+                        {
+                            ParameterId = param.Id,
+                            ApplicableGender = rDto.ApplicableGender,
+                            MinAgeDays = rDto.MinAgeDays,
+                            MaxAgeDays = rDto.MaxAgeDays,
+                            MinNormalValue = rDto.MinNormalValue,
+                            MaxNormalValue = rDto.MaxNormalValue,
+                            PanicLowValue = rDto.PanicLowValue,
+                            PanicHighValue = rDto.PanicHighValue,
+                            TextualRange = rDto.TextualRange,
+                            AgeDisplayGroup = rDto.AgeDisplayGroup
+                        };
+                        await _context.ParameterNormalRanges.AddAsync(range);
+                    }
+                }
+            }
+        }
+
+        await _context.SaveChangesAsync();
+        return Ok(new { message = $"Investigation \"{test.TestName}\" updated successfully." });
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteTest(Guid id)
+    {
+        var test = await _context.Tests
+            .Include(t => t.Parameters)
+            .FirstOrDefaultAsync(t => t.Id == id);
+
+        if (test == null) return NotFound(new { message = "Test not found." });
+
+        var isUsed = await _context.CaseOrderItems.AnyAsync(i => i.TestId == id);
+        if (isUsed)
+        {
+            test.IsActive = false;
+            await _context.SaveChangesAsync();
+            return Ok(new { message = $"Investigation \"{test.TestName}\" has existing patient cases and was deactivated." });
+        }
+
+        var paramIds = test.Parameters.Select(p => p.Id).ToList();
+        var ranges = await _context.ParameterNormalRanges.Where(r => paramIds.Contains(r.ParameterId)).ToListAsync();
+        _context.ParameterNormalRanges.RemoveRange(ranges);
+        _context.TestParameters.RemoveRange(test.Parameters);
+        _context.Tests.Remove(test);
+
+        await _context.SaveChangesAsync();
+        return Ok(new { message = $"Investigation \"{test.TestName}\" deleted successfully." });
+    }
 }

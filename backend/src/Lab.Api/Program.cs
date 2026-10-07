@@ -171,6 +171,17 @@ if (app.Environment.IsDevelopment() || true)
 }
 
 app.UseCors("AllowAll");
+
+// Real-Time Enforcement: Disable all HTTP response caching
+app.Use(async (context, next) =>
+{
+    context.Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0";
+    context.Response.Headers["Pragma"] = "no-cache";
+    context.Response.Headers["Expires"] = "-1";
+    await next();
+});
+
+app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 

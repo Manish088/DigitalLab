@@ -26,6 +26,9 @@ public class ReportsController : ControllerBase
     [Produces("application/pdf")]
     public async Task<IActionResult> DownloadReportPdf(Guid caseOrderId, [FromQuery] bool letterheadMode = true, [FromQuery] bool download = false)
     {
+        if (!await IsLabSubscriptionActiveAsync(caseOrderId))
+            return StatusCode(403, new { message = "Laboratory subscription has expired. Please renew your plan to generate and download patient reports." });
+
         var pdfBytes = await _pdfReportService.GeneratePatientReportPdfAsync(caseOrderId, letterheadMode);
         var disposition = download ? "attachment" : "inline";
         Response.Headers.Append("Content-Disposition", $"{disposition}; filename=DiagnosticReport_{caseOrderId}.pdf");
@@ -37,6 +40,9 @@ public class ReportsController : ControllerBase
     [Produces("application/pdf")]
     public async Task<IActionResult> DownloadInvoicePdf(Guid caseOrderId, [FromQuery] bool download = false)
     {
+        if (!await IsLabSubscriptionActiveAsync(caseOrderId))
+            return StatusCode(403, new { message = "Laboratory subscription has expired. Please renew your plan to download tax invoices and bills." });
+
         var pdfBytes = await _pdfReportService.GenerateInvoicePdfAsync(caseOrderId);
         var disposition = download ? "attachment" : "inline";
         Response.Headers.Append("Content-Disposition", $"{disposition}; filename=TaxInvoice_{caseOrderId}.pdf");
@@ -48,6 +54,9 @@ public class ReportsController : ControllerBase
     [Produces("application/pdf")]
     public async Task<IActionResult> DownloadThermalReceiptPdf(Guid caseOrderId, [FromQuery] int width = 80, [FromQuery] bool download = false)
     {
+        if (!await IsLabSubscriptionActiveAsync(caseOrderId))
+            return StatusCode(403, new { message = "Laboratory subscription has expired. Please renew your plan to download thermal receipts." });
+
         var pdfBytes = await _pdfReportService.GenerateThermalReceiptPdfAsync(caseOrderId, width);
         var disposition = download ? "attachment" : "inline";
         Response.Headers.Append("Content-Disposition", $"{disposition}; filename=ThermalReceipt_{caseOrderId}.pdf");
@@ -71,6 +80,10 @@ public class ReportsController : ControllerBase
         var lab = await _context.Tenants
             .IgnoreQueryFilters()
             .FirstOrDefaultAsync(t => t.Id == caseOrder.TenantId);
+
+        var isLabExpired = lab != null && (lab.SubscriptionStatus == "Expired" || lab.SubscriptionStatus == "Suspended" || (lab.SubscriptionExpiryDate.HasValue && lab.SubscriptionExpiryDate.Value < DateTime.UtcNow));
+        if (isLabExpired)
+            return StatusCode(403, new { message = "Laboratory access is currently inactive / expired. Please contact laboratory administration." });
 
         return Ok(new
         {
@@ -102,11 +115,29 @@ public class ReportsController : ControllerBase
         if (caseOrder == null)
             return NotFound(new { message = "Report link is invalid or expired." });
 
+        if (!await IsLabSubscriptionActiveAsync(caseOrder.Id))
+            return StatusCode(403, new { message = "Laboratory access is currently inactive / expired. Please contact laboratory administration." });
+
         if (caseOrder.Status != CaseStatus.Approved)
             return BadRequest(new { message = "Report is currently under lab testing/processing and has not been approved yet." });
 
         var pdfBytes = await _pdfReportService.GeneratePatientReportPdfAsync(caseOrder.Id, false);
         Response.Headers.Append("Content-Disposition", $"inline; filename=Report_{caseOrder.CaseNumber}.pdf");
         return File(pdfBytes, "application/pdf");
+    }
+
+    private async Task<bool> IsLabSubscriptionActiveAsync(Guid caseOrderId)
+    {
+        var caseOrder = await _context.CaseOrders.IgnoreQueryFilters().AsNoTracking().FirstOrDefaultAsync(c => c.Id == caseOrderId);
+        if (caseOrder == null) return false;
+
+        var lab = await _context.Tenants.IgnoreQueryFilters().AsNoTracking().FirstOrDefaultAsync(t => t.Id == caseOrder.TenantId);
+        if (lab == null) return false;
+
+        var isExpired = lab.SubscriptionStatus == "Expired" || 
+                        lab.SubscriptionStatus == "Suspended" || 
+                        (lab.SubscriptionExpiryDate.HasValue && lab.SubscriptionExpiryDate.Value < DateTime.UtcNow);
+
+        return !isExpired;
     }
 }

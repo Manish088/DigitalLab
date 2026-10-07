@@ -186,7 +186,7 @@ public static class DbInitializer
                 LabName = "Apex Diagnostics & Research Centre",
                 Tagline = "Accurate • Reliable • Advanced Diagnostic Services",
                 OwnerName = "Dr. Rajesh K. Sharma",
-                Phone = "+91 98765 43210",
+                Phone = "+91 77060 87066",
                 Email = "info@apexdiagnostics.com",
                 Address = "Plot 42, Health City, Ring Road",
                 City = "New Delhi",

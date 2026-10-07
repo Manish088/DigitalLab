@@ -93,7 +93,7 @@ import { ApiService } from '../../core/services/api.service';
           </div>
 
           <div class="text-center text-[10px] text-slate-400">
-            Powered by DigitLab Cloud Pathology Information System
+            Powered by DigitalLab Cloud Pathology Information System
           </div>
         </div>
       </div>

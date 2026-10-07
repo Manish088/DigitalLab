@@ -1,7 +1,7 @@
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
 import { DoctorReferral, TestMaster, TestCategory } from '../../core/models/lims.models';
@@ -12,6 +12,27 @@ import { DoctorReferral, TestMaster, TestCategory } from '../../core/models/lims
   imports: [CommonModule, FormsModule, RouterLink],
   template: `
     <div class="space-y-6">
+      <!-- Subscription Expired Alert Banner on Case List -->
+      <div *ngIf="isSubExpired" class="p-4 bg-rose-50 border-2 border-rose-300 rounded-2xl text-rose-900 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 animate-in fade-in duration-200">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center text-rose-600 shrink-0 font-bold text-lg">
+            <i class="fa-solid fa-ban"></i>
+          </div>
+          <div>
+            <div class="text-xs sm:text-sm font-bold text-rose-900 font-heading flex items-center gap-2">
+              <span>⚠️ Laboratory Subscription {{ subStatus === 'Suspended' ? 'Suspended' : 'Expired' }}</span>
+              <span class="px-2 py-0.5 text-[10px] uppercase font-black bg-rose-200 text-rose-800 rounded-md">Billing Blocked</span>
+            </div>
+            <div class="text-xs text-rose-700 mt-0.5">
+              Your subscription plan expired on <span class="font-bold">{{ subExpiryDate ? (subExpiryDate | date:'dd MMM yyyy') : 'an earlier date' }}</span>. New patient registration & billing are locked.
+            </div>
+          </div>
+        </div>
+        <a routerLink="/subscription" class="inline-flex items-center justify-center px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-md shadow-rose-600/30 transition-colors shrink-0">
+          <i class="fa-solid fa-bolt mr-2"></i> Renew Subscription Plan
+        </a>
+      </div>
+
       <!-- Page Header -->
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -24,9 +45,15 @@ import { DoctorReferral, TestMaster, TestCategory } from '../../core/models/lims
             title="Export filtered case records to Microsoft Excel / CSV">
             <i class="fa-solid fa-file-excel mr-2"></i> Export to Excel (CSV)
           </button>
-          <a routerLink="/cases/add" class="inline-flex items-center px-4 py-2 rounded-xl text-sm font-semibold bg-brand-600 text-white hover:bg-brand-700 shadow-sm shadow-brand-500/20 transition-all">
-            <i class="fa-solid fa-plus mr-2"></i> New Registration
-          </a>
+          <button type="button" (click)="goToNewRegistration()"
+            [class.bg-rose-600]="isSubExpired"
+            [class.hover:bg-rose-500]="isSubExpired"
+            [class.bg-brand-600]="!isSubExpired"
+            [class.hover:bg-brand-700]="!isSubExpired"
+            class="inline-flex items-center px-4 py-2 rounded-xl text-sm font-semibold text-white shadow-sm transition-all cursor-pointer">
+            <i class="fa-solid" [ngClass]="isSubExpired ? 'fa-lock mr-2' : 'fa-plus mr-2'"></i>
+            {{ isSubExpired ? 'Subscription Expired' : 'New Registration' }}
+          </button>
         </div>
       </div>
 
@@ -195,39 +222,49 @@ import { DoctorReferral, TestMaster, TestCategory } from '../../core/models/lims
 
                 <!-- Actions -->
                 <td class="p-3.5 text-right whitespace-nowrap min-w-[220px]">
-                  <div class="inline-flex items-center justify-end space-x-1 flex-nowrap">
+                  <div class="inline-flex items-center justify-end space-x-1 flex-nowrap" [class.opacity-40]="isSubExpired">
                     <!-- Add More Tests (If Not Approved) -->
-                    <button *ngIf="c.status !== 'Approved'" (click)="openAddTestsModal(c)"
-                      class="w-7 h-7 inline-flex items-center justify-center rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 hover:text-indigo-800 transition-colors" title="Add More Tests to Case">
+                    <button *ngIf="c.status !== 'Approved'" type="button" (click)="openAddTestsModal(c)"
+                      [class.cursor-not-allowed]="isSubExpired"
+                      class="w-7 h-7 inline-flex items-center justify-center rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 hover:text-indigo-800 transition-colors cursor-pointer" [title]="isSubExpired ? 'Locked: Subscription Expired' : 'Add More Tests to Case'">
                       <i class="fa-solid fa-plus-circle text-xs"></i>
                     </button>
 
                     <!-- Result Entry -->
-                    <a [routerLink]="['/investigations', c.id]" class="w-7 h-7 inline-flex items-center justify-center rounded-lg bg-slate-100 hover:bg-brand-50 hover:text-brand-600 text-slate-600 transition-colors" title="Investigation Result Entry">
+                    <button type="button" (click)="navigateToResultEntry(c)"
+                      [class.cursor-not-allowed]="isSubExpired"
+                      class="w-7 h-7 inline-flex items-center justify-center rounded-lg bg-slate-100 hover:bg-brand-50 hover:text-brand-600 text-slate-600 transition-colors cursor-pointer" [title]="isSubExpired ? 'Locked: Subscription Expired' : 'Investigation Result Entry'">
                       <i class="fa-solid fa-vial-circle-check text-xs"></i>
-                    </a>
+                    </button>
 
                     <!-- Invoice / A4 Bill (Always available for billing/payment) -->
-                    <a [href]="api.getInvoicePdfUrl(c.id)" target="_blank" class="w-7 h-7 inline-flex items-center justify-center rounded-lg bg-slate-100 hover:bg-emerald-50 hover:text-emerald-600 text-slate-600 transition-colors" title="Print Tax Invoice / Bill">
+                    <button type="button" (click)="openInvoicePdf(c)"
+                      [class.cursor-not-allowed]="isSubExpired"
+                      class="w-7 h-7 inline-flex items-center justify-center rounded-lg bg-slate-100 hover:bg-emerald-50 hover:text-emerald-600 text-slate-600 transition-colors cursor-pointer" [title]="isSubExpired ? 'Locked: Subscription Expired' : 'Print Tax Invoice / Bill'">
                       <i class="fa-solid fa-file-invoice text-xs"></i>
-                    </a>
+                    </button>
 
                     <!-- Report PDF (Letterhead Mode) - ONLY AFTER REPORT IS APPROVED -->
-                    <a *ngIf="c.status === 'Approved'" [href]="api.getReportPdfUrl(c.id, true)" target="_blank" class="w-7 h-7 inline-flex items-center justify-center rounded-lg bg-brand-50 hover:bg-brand-100 text-brand-700 transition-colors" title="Print A4 Patient Report">
+                    <button *ngIf="c.status === 'Approved'" type="button" (click)="openReportPdf(c)"
+                      [class.cursor-not-allowed]="isSubExpired"
+                      class="w-7 h-7 inline-flex items-center justify-center rounded-lg bg-brand-50 hover:bg-brand-100 text-brand-700 transition-colors cursor-pointer" [title]="isSubExpired ? 'Locked: Subscription Expired' : 'Print A4 Patient Report'">
                       <i class="fa-solid fa-file-pdf text-xs"></i>
-                    </a>
+                    </button>
 
                     <!-- WhatsApp Share Report Link - ONLY AFTER REPORT IS APPROVED -->
                     <button *ngIf="c.status === 'Approved'" type="button" (click)="shareReportOnWhatsApp(c)"
+                      [class.cursor-not-allowed]="isSubExpired"
                       class="w-7 h-7 inline-flex items-center justify-center rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-600 hover:text-emerald-800 transition-colors cursor-pointer" 
-                      title="Send Verified Report on Patient's WhatsApp">
+                      [title]="isSubExpired ? 'Locked: Subscription Expired' : 'Send Verified Report on WhatsApp'">
                       <i class="fa-brands fa-whatsapp text-xs"></i>
                     </button>
 
                     <!-- Public QR Download Link - ONLY AFTER REPORT IS APPROVED -->
-                    <a *ngIf="c.status === 'Approved'" [routerLink]="['/report/download', c.publicAccessToken]" target="_blank" class="w-7 h-7 inline-flex items-center justify-center rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-700 transition-colors" title="Public QR Token Download URL">
+                    <button *ngIf="c.status === 'Approved'" type="button" (click)="openQrDownload(c)"
+                      [class.cursor-not-allowed]="isSubExpired"
+                      class="w-7 h-7 inline-flex items-center justify-center rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-700 transition-colors cursor-pointer" [title]="isSubExpired ? 'Locked: Subscription Expired' : 'Public QR Token Download URL'">
                       <i class="fa-solid fa-qrcode text-xs"></i>
-                    </a>
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -547,12 +584,18 @@ import { DoctorReferral, TestMaster, TestCategory } from '../../core/models/lims
 export class CaseListComponent implements OnInit {
   api = inject(ApiService);
   private toast = inject(ToastService);
+  private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
 
   cases: any[] = [];
   doctors: DoctorReferral[] = [];
   totalCount = 0;
   loading = false;
+
+  // Subscription Validity
+  isSubExpired = false;
+  subStatus = '';
+  subExpiryDate: string | null = null;
 
   filters = {
     search: '',
@@ -594,6 +637,7 @@ export class CaseListComponent implements OnInit {
   addingTests = false;
 
   ngOnInit(): void {
+    this.loadSubscriptionStatus();
     this.loadCases();
     this.api.getDoctors().subscribe(docs => {
       this.doctors = docs || [];
@@ -609,6 +653,31 @@ export class CaseListComponent implements OnInit {
         this.cdr.detectChanges();
       }
     });
+  }
+
+  loadSubscriptionStatus(): void {
+    this.api.getMySubscription().subscribe({
+      next: (sub) => {
+        this.subStatus = sub?.subscriptionStatus || '';
+        this.subExpiryDate = sub?.subscriptionExpiryDate || null;
+        const isPastDate = sub?.subscriptionExpiryDate ? new Date(sub.subscriptionExpiryDate) < new Date() : false;
+        this.isSubExpired = sub?.isExpired || this.subStatus === 'Expired' || this.subStatus === 'Suspended' || isPastDate;
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Error fetching subscription status:', err)
+    });
+  }
+
+  goToNewRegistration(): void {
+    if (this.isSubExpired) {
+      const expDateStr = this.subExpiryDate 
+        ? new Date(this.subExpiryDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) 
+        : 'earlier';
+      this.toast.error(`⚠️ Laboratory Subscription Expired (Ended on ${expDateStr}). Please renew your plan to register new patients and create bills.`);
+      this.router.navigate(['/subscription']);
+      return;
+    }
+    this.router.navigate(['/cases/add']);
   }
 
   loadCases(): void {
@@ -639,12 +708,58 @@ export class CaseListComponent implements OnInit {
     });
   }
 
+  showSubscriptionExpiredAlert(actionName?: string): void {
+    const expDateStr = this.subExpiryDate 
+      ? new Date(this.subExpiryDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) 
+      : 'earlier';
+    
+    const actionText = actionName ? `to ${actionName}` : 'to perform this action';
+    this.toast.error(`⚠️ Laboratory Subscription Expired (Ended on ${expDateStr}). Please renew your plan ${actionText}.`);
+    this.router.navigate(['/subscription']);
+  }
+
+  navigateToResultEntry(c: any): void {
+    if (this.isSubExpired) {
+      this.showSubscriptionExpiredAlert('enter or edit test results');
+      return;
+    }
+    this.router.navigate(['/investigations', c.id]);
+  }
+
+  openInvoicePdf(c: any): void {
+    if (this.isSubExpired) {
+      this.showSubscriptionExpiredAlert('download or print tax invoices');
+      return;
+    }
+    window.open(this.api.getInvoicePdfUrl(c.id), '_blank');
+  }
+
+  openReportPdf(c: any): void {
+    if (this.isSubExpired) {
+      this.showSubscriptionExpiredAlert('download or print patient diagnostic reports');
+      return;
+    }
+    window.open(this.api.getReportPdfUrl(c.id, true), '_blank');
+  }
+
+  openQrDownload(c: any): void {
+    if (this.isSubExpired) {
+      this.showSubscriptionExpiredAlert('access public QR token report links');
+      return;
+    }
+    window.open(`/report/download/${c.publicAccessToken}`, '_blank');
+  }
+
   resetFilters(): void {
     this.filters = { search: '', doctorId: '', status: '', paymentStatus: '' };
     this.loadCases();
   }
 
   openDueModal(caseItem: any): void {
+    if (this.isSubExpired) {
+      this.showSubscriptionExpiredAlert('settle due payments');
+      return;
+    }
     this.settleModalCase = caseItem;
     this.settleData = {
       amount: caseItem.dueAmount,
@@ -668,10 +783,18 @@ export class CaseListComponent implements OnInit {
   }
 
   showBarcode(c: any): void {
+    if (this.isSubExpired) {
+      this.showSubscriptionExpiredAlert('generate or print barcode stickers');
+      return;
+    }
     this.barcodeModalCase = c;
   }
 
   openThermalSlipModal(c: any): void {
+    if (this.isSubExpired) {
+      this.showSubscriptionExpiredAlert('print thermal receipts');
+      return;
+    }
     this.thermalModalCase = c;
     this.cdr.detectChanges();
   }
@@ -729,6 +852,11 @@ export class CaseListComponent implements OnInit {
   }
 
   shareReportOnWhatsApp(c: any): void {
+    if (this.isSubExpired) {
+      this.showSubscriptionExpiredAlert('share diagnostic reports via WhatsApp');
+      return;
+    }
+
     if (c.status !== 'Approved' && c.status !== 5) {
       this.toast.warning('Report has not been approved yet. WhatsApp report can only be sent after verification & approval.');
       return;
@@ -757,6 +885,11 @@ export class CaseListComponent implements OnInit {
 
   // Add Tests Logic
   openAddTestsModal(caseItem: any): void {
+    if (this.isSubExpired) {
+      this.showSubscriptionExpiredAlert('add tests to case');
+      return;
+    }
+
     if (caseItem.status === 'Approved') {
       this.toast.warning('Cannot add tests to an already approved report.');
       return;
@@ -847,6 +980,13 @@ export class CaseListComponent implements OnInit {
   }
 
   submitAddTests(): void {
+    if (this.isSubExpired) {
+      this.toast.error('⚠️ Laboratory Subscription Expired. Please renew your subscription to add tests.');
+      this.addTestsModalCase = null;
+      this.router.navigate(['/subscription']);
+      return;
+    }
+
     if (!this.addTestsModalCase || this.selectedNewTestIds.length === 0) {
       this.toast.warning('Please select at least one test to add.');
       return;

@@ -343,7 +343,7 @@ import { DoctorReferral, DoctorPayoutRecord, LetterheadConfig } from '../../core
               <!-- Lab Header -->
               <div class="text-center border-b-2 border-slate-800 pb-3 space-y-0.5">
                 <div class="text-base font-black uppercase text-slate-900 tracking-wide">{{ labConfig?.labName || 'CITY CARE DIAGNOSTICS & PATHOLOGY' }}</div>
-                <div class="text-[11px] text-slate-500">{{ labConfig?.address || 'Main Road, Civil Lines' }} {{ labConfig?.city ? '• ' + labConfig.city : '' }} • Ph: {{ labConfig?.phone || '9876543210' }}</div>
+                <div class="text-[11px] text-slate-500">{{ labConfig?.address || 'Main Road, Civil Lines' }} {{ labConfig?.city ? '• ' + labConfig.city : '' }} • Ph: {{ labConfig?.phone || '7706087066' }}</div>
                 <div *ngIf="labConfig?.gstin" class="text-[10px] font-semibold text-slate-700">GSTIN: {{ labConfig.gstin }}</div>
                 <div class="inline-block mt-1 bg-slate-900 text-white font-bold text-[10px] uppercase px-3 py-0.5 rounded tracking-wider">
                   COMMISSION SETTLEMENT VOUCHER
@@ -780,7 +780,7 @@ export class DoctorReferralsComponent implements OnInit {
           <div class="voucher-card">
             <div class="header">
               <div class="lab-title">${this.labConfig?.labName || 'CITY CARE DIAGNOSTICS & PATHOLOGY'}</div>
-              <div class="lab-sub">${this.labConfig?.address || 'Main Road, Civil Lines'} ${this.labConfig?.city ? '• ' + this.labConfig.city : ''} • Ph: ${this.labConfig?.phone || '9876543210'}</div>
+              <div class="lab-sub">${this.labConfig?.address || 'Main Road, Civil Lines'} ${this.labConfig?.city ? '• ' + this.labConfig.city : ''} • Ph: ${this.labConfig?.phone || '7706087066'}</div>
               ${this.labConfig?.gstin ? `<div class="lab-sub"><strong>GSTIN:</strong> ${this.labConfig.gstin}</div>` : ''}
               <div class="voucher-badge">Doctor Commission Settlement Voucher</div>
             </div>

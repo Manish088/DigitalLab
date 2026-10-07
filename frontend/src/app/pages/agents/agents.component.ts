@@ -72,7 +72,7 @@ import { CollectionAgent } from '../../core/models/lims.models';
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>
                 <label class="block font-semibold text-slate-700 mb-1">Phone Number</label>
-                <input type="tel" [(ngModel)]="newAgent.phone" placeholder="9876543210" class="w-full px-3 py-2 border rounded-xl">
+                <input type="tel" [(ngModel)]="newAgent.phone" placeholder="7706087066" class="w-full px-3 py-2 border rounded-xl">
               </div>
               <div>
                 <label class="block font-semibold text-slate-700 mb-1">Commission %</label>

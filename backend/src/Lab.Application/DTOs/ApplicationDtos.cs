@@ -191,6 +191,30 @@ public record CreateTestMasterDto(
     List<CreateTestParameterDto> Parameters
 );
 
+public record UpdateTestPriceDto(
+    decimal Price,
+    decimal? CostPrice = null
+);
+
+public record UpdateTestMasterDto(
+    Guid CategoryId,
+    string TestCode,
+    string TestName,
+    string? ShortName,
+    TestItemType ItemType,
+    string? SampleType,
+    string? ContainerVialType,
+    decimal Price,
+    decimal? CostPrice,
+    int TatHours,
+    string? Methodology,
+    string? ClinicalSignificance,
+    string? PreTestInstructions,
+    string? InterpretationTemplate,
+    bool IsActive,
+    List<CreateTestParameterDto>? Parameters = null
+);
+
 public record TestParameterDto(
     Guid Id,
     Guid TestId,
@@ -446,4 +470,54 @@ public record SuperAdminLabItemDto(
     DateTime? SubscriptionExpiryDate,
     DateTime CreatedAt,
     bool IsActive
+);
+
+public record AdminCreateLabRequest(
+    string LabName,
+    string OwnerName,
+    string Email,
+    string Phone,
+    string Password,
+    Guid? PlanId,
+    string? Address,
+    string? City,
+    string? State,
+    int ValidityMonths = 1,
+    string SubscriptionStatus = "Active"
+);
+
+public record AdminResetPasswordRequest(
+    Guid TenantId,
+    string? NewPassword
+);
+
+public record CreateOrUpdatePlanDto(
+    string PlanCode,
+    string PlanName,
+    string Description,
+    decimal MonthlyPrice,
+    decimal AnnualPrice,
+    int MaxCasesPerMonth,
+    int MaxStaffAccounts,
+    bool HasCustomLetterhead,
+    bool HasPublicQrDownload,
+    bool HasDoctorReferralModule,
+    bool HasThermalPrinting,
+    bool HasWhatsAppAlerts,
+    bool IsActive,
+    int DisplayOrder
+);
+
+public record BroadcastAnnouncementDto(
+    string Message,
+    string Type,
+    bool IsActive,
+    DateTime? ExpiresAt = null
+);
+
+public record AdminTicketReplyRequest(
+    Guid TicketId,
+    string Message,
+    string? AttachmentUrl,
+    TicketStatus? NewStatus
 );

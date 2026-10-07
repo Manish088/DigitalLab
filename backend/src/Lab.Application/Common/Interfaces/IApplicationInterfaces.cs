@@ -36,6 +36,7 @@ public interface ICurrentUserService
     Guid? TenantId { get; }
     string? Role { get; }
     string? FullName { get; }
+    string? Email { get; }
     bool IsSuperAdmin { get; }
 }
 
