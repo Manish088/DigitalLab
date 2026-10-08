@@ -176,66 +176,7 @@ public static class DbInitializer
             Console.WriteLine($"[DbInitializer] SystemSettings warning: {ex.Message}");
         }
 
-        // 4. Seed Demo Lab Tenant
-        var demoLab = await context.Tenants.FirstOrDefaultAsync(t => t.LabCode == "DEMO01");
-        if (demoLab == null)
-        {
-            demoLab = new TenantLab
-            {
-                LabCode = "DEMO01",
-                LabName = "Apex Diagnostics & Research Centre",
-                Tagline = "Accurate • Reliable • Advanced Diagnostic Services",
-                OwnerName = "Dr. Rajesh K. Sharma",
-                Phone = "+91 77060 87066",
-                Email = "info@apexdiagnostics.com",
-                Address = "Plot 42, Health City, Ring Road",
-                City = "New Delhi",
-                State = "Delhi",
-                Pincode = "110001",
-                Gstin = "07AAAAA0000A1Z5",
-                NablNumber = "NABL-MC-2026-9812",
-                PathologistName = "Dr. Rajesh K. Sharma, MD",
-                PathologistDegree = "MBBS, MD (Pathology) AIIMS",
-                PathologistRegNo = "DMC-48291",
-                LetterheadMarginTopMm = 35,
-                LetterheadMarginBottomMm = 30,
-                ShowHeader = true,
-                ShowFooter = true,
-                ShowQrCode = true,
-                ShowBarcodeOnBill = true,
-                ShowDigitalSignature = true,
-                PrimaryColor = "#0284c7",
-                SubscriptionStatus = "Active",
-                SubscriptionExpiryDate = DateTime.UtcNow.AddYears(1)
-            };
-            await context.Tenants.AddAsync(demoLab);
-            await context.SaveChangesAsync();
-
-            // Seed Demo Lab User
-            var labUserEmail = "doctor@citylab.com";
-            var labUser = await userManager.FindByEmailAsync(labUserEmail);
-            if (labUser == null)
-            {
-                labUser = new ApplicationUser
-                {
-                    UserName = labUserEmail,
-                    Email = labUserEmail,
-                    FullName = "Dr. Rajesh Sharma",
-                    TenantId = demoLab.Id,
-                    Role = "LabAdmin",
-                    Designation = "Lab Director / Pathologist",
-                    EmailConfirmed = true,
-                    IsActive = true
-                };
-                await userManager.CreateAsync(labUser, "Pass@12345");
-                await userManager.AddToRoleAsync(labUser, "LabAdmin");
-            }
-
-            // 5. Seed Standard Pathology Catalog for Demo Lab
-            await SeedStandardCatalogForTenantAsync(context, demoLab.Id);
-        }
-
-        // Ensure standard master catalog is seeded for ALL existing tenants
+        // 4. Ensure standard master catalog is seeded for ALL existing tenants (if any)
         var allTenants = await context.Tenants.ToListAsync();
         foreach (var t in allTenants)
         {

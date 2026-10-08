@@ -41,12 +41,15 @@ public class AuthController : ControllerBase
         var user = await _userManager.FindByEmailAsync(request.EmailOrUsername)
                    ?? await _userManager.FindByNameAsync(request.EmailOrUsername);
 
-        if (user == null || !user.IsActive)
-            return Unauthorized(new { message = "Invalid email/username or account deactivated." });
+        if (user == null)
+            return Unauthorized(new { message = "This email or username is not registered. Please register first." });
+
+        if (!user.IsActive)
+            return Unauthorized(new { message = "This account has been deactivated. Please contact administrator." });
 
         var isPasswordValid = await _userManager.CheckPasswordAsync(user, request.Password);
         if (!isPasswordValid)
-            return Unauthorized(new { message = "Invalid credentials." });
+            return Unauthorized(new { message = "Incorrect password. Please enter the correct password." });
 
         string? labName = null;
         string? logoUrl = null;

@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -140,6 +140,7 @@ import { AuthService } from '../../core/services/auth.service';
 export class LoginComponent {
   private authService = inject(AuthService);
   private router = inject(Router);
+  private cdr = inject(ChangeDetectorRef);
 
   isRegister = false;
   loading = false;
@@ -163,14 +164,18 @@ export class LoginComponent {
   onLogin() {
     if (!this.loginData.emailOrUsername || !this.loginData.password) {
       this.errorMessage = 'Please enter both email/username and password.';
+      this.cdr.markForCheck();
       return;
     }
 
     this.loading = true;
     this.errorMessage = '';
+    this.cdr.markForCheck();
+
     this.authService.login(this.loginData).subscribe({
       next: (res) => {
         this.loading = false;
+        this.cdr.markForCheck();
         if (res.role === 'SuperAdmin') {
           this.router.navigate(['/admin-dashboard']);
         } else {
@@ -179,7 +184,18 @@ export class LoginComponent {
       },
       error: (err) => {
         this.loading = false;
-        this.errorMessage = err.error?.message || 'Login failed. Please check your credentials.';
+        if (err.status === 0) {
+          this.errorMessage = 'Unable to connect to server. Please ensure the backend API is running.';
+        } else if (err.error?.message) {
+          this.errorMessage = err.error.message;
+        } else if (typeof err.error === 'string' && err.error.length < 150) {
+          this.errorMessage = err.error;
+        } else if (err.status === 401) {
+          this.errorMessage = 'Invalid email/username or account does not exist.';
+        } else {
+          this.errorMessage = 'Login failed. Please check your credentials and try again.';
+        }
+        this.cdr.markForCheck();
       }
     });
   }
@@ -187,19 +203,30 @@ export class LoginComponent {
   onRegister() {
     if (!this.regData.labName || !this.regData.ownerName || !this.regData.email || !this.regData.phone || !this.regData.password) {
       this.errorMessage = 'Please fill in all required fields.';
+      this.cdr.markForCheck();
       return;
     }
 
     this.loading = true;
     this.errorMessage = '';
+    this.cdr.markForCheck();
+
     this.authService.register(this.regData).subscribe({
       next: () => {
         this.loading = false;
+        this.cdr.markForCheck();
         this.router.navigate(['/dashboard']);
       },
       error: (err) => {
         this.loading = false;
-        this.errorMessage = err.error?.message || 'Registration failed.';
+        if (err.status === 0) {
+          this.errorMessage = 'Unable to connect to server. Please ensure the backend API is running.';
+        } else if (err.error?.message) {
+          this.errorMessage = err.error.message;
+        } else {
+          this.errorMessage = 'Registration failed. Please check your details and try again.';
+        }
+        this.cdr.markForCheck();
       }
     });
   }

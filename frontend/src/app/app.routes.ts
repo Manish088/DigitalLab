@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { LandingPageComponent } from './pages/marketing/landing-page.component';
 import { LoginComponent } from './pages/auth/login.component';
+import { SetupComponent } from './pages/setup/setup.component';
 import { PublicDownloadComponent } from './pages/reports/public-download.component';
 import { LayoutComponent } from './shared/components/layout/layout.component';
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
@@ -21,6 +22,9 @@ import { authGuard, superAdminGuard, subscriptionActiveGuard } from './core/guar
 export const routes: Routes = [
   { path: '', component: LandingPageComponent },
   { path: 'login', component: LoginComponent },
+  { path: 'launch', component: SetupComponent },
+  { path: 'setup', component: SetupComponent },
+  { path: 'init', component: SetupComponent },
   { path: 'report/download/:token', component: PublicDownloadComponent },
 
   {

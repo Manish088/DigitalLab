@@ -344,4 +344,17 @@ export class ApiService {
   replyAdminTicket(id: string, data: { message: string; status?: string }): Observable<any> {
     return this.http.post(`${this.baseUrl}/admin/support-tickets/${id}/reply`, data);
   }
+
+  // One-Time Production Setup & Launch
+  checkSetupStatus(): Observable<{ isInitialized: boolean; initializedAt?: string }> {
+    return this.http.get<{ isInitialized: boolean; initializedAt?: string }>(`${this.baseUrl}/setup/status`);
+  }
+
+  quickLaunch(launchCode: string): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/setup/quick-launch`, { launchCode });
+  }
+
+  initializeProduction(payload: any): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/setup/initialize`, payload);
+  }
 }

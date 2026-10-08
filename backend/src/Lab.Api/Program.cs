@@ -152,7 +152,6 @@ using (var scope = app.Services.CreateScope())
             // fallback
         }
         await DbInitializer.InitializeAsync(app.Services);
-        await PasswordResetTool.ResetAllPasswordsAsync(app.Services);
     }
     catch (Exception ex)
     {
