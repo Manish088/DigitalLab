@@ -41,6 +41,18 @@ export const staffManagementGuard: CanActivateFn = () => {
   return false;
 };
 
+export const labManagementGuard: CanActivateFn = () => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+
+  if (authService.canManageLab()) {
+    return true;
+  }
+
+  router.navigate(['/dashboard']);
+  return false;
+};
+
 export const subscriptionActiveGuard: CanActivateFn = () => {
   const authService = inject(AuthService);
   const apiService = inject(ApiService);

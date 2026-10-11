@@ -150,43 +150,45 @@ import { ToastService } from '../../../core/services/toast.service';
             <i class="fa-solid fa-list-check w-5 text-center mr-2.5"></i> Case Management
           </a>
 
-          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 pt-3 pb-1">Lab Operations</div>
+          <ng-container *ngIf="canManageLab()">
+            <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 pt-3 pb-1">Lab Operations</div>
 
-          <a routerLink="/tests" (click)="closeMobileMenu()" routerLinkActive="bg-brand-600 text-white shadow-lg" class="flex items-center px-3 py-2 text-xs font-medium rounded-xl hover:bg-slate-800 transition-all">
-            <i class="fa-solid fa-dna w-5 text-center mr-2.5"></i> Test Catalog & Rates
-          </a>
+            <a routerLink="/tests" (click)="closeMobileMenu()" routerLinkActive="bg-brand-600 text-white shadow-lg" class="flex items-center px-3 py-2 text-xs font-medium rounded-xl hover:bg-slate-800 transition-all">
+              <i class="fa-solid fa-dna w-5 text-center mr-2.5"></i> Test Catalog & Rates
+            </a>
 
-          <a routerLink="/doctors" (click)="closeMobileMenu()" routerLinkActive="bg-brand-600 text-white shadow-lg" class="flex items-center px-3 py-2 text-xs font-medium rounded-xl hover:bg-slate-800 transition-all">
-            <i class="fa-solid fa-user-doctor w-5 text-center mr-2.5"></i> Doctor Referrals
-          </a>
+            <a routerLink="/doctors" (click)="closeMobileMenu()" routerLinkActive="bg-brand-600 text-white shadow-lg" class="flex items-center px-3 py-2 text-xs font-medium rounded-xl hover:bg-slate-800 transition-all">
+              <i class="fa-solid fa-user-doctor w-5 text-center mr-2.5"></i> Doctor Referrals
+            </a>
 
-          <a routerLink="/agents" (click)="closeMobileMenu()" routerLinkActive="bg-brand-600 text-white shadow-lg" class="flex items-center px-3 py-2 text-xs font-medium rounded-xl hover:bg-slate-800 transition-all">
-            <i class="fa-solid fa-motorcycle w-5 text-center mr-2.5"></i> Collection Centres
-          </a>
+            <a routerLink="/agents" (click)="closeMobileMenu()" routerLinkActive="bg-brand-600 text-white shadow-lg" class="flex items-center px-3 py-2 text-xs font-medium rounded-xl hover:bg-slate-800 transition-all">
+              <i class="fa-solid fa-motorcycle w-5 text-center mr-2.5"></i> Collection Centres / Agents
+            </a>
 
-          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 pt-3 pb-1">Finance & Branding</div>
+            <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 pt-3 pb-1">Finance & Branding</div>
 
-          <a routerLink="/transactions" (click)="closeMobileMenu()" routerLinkActive="bg-brand-600 text-white shadow-lg" class="flex items-center px-3 py-2 text-xs font-medium rounded-xl hover:bg-slate-800 transition-all">
-            <i class="fa-solid fa-receipt w-5 text-center mr-2.5"></i> Accounts & Ledger
-          </a>
+            <a routerLink="/transactions" (click)="closeMobileMenu()" routerLinkActive="bg-brand-600 text-white shadow-lg" class="flex items-center px-3 py-2 text-xs font-medium rounded-xl hover:bg-slate-800 transition-all">
+              <i class="fa-solid fa-receipt w-5 text-center mr-2.5"></i> Accounts & Ledger
+            </a>
 
-          <a routerLink="/letterhead" (click)="closeMobileMenu()" routerLinkActive="bg-brand-600 text-white shadow-lg" class="flex items-center px-3 py-2 text-xs font-medium rounded-xl hover:bg-slate-800 transition-all">
-            <i class="fa-solid fa-signature w-5 text-center mr-2.5"></i> Letterhead & Branding
-          </a>
+            <a routerLink="/letterhead" (click)="closeMobileMenu()" routerLinkActive="bg-brand-600 text-white shadow-lg" class="flex items-center px-3 py-2 text-xs font-medium rounded-xl hover:bg-slate-800 transition-all">
+              <i class="fa-solid fa-signature w-5 text-center mr-2.5"></i> Letterhead & Branding
+            </a>
 
-          <a *ngIf="canManageStaff()" routerLink="/staff" (click)="closeMobileMenu()" routerLinkActive="bg-brand-600 text-white shadow-lg" class="flex items-center px-3 py-2 text-xs font-medium rounded-xl hover:bg-slate-800 transition-all">
-            <i class="fa-solid fa-users-gear w-5 text-center mr-2.5"></i> Staff & Permissions
-          </a>
+            <a routerLink="/staff" (click)="closeMobileMenu()" routerLinkActive="bg-brand-600 text-white shadow-lg" class="flex items-center px-3 py-2 text-xs font-medium rounded-xl hover:bg-slate-800 transition-all">
+              <i class="fa-solid fa-users-gear w-5 text-center mr-2.5"></i> Staff & Permissions
+            </a>
 
-          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 pt-3 pb-1">SaaS & Support</div>
+            <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 pt-3 pb-1">SaaS & Support</div>
 
-          <a routerLink="/subscription" (click)="closeMobileMenu()" routerLinkActive="bg-brand-600 text-white shadow-lg" class="flex items-center px-3 py-2 text-xs font-medium rounded-xl hover:bg-slate-800 transition-all">
-            <i class="fa-solid fa-credit-card w-5 text-center mr-2.5"></i> Subscription & Billing
-          </a>
+            <a routerLink="/subscription" (click)="closeMobileMenu()" routerLinkActive="bg-brand-600 text-white shadow-lg" class="flex items-center px-3 py-2 text-xs font-medium rounded-xl hover:bg-slate-800 transition-all">
+              <i class="fa-solid fa-credit-card w-5 text-center mr-2.5"></i> Subscription & Billing
+            </a>
 
-          <a routerLink="/support" (click)="closeMobileMenu()" routerLinkActive="bg-brand-600 text-white shadow-lg" class="flex items-center px-3 py-2 text-xs font-medium rounded-xl hover:bg-slate-800 transition-all">
-            <i class="fa-solid fa-headset w-5 text-center mr-2.5"></i> Helpdesk & Support
-          </a>
+            <a routerLink="/support" (click)="closeMobileMenu()" routerLinkActive="bg-brand-600 text-white shadow-lg" class="flex items-center px-3 py-2 text-xs font-medium rounded-xl hover:bg-slate-800 transition-all">
+              <i class="fa-solid fa-headset w-5 text-center mr-2.5"></i> Helpdesk & Support
+            </a>
+          </ng-container>
 
           <ng-container *ngIf="isSuperAdmin()">
             <div class="text-[10px] font-bold uppercase tracking-wider text-amber-400 px-3 pt-3 pb-1">Super Admin</div>
@@ -221,43 +223,45 @@ import { ToastService } from '../../../core/services/toast.service';
               <i class="fa-solid fa-list-check w-5 text-center mr-3"></i> Case Management
             </a>
 
-            <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400 px-3 pt-4 pb-1">Lab Operations</div>
+            <ng-container *ngIf="canManageLab()">
+              <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400 px-3 pt-4 pb-1">Lab Operations</div>
 
-            <a routerLink="/tests" routerLinkActive="bg-brand-600 text-white shadow-lg shadow-brand-600/30" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg hover:bg-slate-800 transition-all">
-              <i class="fa-solid fa-dna w-5 text-center mr-3"></i> Test Catalog & Rates
-            </a>
+              <a routerLink="/tests" routerLinkActive="bg-brand-600 text-white shadow-lg shadow-brand-600/30" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg hover:bg-slate-800 transition-all">
+                <i class="fa-solid fa-dna w-5 text-center mr-3"></i> Test Catalog & Rates
+              </a>
 
-            <a routerLink="/doctors" routerLinkActive="bg-brand-600 text-white shadow-lg shadow-brand-600/30" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg hover:bg-slate-800 transition-all">
-              <i class="fa-solid fa-user-doctor w-5 text-center mr-3"></i> Doctor Referrals
-            </a>
+              <a routerLink="/doctors" routerLinkActive="bg-brand-600 text-white shadow-lg shadow-brand-600/30" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg hover:bg-slate-800 transition-all">
+                <i class="fa-solid fa-user-doctor w-5 text-center mr-3"></i> Doctor Referrals
+              </a>
 
-            <a routerLink="/agents" routerLinkActive="bg-brand-600 text-white shadow-lg shadow-brand-600/30" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg hover:bg-slate-800 transition-all">
-              <i class="fa-solid fa-motorcycle w-5 text-center mr-3"></i> Collection Centres / Agents
-            </a>
+              <a routerLink="/agents" routerLinkActive="bg-brand-600 text-white shadow-lg shadow-brand-600/30" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg hover:bg-slate-800 transition-all">
+                <i class="fa-solid fa-motorcycle w-5 text-center mr-3"></i> Collection Centres / Agents
+              </a>
 
-            <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400 px-3 pt-4 pb-1">Finance & Branding</div>
+              <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400 px-3 pt-4 pb-1">Finance & Branding</div>
 
-            <a routerLink="/transactions" routerLinkActive="bg-brand-600 text-white shadow-lg shadow-brand-600/30" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg hover:bg-slate-800 transition-all">
-              <i class="fa-solid fa-receipt w-5 text-center mr-3"></i> Accounts & Ledger
-            </a>
+              <a routerLink="/transactions" routerLinkActive="bg-brand-600 text-white shadow-lg shadow-brand-600/30" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg hover:bg-slate-800 transition-all">
+                <i class="fa-solid fa-receipt w-5 text-center mr-3"></i> Accounts & Ledger
+              </a>
 
-            <a routerLink="/letterhead" routerLinkActive="bg-brand-600 text-white shadow-lg shadow-brand-600/30" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg hover:bg-slate-800 transition-all">
-              <i class="fa-solid fa-signature w-5 text-center mr-3"></i> Letterhead & Branding
-            </a>
+              <a routerLink="/letterhead" routerLinkActive="bg-brand-600 text-white shadow-lg shadow-brand-600/30" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg hover:bg-slate-800 transition-all">
+                <i class="fa-solid fa-signature w-5 text-center mr-3"></i> Letterhead & Branding
+              </a>
 
-            <a *ngIf="canManageStaff()" routerLink="/staff" routerLinkActive="bg-brand-600 text-white shadow-lg shadow-brand-600/30" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg hover:bg-slate-800 transition-all">
-              <i class="fa-solid fa-users-gear w-5 text-center mr-3"></i> Staff & Permissions
-            </a>
+              <a routerLink="/staff" routerLinkActive="bg-brand-600 text-white shadow-lg shadow-brand-600/30" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg hover:bg-slate-800 transition-all">
+                <i class="fa-solid fa-users-gear w-5 text-center mr-3"></i> Staff & Permissions
+              </a>
 
-            <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400 px-3 pt-4 pb-1">SaaS & Support</div>
+              <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400 px-3 pt-4 pb-1">SaaS & Support</div>
 
-            <a routerLink="/subscription" routerLinkActive="bg-brand-600 text-white shadow-lg shadow-brand-600/30" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg hover:bg-slate-800 transition-all">
-              <i class="fa-solid fa-credit-card w-5 text-center mr-3"></i> Subscription & Billing
-            </a>
+              <a routerLink="/subscription" routerLinkActive="bg-brand-600 text-white shadow-lg shadow-brand-600/30" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg hover:bg-slate-800 transition-all">
+                <i class="fa-solid fa-credit-card w-5 text-center mr-3"></i> Subscription & Billing
+              </a>
 
-            <a routerLink="/support" routerLinkActive="bg-brand-600 text-white shadow-lg shadow-brand-600/30" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg hover:bg-slate-800 transition-all">
-              <i class="fa-solid fa-headset w-5 text-center mr-3"></i> Helpdesk & Support
-            </a>
+              <a routerLink="/support" routerLinkActive="bg-brand-600 text-white shadow-lg shadow-brand-600/30" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg hover:bg-slate-800 transition-all">
+                <i class="fa-solid fa-headset w-5 text-center mr-3"></i> Helpdesk & Support
+              </a>
+            </ng-container>
 
             <ng-container *ngIf="isSuperAdmin()">
               <div class="text-[11px] font-bold uppercase tracking-wider text-amber-400 px-3 pt-4 pb-1">Super Admin</div>
@@ -290,6 +294,7 @@ export class LayoutComponent implements OnInit {
   currentUser = this.authService.currentUserSignal;
   isSuperAdmin = this.authService.isSuperAdmin;
   canManageStaff = this.authService.canManageStaff;
+  canManageLab = this.authService.canManageLab;
   isImpersonating = this.authService.isImpersonatingSignal;
 
   mobileMenuOpen = false;

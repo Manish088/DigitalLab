@@ -25,6 +25,10 @@ export class AuthService {
     const role = this.currentUserSignal()?.role;
     return role === 'LabAdmin' || role === 'LabManager' || role === 'SuperAdmin';
   });
+  canManageLab = computed(() => {
+    const role = this.currentUserSignal()?.role;
+    return role === 'LabAdmin' || role === 'LabManager' || role === 'SuperAdmin';
+  });
 
   constructor(private http: HttpClient, private router: Router) {}
 

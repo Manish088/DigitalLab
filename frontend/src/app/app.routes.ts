@@ -17,7 +17,7 @@ import { StaffComponent } from './pages/staff/staff.component';
 import { SubscriptionComponent } from './pages/subscription/subscription.component';
 import { SupportComponent } from './pages/support/support.component';
 import { SuperAdminComponent } from './pages/super-admin/super-admin.component';
-import { authGuard, superAdminGuard, subscriptionActiveGuard, staffManagementGuard } from './core/guards/auth.guard';
+import { authGuard, superAdminGuard, subscriptionActiveGuard, staffManagementGuard, labManagementGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   { path: '', component: LandingPageComponent },
@@ -37,14 +37,14 @@ export const routes: Routes = [
       { path: 'cases', component: CaseListComponent },
       { path: 'cases/add', component: AddCaseComponent, canActivate: [subscriptionActiveGuard] },
       { path: 'investigations/:id', component: ResultEntryComponent, canActivate: [subscriptionActiveGuard] },
-      { path: 'tests', component: TestCatalogComponent, canActivate: [subscriptionActiveGuard] },
-      { path: 'doctors', component: DoctorReferralsComponent, canActivate: [subscriptionActiveGuard] },
-      { path: 'agents', component: AgentsComponent, canActivate: [subscriptionActiveGuard] },
-      { path: 'transactions', component: TransactionsComponent, canActivate: [subscriptionActiveGuard] },
-      { path: 'letterhead', component: LetterheadComponent, canActivate: [subscriptionActiveGuard] },
-      { path: 'staff', component: StaffComponent, canActivate: [subscriptionActiveGuard, staffManagementGuard] },
-      { path: 'subscription', component: SubscriptionComponent },
-      { path: 'support', component: SupportComponent },
+      { path: 'tests', component: TestCatalogComponent, canActivate: [subscriptionActiveGuard, labManagementGuard] },
+      { path: 'doctors', component: DoctorReferralsComponent, canActivate: [subscriptionActiveGuard, labManagementGuard] },
+      { path: 'agents', component: AgentsComponent, canActivate: [subscriptionActiveGuard, labManagementGuard] },
+      { path: 'transactions', component: TransactionsComponent, canActivate: [subscriptionActiveGuard, labManagementGuard] },
+      { path: 'letterhead', component: LetterheadComponent, canActivate: [subscriptionActiveGuard, labManagementGuard] },
+      { path: 'staff', component: StaffComponent, canActivate: [subscriptionActiveGuard, labManagementGuard] },
+      { path: 'subscription', component: SubscriptionComponent, canActivate: [labManagementGuard] },
+      { path: 'support', component: SupportComponent, canActivate: [labManagementGuard] },
       { path: 'admin-dashboard', component: SuperAdminComponent, canActivate: [superAdminGuard] }
     ]
   },
