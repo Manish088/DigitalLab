@@ -2,6 +2,7 @@ using Lab.Application.Common.Interfaces;
 using Lab.Domain.Common;
 using Lab.Domain.Entities;
 using Lab.Infrastructure.Identity;
+using Lab.Infrastructure.Services;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -42,20 +43,20 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>, IApplica
     {
         base.OnModelCreating(builder);
 
-        // Global multi-tenancy query filters
-        builder.Entity<Patient>().HasQueryFilter(e => !e.IsDeleted && (_currentUserService.IsSuperAdmin || e.TenantId == _currentUserService.TenantId));
-        builder.Entity<DoctorReferral>().HasQueryFilter(e => !e.IsDeleted && (_currentUserService.IsSuperAdmin || e.TenantId == _currentUserService.TenantId));
-        builder.Entity<CollectionAgent>().HasQueryFilter(e => !e.IsDeleted && (_currentUserService.IsSuperAdmin || e.TenantId == _currentUserService.TenantId));
-        builder.Entity<TestCategory>().HasQueryFilter(e => !e.IsDeleted && (_currentUserService.IsSuperAdmin || e.TenantId == _currentUserService.TenantId || e.TenantId == Guid.Empty));
-        builder.Entity<TestMaster>().HasQueryFilter(e => !e.IsDeleted && (_currentUserService.IsSuperAdmin || e.TenantId == _currentUserService.TenantId || e.TenantId == Guid.Empty));
-        builder.Entity<TestParameter>().HasQueryFilter(e => !e.IsDeleted && (_currentUserService.IsSuperAdmin || e.TenantId == _currentUserService.TenantId || e.TenantId == Guid.Empty));
-        builder.Entity<ParameterNormalRange>().HasQueryFilter(e => !e.IsDeleted && (_currentUserService.IsSuperAdmin || e.TenantId == _currentUserService.TenantId || e.TenantId == Guid.Empty));
-        builder.Entity<PackageProfileItem>().HasQueryFilter(e => !e.IsDeleted && (_currentUserService.IsSuperAdmin || e.TenantId == _currentUserService.TenantId || e.TenantId == Guid.Empty));
-        builder.Entity<CaseOrder>().HasQueryFilter(e => !e.IsDeleted && (_currentUserService.IsSuperAdmin || e.TenantId == _currentUserService.TenantId));
-        builder.Entity<CaseOrderItem>().HasQueryFilter(e => !e.IsDeleted && (_currentUserService.IsSuperAdmin || e.TenantId == _currentUserService.TenantId));
-        builder.Entity<TestResultValue>().HasQueryFilter(e => !e.IsDeleted && (_currentUserService.IsSuperAdmin || e.TenantId == _currentUserService.TenantId));
-        builder.Entity<PaymentTransaction>().HasQueryFilter(e => !e.IsDeleted && (_currentUserService.IsSuperAdmin || e.TenantId == _currentUserService.TenantId));
-        builder.Entity<DoctorCommissionPayout>().HasQueryFilter(e => !e.IsDeleted && (_currentUserService.IsSuperAdmin || e.TenantId == _currentUserService.TenantId));
+        // Global multi-tenancy query filters (Strict tenant isolation)
+        builder.Entity<Patient>().HasQueryFilter(e => !e.IsDeleted && e.TenantId == _currentUserService.TenantId);
+        builder.Entity<DoctorReferral>().HasQueryFilter(e => !e.IsDeleted && e.TenantId == _currentUserService.TenantId);
+        builder.Entity<CollectionAgent>().HasQueryFilter(e => !e.IsDeleted && e.TenantId == _currentUserService.TenantId);
+        builder.Entity<TestCategory>().HasQueryFilter(e => !e.IsDeleted && e.TenantId == _currentUserService.TenantId);
+        builder.Entity<TestMaster>().HasQueryFilter(e => !e.IsDeleted && e.TenantId == _currentUserService.TenantId);
+        builder.Entity<TestParameter>().HasQueryFilter(e => !e.IsDeleted && e.TenantId == _currentUserService.TenantId);
+        builder.Entity<ParameterNormalRange>().HasQueryFilter(e => !e.IsDeleted && e.TenantId == _currentUserService.TenantId);
+        builder.Entity<PackageProfileItem>().HasQueryFilter(e => !e.IsDeleted && e.TenantId == _currentUserService.TenantId);
+        builder.Entity<CaseOrder>().HasQueryFilter(e => !e.IsDeleted && e.TenantId == _currentUserService.TenantId);
+        builder.Entity<CaseOrderItem>().HasQueryFilter(e => !e.IsDeleted && e.TenantId == _currentUserService.TenantId);
+        builder.Entity<TestResultValue>().HasQueryFilter(e => !e.IsDeleted && e.TenantId == _currentUserService.TenantId);
+        builder.Entity<PaymentTransaction>().HasQueryFilter(e => !e.IsDeleted && e.TenantId == _currentUserService.TenantId);
+        builder.Entity<DoctorCommissionPayout>().HasQueryFilter(e => !e.IsDeleted && e.TenantId == _currentUserService.TenantId);
         builder.Entity<SupportTicket>().HasQueryFilter(e => !e.IsDeleted && (_currentUserService.IsSuperAdmin || e.TenantId == _currentUserService.TenantId));
         builder.Entity<SupportTicketReply>().HasQueryFilter(e => !e.IsDeleted);
 
@@ -141,7 +142,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>, IApplica
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        var currentTenantId = _currentUserService.TenantId;
+        var currentTenantId = _currentUserService.TenantId ?? (_currentUserService.IsSuperAdmin ? CurrentUserService.MasterTenantId : (Guid?)null);
         var currentUserId = _currentUserService.UserId;
 
         foreach (var entry in ChangeTracker.Entries<BaseEntity>())

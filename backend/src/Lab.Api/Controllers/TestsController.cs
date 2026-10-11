@@ -3,6 +3,7 @@ using Lab.Application.DTOs;
 using Lab.Domain.Entities;
 using Lab.Domain.Enums;
 using Lab.Infrastructure.Data;
+using Lab.Infrastructure.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -15,24 +16,28 @@ namespace Lab.Api.Controllers;
 public class TestsController : ControllerBase
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICurrentUserService _currentUserService;
 
-    public TestsController(IApplicationDbContext context)
+    public TestsController(IApplicationDbContext context, ICurrentUserService currentUserService)
     {
         _context = context;
+        _currentUserService = currentUserService;
     }
 
     [HttpGet("categories")]
     public async Task<ActionResult<List<TestCategoryDto>>> GetCategories()
     {
-        if (!await _context.TestCategories.IgnoreQueryFilters().AnyAsync())
+        var tenantId = _currentUserService.TenantId ?? CurrentUserService.MasterTenantId;
+        if (!await _context.TestCategories.AnyAsync(c => c.TenantId == tenantId))
         {
             if (_context is ApplicationDbContext appDb)
             {
-                await DbInitializer.SeedStandardCatalogForTenantAsync(appDb, Guid.Empty);
+                await DbInitializer.SeedStandardCatalogForTenantAsync(appDb, tenantId);
             }
         }
 
         var list = await _context.TestCategories
+            .Where(c => c.TenantId == tenantId)
             .Include(c => c.Tests)
             .OrderBy(c => c.DisplayOrder)
             .Select(c => new TestCategoryDto(
@@ -41,7 +46,7 @@ public class TestsController : ControllerBase
                 c.CategoryName,
                 c.DisplayOrder,
                 c.IsActive,
-                c.Tests.Count
+                c.Tests.Count(t => t.TenantId == tenantId && !t.IsDeleted)
             ))
             .ToListAsync();
 
@@ -51,8 +56,10 @@ public class TestsController : ControllerBase
     [HttpPost("categories")]
     public async Task<ActionResult<TestCategoryDto>> CreateCategory([FromBody] CreateTestCategoryDto dto)
     {
+        var tenantId = _currentUserService.TenantId ?? CurrentUserService.MasterTenantId;
         var cat = new TestCategory
         {
+            TenantId = tenantId,
             CategoryCode = dto.CategoryCode,
             CategoryName = dto.CategoryName,
             DisplayOrder = dto.DisplayOrder,
@@ -68,16 +75,18 @@ public class TestsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<List<TestMasterDto>>> GetTests([FromQuery] string? search, [FromQuery] Guid? categoryId)
     {
-        if (!await _context.Tests.IgnoreQueryFilters().AnyAsync())
+        var tenantId = _currentUserService.TenantId ?? CurrentUserService.MasterTenantId;
+        if (!await _context.Tests.AnyAsync(t => t.TenantId == tenantId))
         {
             if (_context is ApplicationDbContext appDb)
             {
-                await DbInitializer.SeedStandardCatalogForTenantAsync(appDb, Guid.Empty);
+                await DbInitializer.SeedStandardCatalogForTenantAsync(appDb, tenantId);
             }
         }
 
         var query = _context.Tests
             .AsNoTracking()
+            .Where(t => t.TenantId == tenantId)
             .Include(t => t.Category)
             .AsQueryable();
 
@@ -99,7 +108,7 @@ public class TestsController : ControllerBase
 
         var parameters = await _context.TestParameters
             .AsNoTracking()
-            .Where(p => testIds.Contains(p.TestId))
+            .Where(p => testIds.Contains(p.TestId) && p.TenantId == tenantId)
             .OrderBy(p => p.DisplayOrder)
             .ToListAsync();
 
@@ -107,7 +116,7 @@ public class TestsController : ControllerBase
 
         var normalRanges = await _context.ParameterNormalRanges
             .AsNoTracking()
-            .Where(r => paramIds.Contains(r.ParameterId))
+            .Where(r => paramIds.Contains(r.ParameterId) && r.TenantId == tenantId)
             .ToListAsync();
 
         var rangesByParam = normalRanges
@@ -169,8 +178,10 @@ public class TestsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<TestMasterDto>> CreateTest([FromBody] CreateTestMasterDto dto)
     {
+        var tenantId = _currentUserService.TenantId ?? CurrentUserService.MasterTenantId;
         var test = new TestMaster
         {
+            TenantId = tenantId,
             CategoryId = dto.CategoryId,
             TestCode = dto.TestCode,
             TestName = dto.TestName,
@@ -197,6 +208,7 @@ public class TestsController : ControllerBase
             {
                 var param = new TestParameter
                 {
+                    TenantId = tenantId,
                     TestId = test.Id,
                     ParameterCode = pDto.ParameterCode,
                     ParameterName = pDto.ParameterName,
@@ -218,6 +230,7 @@ public class TestsController : ControllerBase
                     {
                         var range = new ParameterNormalRange
                         {
+                            TenantId = tenantId,
                             ParameterId = param.Id,
                             ApplicableGender = rDto.ApplicableGender,
                             MinAgeDays = rDto.MinAgeDays,
@@ -242,7 +255,8 @@ public class TestsController : ControllerBase
     [HttpPatch("{id}/price")]
     public async Task<IActionResult> UpdateTestPrice(Guid id, [FromBody] UpdateTestPriceDto dto)
     {
-        var test = await _context.Tests.FirstOrDefaultAsync(t => t.Id == id);
+        var tenantId = _currentUserService.TenantId ?? CurrentUserService.MasterTenantId;
+        var test = await _context.Tests.FirstOrDefaultAsync(t => t.Id == id && t.TenantId == tenantId);
         if (test == null) return NotFound(new { message = "Test not found." });
 
         test.Price = dto.Price;
@@ -258,9 +272,10 @@ public class TestsController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateTest(Guid id, [FromBody] UpdateTestMasterDto dto)
     {
+        var tenantId = _currentUserService.TenantId ?? CurrentUserService.MasterTenantId;
         var test = await _context.Tests
             .Include(t => t.Parameters)
-            .FirstOrDefaultAsync(t => t.Id == id);
+            .FirstOrDefaultAsync(t => t.Id == id && t.TenantId == tenantId);
 
         if (test == null) return NotFound(new { message = "Test not found." });
 
@@ -283,7 +298,7 @@ public class TestsController : ControllerBase
         if (dto.Parameters != null && dto.Parameters.Any())
         {
             var oldParamIds = test.Parameters.Select(p => p.Id).ToList();
-            var oldRanges = await _context.ParameterNormalRanges.Where(r => oldParamIds.Contains(r.ParameterId)).ToListAsync();
+            var oldRanges = await _context.ParameterNormalRanges.Where(r => oldParamIds.Contains(r.ParameterId) && r.TenantId == tenantId).ToListAsync();
             _context.ParameterNormalRanges.RemoveRange(oldRanges);
             _context.TestParameters.RemoveRange(test.Parameters);
             await _context.SaveChangesAsync();
@@ -292,6 +307,7 @@ public class TestsController : ControllerBase
             {
                 var param = new TestParameter
                 {
+                    TenantId = tenantId,
                     TestId = test.Id,
                     ParameterCode = pDto.ParameterCode,
                     ParameterName = pDto.ParameterName,
@@ -313,6 +329,7 @@ public class TestsController : ControllerBase
                     {
                         var range = new ParameterNormalRange
                         {
+                            TenantId = tenantId,
                             ParameterId = param.Id,
                             ApplicableGender = rDto.ApplicableGender,
                             MinAgeDays = rDto.MinAgeDays,
@@ -337,9 +354,10 @@ public class TestsController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteTest(Guid id)
     {
+        var tenantId = _currentUserService.TenantId ?? CurrentUserService.MasterTenantId;
         var test = await _context.Tests
             .Include(t => t.Parameters)
-            .FirstOrDefaultAsync(t => t.Id == id);
+            .FirstOrDefaultAsync(t => t.Id == id && t.TenantId == tenantId);
 
         if (test == null) return NotFound(new { message = "Test not found." });
 
@@ -352,7 +370,7 @@ public class TestsController : ControllerBase
         }
 
         var paramIds = test.Parameters.Select(p => p.Id).ToList();
-        var ranges = await _context.ParameterNormalRanges.Where(r => paramIds.Contains(r.ParameterId)).ToListAsync();
+        var ranges = await _context.ParameterNormalRanges.Where(r => paramIds.Contains(r.ParameterId) && r.TenantId == tenantId).ToListAsync();
         _context.ParameterNormalRanges.RemoveRange(ranges);
         _context.TestParameters.RemoveRange(test.Parameters);
         _context.Tests.Remove(test);

@@ -1,6 +1,7 @@
 using Lab.Domain.Entities;
 using Lab.Domain.Enums;
 using Lab.Infrastructure.Identity;
+using Lab.Infrastructure.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -30,11 +31,12 @@ public static class DbInitializer
 
         // 2. Seed Master Laboratory Tenant & Super Admin
         var superAdminEmail = "admin@digitlab.com";
-        var masterTenant = await context.Tenants.FirstOrDefaultAsync(t => t.LabCode == "MASTER" || t.Email == superAdminEmail);
+        var masterTenant = await context.Tenants.FirstOrDefaultAsync(t => t.Id == CurrentUserService.MasterTenantId || t.LabCode == "MASTER" || t.Email == superAdminEmail);
         if (masterTenant == null)
         {
             masterTenant = new TenantLab
             {
+                Id = CurrentUserService.MasterTenantId,
                 LabCode = "MASTER",
                 LabName = "DigitLab Central Diagnostic Lab",
                 Tagline = "Central Pathology & Diagnostic Services",
@@ -217,10 +219,124 @@ public static class DbInitializer
             Console.WriteLine($"[DbInitializer] SystemSettings warning: {ex.Message}");
         }
 
-        // 4. Always ensure standard master catalog is seeded for Guid.Empty (Global Catalog for SuperAdmin & all new labs)
-        await SeedStandardCatalogForTenantAsync(context, Guid.Empty);
+        // 4. Data Cleanup & Migration: Remove/reassign Guid.Empty tests and deduplicate tests per tenant
+        try
+        {
+            var masterId = masterTenant.Id;
 
-        // 4.1 Ensure standard master catalog is seeded for ALL existing tenants (if any)
+            // Step A: Reassign or remove any Guid.Empty tests
+            var emptyTests = await context.Tests.IgnoreQueryFilters().Where(t => t.TenantId == Guid.Empty).ToListAsync();
+            if (emptyTests.Any())
+            {
+                foreach (var t in emptyTests)
+                {
+                    var masterAlreadyHas = await context.Tests.IgnoreQueryFilters().AnyAsync(x => x.TenantId == masterId && x.TestCode == t.TestCode);
+                    var isUsed = await context.CaseOrderItems.IgnoreQueryFilters().AnyAsync(x => x.TestId == t.Id);
+                    if (masterAlreadyHas && !isUsed)
+                    {
+                        var pList = await context.TestParameters.IgnoreQueryFilters().Where(p => p.TestId == t.Id).ToListAsync();
+                        var pIds = pList.Select(p => p.Id).ToList();
+                        var rList = await context.ParameterNormalRanges.IgnoreQueryFilters().Where(r => pIds.Contains(r.ParameterId)).ToListAsync();
+                        context.ParameterNormalRanges.RemoveRange(rList);
+                        context.TestParameters.RemoveRange(pList);
+                        context.Tests.Remove(t);
+                    }
+                    else
+                    {
+                        t.TenantId = masterId;
+                    }
+                }
+                await context.SaveChangesAsync();
+            }
+
+            // Step B: Reassign or remove empty categories
+            var emptyCats = await context.TestCategories.IgnoreQueryFilters().Where(c => c.TenantId == Guid.Empty).ToListAsync();
+            if (emptyCats.Any())
+            {
+                foreach (var c in emptyCats)
+                {
+                    var masterAlreadyHas = await context.TestCategories.IgnoreQueryFilters().AnyAsync(x => x.TenantId == masterId && x.CategoryCode == c.CategoryCode);
+                    var isUsed = await context.Tests.IgnoreQueryFilters().AnyAsync(x => x.CategoryId == c.Id);
+                    if (masterAlreadyHas && !isUsed)
+                    {
+                        context.TestCategories.Remove(c);
+                    }
+                    else
+                    {
+                        c.TenantId = masterId;
+                    }
+                }
+                await context.SaveChangesAsync();
+            }
+
+            // Step C: Reassign any remaining empty parameters and ranges to masterId
+            var emptyParams = await context.TestParameters.IgnoreQueryFilters().Where(p => p.TenantId == Guid.Empty).ToListAsync();
+            foreach (var p in emptyParams) p.TenantId = masterId;
+            var emptyRanges = await context.ParameterNormalRanges.IgnoreQueryFilters().Where(r => r.TenantId == Guid.Empty).ToListAsync();
+            foreach (var r in emptyRanges) r.TenantId = masterId;
+            await context.SaveChangesAsync();
+
+            // Step D: Reassign any patients, doctors, cases that had Guid.Empty to masterId
+            var emptyPatients = await context.Patients.IgnoreQueryFilters().Where(p => p.TenantId == Guid.Empty).ToListAsync();
+            foreach (var p in emptyPatients) p.TenantId = masterId;
+            var emptyCases = await context.CaseOrders.IgnoreQueryFilters().Where(c => c.TenantId == Guid.Empty).ToListAsync();
+            foreach (var c in emptyCases) c.TenantId = masterId;
+            var emptyOrderItems = await context.CaseOrderItems.IgnoreQueryFilters().Where(i => i.TenantId == Guid.Empty).ToListAsync();
+            foreach (var i in emptyOrderItems) i.TenantId = masterId;
+            var emptyDoctors = await context.Doctors.IgnoreQueryFilters().Where(d => d.TenantId == Guid.Empty).ToListAsync();
+            foreach (var d in emptyDoctors) d.TenantId = masterId;
+            var emptyAgents = await context.CollectionAgents.IgnoreQueryFilters().Where(a => a.TenantId == Guid.Empty).ToListAsync();
+            foreach (var a in emptyAgents) a.TenantId = masterId;
+            await context.SaveChangesAsync();
+
+            // Step E: Deduplicate tests within each tenant so every tenant has exactly 1 of each test
+            var allTenantsList = await context.Tenants.Select(t => t.Id).ToListAsync();
+            foreach (var tid in allTenantsList)
+            {
+                var tenantTests = await context.Tests.IgnoreQueryFilters().Where(t => t.TenantId == tid).ToListAsync();
+                var grouped = tenantTests.GroupBy(t => t.TestCode).Where(g => g.Count() > 1);
+                foreach (var g in grouped)
+                {
+                    var toDrop = g.Skip(1).ToList();
+                    foreach (var dup in toDrop)
+                    {
+                        var isUsed = await context.CaseOrderItems.IgnoreQueryFilters().AnyAsync(x => x.TestId == dup.Id);
+                        if (!isUsed)
+                        {
+                            var pList = await context.TestParameters.IgnoreQueryFilters().Where(p => p.TestId == dup.Id).ToListAsync();
+                            var pIds = pList.Select(p => p.Id).ToList();
+                            var rList = await context.ParameterNormalRanges.IgnoreQueryFilters().Where(r => pIds.Contains(r.ParameterId)).ToListAsync();
+                            context.ParameterNormalRanges.RemoveRange(rList);
+                            context.TestParameters.RemoveRange(pList);
+                            context.Tests.Remove(dup);
+                        }
+                    }
+                    await context.SaveChangesAsync();
+                }
+
+                var tenantCats = await context.TestCategories.IgnoreQueryFilters().Where(c => c.TenantId == tid).ToListAsync();
+                var groupedCats = tenantCats.GroupBy(c => c.CategoryCode).Where(g => g.Count() > 1);
+                foreach (var gc in groupedCats)
+                {
+                    var toDrop = gc.Skip(1).ToList();
+                    foreach (var dupCat in toDrop)
+                    {
+                        var isUsed = await context.Tests.IgnoreQueryFilters().AnyAsync(x => x.CategoryId == dupCat.Id);
+                        if (!isUsed)
+                        {
+                            context.TestCategories.Remove(dupCat);
+                        }
+                    }
+                    await context.SaveChangesAsync();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[DbInitializer] Deduplication notice: {ex.Message}");
+        }
+
+        // 5. Ensure standard master catalog is seeded for each existing tenant (NOT Guid.Empty!)
         var allTenants = await context.Tenants.ToListAsync();
         foreach (var t in allTenants)
         {
