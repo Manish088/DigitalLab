@@ -46,3 +46,6 @@ Desktop.ini
 !.vscode/launch.json
 !.vscode/extensions.json
 .idea/
+
+# Environment Variables
+.env

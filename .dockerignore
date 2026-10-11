@@ -1,0 +1,14 @@
+.git/
+.github/
+dist_production/
+publish-output/
+*.zip
+backend/bin/
+backend/obj/
+backend/.vs/
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+frontend/.vscode/
+*.bat
+FREE_HOSTING_GUIDE.md

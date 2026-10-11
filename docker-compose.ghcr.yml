@@ -1,0 +1,57 @@
+# ========================================================
+# DIGITLAB - RUN DIRECTLY FROM GITHUB CONTAINER REGISTRY
+# Automatically runs images built and pushed by GitHub Actions
+# ========================================================
+
+services:
+  backend:
+    image: ghcr.io/manish088/digitlab-backend:latest
+    container_name: digitlab-backend
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-5000}:5000"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:5000
+      - DatabaseProvider=${DATABASE_PROVIDER:-SqlServer}
+      - ConnectionStrings__DefaultConnection=${SQLSERVER_CONNECTION_STRING}
+      - ConnectionStrings__SqliteConnection=${SQLITE_CONNECTION_STRING:-Data Source=/app/data/lab_lims.db}
+      - Jwt__Key=${JWT_KEY:-DigitLabEnterpriseSuperSecretEncryptionKey2026!@#$%^&*}
+      - Jwt__Issuer=${JWT_ISSUER:-DigitLab}
+      - Jwt__Audience=${JWT_AUDIENCE:-DigitLabApp}
+    volumes:
+      - sqlite_data:/app/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - digitlab-net
+
+  frontend:
+    image: ghcr.io/manish088/digitlab-frontend:latest
+    container_name: digitlab-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+      - "4200:80"
+    depends_on:
+      - backend
+    networks:
+      - digitlab-net
+
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: digitlab-watchtower
+    restart: unless-stopped
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_POLL_INTERVAL=60 # Checks GitHub every 60s for new commits/images
+      - WATCHTOWER_INCLUDE_RESTARTING=true
+    volumes:
+      - //var/run/docker.sock:/var/run/docker.sock
+
+networks:
+  digitlab-net:
+    driver: bridge
+
+volumes:
+  sqlite_data:
