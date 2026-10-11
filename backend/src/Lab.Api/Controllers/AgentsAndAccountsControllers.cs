@@ -346,7 +346,7 @@ public class StaffController : ControllerBase
     {
         var tenantId = _currentUserService.TenantId;
         var list = await _userManager.Users
-            .Where(u => u.TenantId == tenantId)
+            .Where(u => u.TenantId == tenantId && u.Role != "LabAdmin" && u.Role != "SuperAdmin")
             .OrderBy(u => u.FullName)
             .Select(u => new StaffUserDto(
                 u.Id,
@@ -399,6 +399,9 @@ public class StaffController : ControllerBase
         var user = await _userManager.FindByIdAsync(id);
         if (user == null || user.TenantId != _currentUserService.TenantId)
             return NotFound();
+
+        if (user.Role == "LabAdmin" || user.Role == "SuperAdmin")
+            return BadRequest(new { message = "Cannot deactivate the primary laboratory owner account." });
 
         user.IsActive = !user.IsActive;
         await _userManager.UpdateAsync(user);

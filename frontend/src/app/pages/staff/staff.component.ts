@@ -20,7 +20,15 @@ import { ToastService } from '../../core/services/toast.service';
         </button>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div *ngIf="staffList.length === 0" class="bg-white p-8 sm:p-12 rounded-2xl border border-dashed border-slate-300 text-center space-y-3 shadow-sm">
+        <div class="w-14 h-14 mx-auto rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center text-2xl shadow-inner">
+          <i class="fa-solid fa-users"></i>
+        </div>
+        <h3 class="font-bold text-slate-800 text-base">No Staff Members Added Yet</h3>
+        <p class="text-xs text-slate-500 max-w-md mx-auto">The laboratory owner/admin is not listed here. Click <strong class="text-brand-600">"+ Add Staff Member"</strong> above to create accounts for Receptionists, Technicians, Pathologists, or Managers.</p>
+      </div>
+
+      <div *ngIf="staffList.length > 0" class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div *ngFor="let s of staffList" class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-3">
           <div class="flex items-start justify-between">
             <div class="flex items-center space-x-3">
@@ -53,7 +61,7 @@ import { ToastService } from '../../core/services/toast.service';
             </div>
           </div>
 
-          <button (click)="toggleStatus(s.id)" class="w-full py-1.5 rounded-lg border text-xs font-semibold hover:bg-slate-50">
+          <button (click)="toggleStatus(s.id)" class="w-full py-1.5 rounded-lg border text-xs font-semibold hover:bg-slate-50 cursor-pointer">
             {{ s.isActive ? 'Deactivate Account' : 'Activate Account' }}
           </button>
         </div>
@@ -129,7 +137,7 @@ export class StaffComponent implements OnInit {
 
   loadStaff(): void {
     this.api.getStaff().subscribe(res => {
-      this.staffList = res || [];
+      this.staffList = (res || []).filter((s: any) => s.role !== 'LabAdmin' && s.role !== 'SuperAdmin');
       this.cdr.detectChanges();
     });
   }
