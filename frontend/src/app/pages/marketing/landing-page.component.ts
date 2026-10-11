@@ -35,7 +35,7 @@ export interface FlowerPetal {
 
       <!-- Auspicious Launch Celebratory Pill Banner -->
       <div *ngIf="flowerShowerActive()"
-        class="fixed top-24 left-1/2 -translate-x-1/2 z-50 px-5 py-2 rounded-full bg-gradient-to-r from-rose-600 via-amber-500 to-rose-600 text-white font-bold text-xs sm:text-sm shadow-2xl flex items-center space-x-2 animate-bounce pointer-events-none border border-white/40 shadow-rose-500/25 backdrop-blur-md">
+        class="fixed top-32 sm:top-36 left-1/2 -translate-x-1/2 z-[60] px-5 py-2.5 rounded-full bg-gradient-to-r from-rose-600 via-amber-500 to-rose-600 text-white font-bold text-xs sm:text-sm shadow-2xl flex items-center space-x-2 animate-bounce pointer-events-none border border-white/40 shadow-rose-500/30 backdrop-blur-md">
         <span class="text-base">🌸</span>
         <span class="tracking-wide font-black uppercase text-[11px] sm:text-xs">शुभ आरंभ • Auspicious Launch Celebration</span>
         <span class="text-base">🌸</span>
