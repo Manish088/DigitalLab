@@ -28,8 +28,40 @@ public static class DbInitializer
             }
         }
 
-        // 2. Seed Super Admin
+        // 2. Seed Master Laboratory Tenant & Super Admin
         var superAdminEmail = "admin@digitlab.com";
+        var masterTenant = await context.Tenants.FirstOrDefaultAsync(t => t.LabCode == "MASTER" || t.Email == superAdminEmail);
+        if (masterTenant == null)
+        {
+            masterTenant = new TenantLab
+            {
+                LabCode = "MASTER",
+                LabName = "DigitLab Central Diagnostic Lab",
+                Tagline = "Central Pathology & Diagnostic Services",
+                OwnerName = "Super Administrator",
+                Email = superAdminEmail,
+                Phone = "7706087066",
+                Address = "Central Laboratory HQ",
+                City = "Delhi",
+                State = "Delhi",
+                SubscriptionStatus = "Active",
+                SubscriptionExpiryDate = DateTime.UtcNow.AddYears(50),
+                IsActive = true
+            };
+            await context.Tenants.AddAsync(masterTenant);
+            await context.SaveChangesAsync();
+        }
+        else
+        {
+            masterTenant.IsActive = true;
+            masterTenant.SubscriptionStatus = "Active";
+            if (!masterTenant.SubscriptionExpiryDate.HasValue || masterTenant.SubscriptionExpiryDate.Value < DateTime.UtcNow)
+            {
+                masterTenant.SubscriptionExpiryDate = DateTime.UtcNow.AddYears(50);
+            }
+            await context.SaveChangesAsync();
+        }
+
         var superAdmin = await userManager.FindByEmailAsync(superAdminEmail);
         if (superAdmin == null)
         {
@@ -40,11 +72,20 @@ public static class DbInitializer
                 FullName = "Super Administrator",
                 Role = "SuperAdmin",
                 Designation = "Platform Owner",
+                TenantId = masterTenant.Id,
                 EmailConfirmed = true,
                 IsActive = true
             };
             await userManager.CreateAsync(superAdmin, "Admin@12345");
             await userManager.AddToRoleAsync(superAdmin, "SuperAdmin");
+        }
+        else
+        {
+            if (!superAdmin.TenantId.HasValue || superAdmin.TenantId == Guid.Empty)
+            {
+                superAdmin.TenantId = masterTenant.Id;
+                await userManager.UpdateAsync(superAdmin);
+            }
         }
 
         // 3. Seed Subscription Plans

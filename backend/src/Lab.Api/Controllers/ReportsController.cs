@@ -132,7 +132,7 @@ public class ReportsController : ControllerBase
         if (caseOrder == null) return false;
 
         var lab = await _context.Tenants.IgnoreQueryFilters().AsNoTracking().FirstOrDefaultAsync(t => t.Id == caseOrder.TenantId);
-        if (lab == null) return false;
+        if (lab == null) return true;
 
         var isExpired = lab.SubscriptionStatus == "Expired" || 
                         lab.SubscriptionStatus == "Suspended" || 

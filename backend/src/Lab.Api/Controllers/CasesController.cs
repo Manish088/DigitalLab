@@ -203,39 +203,57 @@ public class CasesController : ControllerBase
         try
         {
             // 0. Enforce Subscription & Tenant Validity
-            var tenantId = _currentUserService.TenantId;
-            var lab = await _context.Tenants.FirstOrDefaultAsync(t => t.Id == tenantId);
-            if (lab == null || !lab.IsActive)
-            {
-                return StatusCode(403, new { message = "Your laboratory account is suspended or inactive. Please contact Super Administrator." });
-            }
+            var isSuperAdmin = _currentUserService.IsSuperAdmin || User.IsInRole("SuperAdmin");
+            var effectiveTenantId = _currentUserService.TenantId;
 
-            var isExpired = lab.SubscriptionStatus == "Expired" || 
-                            lab.SubscriptionStatus == "Suspended" || 
-                            (lab.SubscriptionExpiryDate.HasValue && lab.SubscriptionExpiryDate.Value < DateTime.UtcNow);
-
-            if (isExpired)
+            if (!isSuperAdmin)
             {
-                if (lab.SubscriptionStatus != "Suspended")
+                var lab = await _context.Tenants.FirstOrDefaultAsync(t => t.Id == effectiveTenantId);
+                if (lab == null || !lab.IsActive)
                 {
-                    lab.SubscriptionStatus = "Expired";
-                    await _context.SaveChangesAsync();
+                    return StatusCode(403, new { message = "Your laboratory account is suspended or inactive. Please contact Super Administrator." });
                 }
-                var expFormatted = lab.SubscriptionExpiryDate.HasValue ? lab.SubscriptionExpiryDate.Value.ToString("dd MMM yyyy") : "Expired";
-                return StatusCode(402, new { message = $"Your laboratory subscription expired on {expFormatted}. Please renew your plan to register new patients and create bills." });
-            }
 
-            // Monthly Case Quota Check
-            if (lab.SubscriptionPlanId.HasValue)
-            {
-                var plan = await _context.SubscriptionPlans.FirstOrDefaultAsync(p => p.Id == lab.SubscriptionPlanId.Value);
-                if (plan != null && plan.MaxCasesPerMonth > 0)
+                var isExpired = lab.SubscriptionStatus == "Expired" || 
+                                lab.SubscriptionStatus == "Suspended" || 
+                                (lab.SubscriptionExpiryDate.HasValue && lab.SubscriptionExpiryDate.Value < DateTime.UtcNow);
+
+                if (isExpired)
                 {
-                    var startOfMonth = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
-                    var casesThisMonth = await _context.CaseOrders.CountAsync(c => c.CreatedAt >= startOfMonth);
-                    if (casesThisMonth >= plan.MaxCasesPerMonth)
+                    if (lab.SubscriptionStatus != "Suspended")
                     {
-                        return StatusCode(402, new { message = $"You have reached your monthly quota limit of {plan.MaxCasesPerMonth} cases. Please upgrade your subscription plan to continue billing." });
+                        lab.SubscriptionStatus = "Expired";
+                        await _context.SaveChangesAsync();
+                    }
+                    var expFormatted = lab.SubscriptionExpiryDate.HasValue ? lab.SubscriptionExpiryDate.Value.ToString("dd MMM yyyy") : "Expired";
+                    return StatusCode(402, new { message = $"Your laboratory subscription expired on {expFormatted}. Please renew your plan to register new patients and create bills." });
+                }
+
+                // Monthly Case Quota Check
+                if (lab.SubscriptionPlanId.HasValue)
+                {
+                    var plan = await _context.SubscriptionPlans.FirstOrDefaultAsync(p => p.Id == lab.SubscriptionPlanId.Value);
+                    if (plan != null && plan.MaxCasesPerMonth > 0)
+                    {
+                        var startOfMonth = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
+                        var casesThisMonth = await _context.CaseOrders.CountAsync(c => c.CreatedAt >= startOfMonth);
+                        if (casesThisMonth >= plan.MaxCasesPerMonth)
+                        {
+                            return StatusCode(402, new { message = $"You have reached your monthly quota limit of {plan.MaxCasesPerMonth} cases. Please upgrade your subscription plan to continue billing." });
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // For SuperAdmin, if no TenantId assigned in token, fallback to master tenant or first active tenant
+                if (!effectiveTenantId.HasValue || effectiveTenantId == Guid.Empty)
+                {
+                    var masterLab = await _context.Tenants.FirstOrDefaultAsync(t => t.LabCode == "MASTER" && t.IsActive)
+                                    ?? await _context.Tenants.FirstOrDefaultAsync(t => t.IsActive);
+                    if (masterLab != null)
+                    {
+                        effectiveTenantId = masterLab.Id;
                     }
                 }
             }
@@ -280,6 +298,7 @@ public class CasesController : ControllerBase
 
                 var newPatient = new Patient
                 {
+                    TenantId = effectiveTenantId ?? Guid.Empty,
                     Uhid = uhid,
                     FullName = dto.NewPatient.FullName?.Trim() ?? "Unknown",
                     Gender = dto.NewPatient.Gender,
@@ -367,6 +386,7 @@ public class CasesController : ControllerBase
 
             var caseOrder = new CaseOrder
             {
+                TenantId = effectiveTenantId ?? Guid.Empty,
                 CaseNumber = caseNumber,
                 Barcode = barcode,
                 PatientId = patientId,
@@ -401,6 +421,7 @@ public class CasesController : ControllerBase
 
                 var orderItem = new CaseOrderItem
                 {
+                    TenantId = effectiveTenantId ?? Guid.Empty,
                     CaseOrderId = caseOrder.Id,
                     TestId = test.Id,
                     ItemPrice = Math.Round(test.Price, 2),
@@ -427,6 +448,7 @@ public class CasesController : ControllerBase
 
                     var resVal = new TestResultValue
                     {
+                        TenantId = effectiveTenantId ?? Guid.Empty,
                         CaseOrderItemId = orderItem.Id,
                         ParameterId = param.Id,
                         ParameterName = param.ParameterName,
@@ -452,6 +474,7 @@ public class CasesController : ControllerBase
 
                 var tx = new PaymentTransaction
                 {
+                    TenantId = effectiveTenantId ?? Guid.Empty,
                     CaseOrderId = caseOrder.Id,
                     TransactionNumber = txNum,
                     TransactionDate = DateTime.UtcNow,
@@ -495,6 +518,7 @@ public class CasesController : ControllerBase
         var txCount = await _context.PaymentTransactions.CountAsync() + 1;
         var tx = new PaymentTransaction
         {
+            TenantId = caseOrder.TenantId,
             CaseOrderId = caseOrder.Id,
             TransactionNumber = $"TXN-{DateTime.UtcNow:yyyyMM}-{txCount:D4}",
             TransactionDate = DateTime.UtcNow,
@@ -517,26 +541,30 @@ public class CasesController : ControllerBase
         try
         {
             // 0. Enforce Subscription & Tenant Validity
-            var tenantId = _currentUserService.TenantId;
-            var lab = await _context.Tenants.FirstOrDefaultAsync(t => t.Id == tenantId);
-            if (lab == null || !lab.IsActive)
+            var isSuperAdmin = _currentUserService.IsSuperAdmin || User.IsInRole("SuperAdmin");
+            if (!isSuperAdmin)
             {
-                return StatusCode(403, new { message = "Your laboratory account is suspended or inactive." });
-            }
-
-            var isExpired = lab.SubscriptionStatus == "Expired" || 
-                            lab.SubscriptionStatus == "Suspended" || 
-                            (lab.SubscriptionExpiryDate.HasValue && lab.SubscriptionExpiryDate.Value < DateTime.UtcNow);
-
-            if (isExpired)
-            {
-                if (lab.SubscriptionStatus != "Suspended")
+                var tenantId = _currentUserService.TenantId;
+                var lab = await _context.Tenants.FirstOrDefaultAsync(t => t.Id == tenantId);
+                if (lab == null || !lab.IsActive)
                 {
-                    lab.SubscriptionStatus = "Expired";
-                    await _context.SaveChangesAsync();
+                    return StatusCode(403, new { message = "Your laboratory account is suspended or inactive." });
                 }
-                var expFormatted = lab.SubscriptionExpiryDate.HasValue ? lab.SubscriptionExpiryDate.Value.ToString("dd MMM yyyy") : "Expired";
-                return StatusCode(402, new { message = $"Your laboratory subscription expired on {expFormatted}. Adding new tests and modifying case billing are disabled. Please renew your plan." });
+
+                var isExpired = lab.SubscriptionStatus == "Expired" || 
+                                lab.SubscriptionStatus == "Suspended" || 
+                                (lab.SubscriptionExpiryDate.HasValue && lab.SubscriptionExpiryDate.Value < DateTime.UtcNow);
+
+                if (isExpired)
+                {
+                    if (lab.SubscriptionStatus != "Suspended")
+                    {
+                        lab.SubscriptionStatus = "Expired";
+                        await _context.SaveChangesAsync();
+                    }
+                    var expFormatted = lab.SubscriptionExpiryDate.HasValue ? lab.SubscriptionExpiryDate.Value.ToString("dd MMM yyyy") : "Expired";
+                    return StatusCode(402, new { message = $"Your laboratory subscription expired on {expFormatted}. Adding new tests and modifying case billing are disabled. Please renew your plan." });
+                }
             }
 
             var caseOrder = await _context.CaseOrders
@@ -576,6 +604,7 @@ public class CasesController : ControllerBase
 
                 var orderItem = new CaseOrderItem
                 {
+                    TenantId = caseOrder.TenantId,
                     CaseOrderId = caseOrder.Id,
                     TestId = test.Id,
                     ItemPrice = Math.Round(test.Price, 2),
@@ -602,6 +631,7 @@ public class CasesController : ControllerBase
 
                     var resVal = new TestResultValue
                     {
+                        TenantId = caseOrder.TenantId,
                         CaseOrderItemId = orderItem.Id,
                         ParameterId = param.Id,
                         ParameterName = param.ParameterName,
@@ -637,6 +667,7 @@ public class CasesController : ControllerBase
 
                 var tx = new PaymentTransaction
                 {
+                    TenantId = caseOrder.TenantId,
                     CaseOrderId = caseOrder.Id,
                     TransactionNumber = txNum,
                     TransactionDate = DateTime.UtcNow,

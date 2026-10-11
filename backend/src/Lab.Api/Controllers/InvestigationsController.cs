@@ -145,8 +145,9 @@ public class InvestigationsController : ControllerBase
 
         if (caseOrder == null) return NotFound(new { message = "Case order not found." });
 
+        var isSuperAdmin = _currentUserService.IsSuperAdmin || User.IsInRole("SuperAdmin");
         var labTenant = await _context.Tenants.IgnoreQueryFilters().FirstOrDefaultAsync(t => t.Id == caseOrder.TenantId);
-        var isExpired = labTenant != null && (labTenant.SubscriptionStatus == "Expired" || labTenant.SubscriptionStatus == "Suspended" || (labTenant.SubscriptionExpiryDate.HasValue && labTenant.SubscriptionExpiryDate.Value < DateTime.UtcNow));
+        var isExpired = !isSuperAdmin && labTenant != null && (labTenant.SubscriptionStatus == "Expired" || labTenant.SubscriptionStatus == "Suspended" || (labTenant.SubscriptionExpiryDate.HasValue && labTenant.SubscriptionExpiryDate.Value < DateTime.UtcNow));
         if (isExpired)
         {
             return StatusCode(403, new { message = "Laboratory subscription has expired. Please renew your plan to enter diagnostic test results." });
@@ -302,8 +303,9 @@ public class InvestigationsController : ControllerBase
 
         if (caseOrder == null) return NotFound(new { message = "Case order not found." });
 
+        var isSuperAdmin = _currentUserService.IsSuperAdmin || User.IsInRole("SuperAdmin");
         var labTenant = await _context.Tenants.IgnoreQueryFilters().FirstOrDefaultAsync(t => t.Id == caseOrder.TenantId);
-        var isExpired = labTenant != null && (labTenant.SubscriptionStatus == "Expired" || labTenant.SubscriptionStatus == "Suspended" || (labTenant.SubscriptionExpiryDate.HasValue && labTenant.SubscriptionExpiryDate.Value < DateTime.UtcNow));
+        var isExpired = !isSuperAdmin && labTenant != null && (labTenant.SubscriptionStatus == "Expired" || labTenant.SubscriptionStatus == "Suspended" || (labTenant.SubscriptionExpiryDate.HasValue && labTenant.SubscriptionExpiryDate.Value < DateTime.UtcNow));
         if (isExpired)
         {
             return StatusCode(403, new { message = "Laboratory subscription has expired. Please renew your plan to approve diagnostic reports." });
@@ -364,8 +366,9 @@ public class InvestigationsController : ControllerBase
 
         if (caseOrder == null) return NotFound(new { message = "Case order not found." });
 
+        var isSuperAdmin = _currentUserService.IsSuperAdmin || User.IsInRole("SuperAdmin");
         var labTenant = await _context.Tenants.IgnoreQueryFilters().FirstOrDefaultAsync(t => t.Id == caseOrder.TenantId);
-        var isExpired = labTenant != null && (labTenant.SubscriptionStatus == "Expired" || labTenant.SubscriptionStatus == "Suspended" || (labTenant.SubscriptionExpiryDate.HasValue && labTenant.SubscriptionExpiryDate.Value < DateTime.UtcNow));
+        var isExpired = !isSuperAdmin && labTenant != null && (labTenant.SubscriptionStatus == "Expired" || labTenant.SubscriptionStatus == "Suspended" || (labTenant.SubscriptionExpiryDate.HasValue && labTenant.SubscriptionExpiryDate.Value < DateTime.UtcNow));
         if (isExpired)
         {
             return StatusCode(403, new { message = "Laboratory subscription has expired. Please renew your plan to modify or unlock diagnostic reports." });
