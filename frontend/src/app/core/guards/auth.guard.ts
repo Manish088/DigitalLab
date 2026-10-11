@@ -62,3 +62,26 @@ export const subscriptionActiveGuard: CanActivateFn = () => {
   );
 };
 
+// Launch Day Gate: Shows /launch today by default, then runs normally next day onwards
+export const launchGateGuard: CanActivateFn = () => {
+  const router = inject(Router);
+
+  // 1. If unlocked in current session, allow through
+  if (sessionStorage.getItem('digitlab_unlocked_session') === 'true') {
+    return true;
+  }
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const launchDateStr = localStorage.getItem('digitlab_launch_date');
+  const isSiteLaunched = localStorage.getItem('digitlab_site_launched') === 'true';
+
+  // 2. If already launched on a previous day (next day onwards), run simply without launch screen
+  if (isSiteLaunched && launchDateStr && launchDateStr < todayStr) {
+    return true;
+  }
+
+  // 3. For today (Launch Day), redirect to /launch screen
+  router.navigate(['/launch']);
+  return false;
+};
+

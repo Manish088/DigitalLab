@@ -17,10 +17,11 @@ import { StaffComponent } from './pages/staff/staff.component';
 import { SubscriptionComponent } from './pages/subscription/subscription.component';
 import { SupportComponent } from './pages/support/support.component';
 import { SuperAdminComponent } from './pages/super-admin/super-admin.component';
-import { authGuard, superAdminGuard, subscriptionActiveGuard } from './core/guards/auth.guard';
+import { authGuard, superAdminGuard, subscriptionActiveGuard, launchGateGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
-  { path: '', component: LandingPageComponent },
+  { path: '', component: LandingPageComponent, canActivate: [launchGateGuard] },
+  { path: 'home', component: LandingPageComponent },
   { path: 'login', component: LoginComponent },
   { path: 'launch', component: SetupComponent },
   { path: 'setup', component: SetupComponent },

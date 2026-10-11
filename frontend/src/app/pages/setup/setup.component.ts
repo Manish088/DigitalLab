@@ -54,16 +54,16 @@ interface Confetti {
       <div class="absolute -bottom-32 -right-32 w-80 h-80 bg-amber-500/15 rounded-full blur-3xl pointer-events-none"></div>
 
       <!-- Celebration Overlay during Fireworks -->
-      <div *ngIf="showFireworks" class="fixed inset-0 z-40 bg-black/40 backdrop-blur-xs flex flex-col items-center justify-center text-center p-6 animate-in fade-in zoom-in duration-500">
+      <div *ngIf="showFireworks" class="fixed inset-0 z-40 bg-black/60 backdrop-blur-xs flex flex-col items-center justify-center text-center p-6 animate-in fade-in zoom-in duration-500">
         <div class="space-y-4 max-w-xl">
           <div class="inline-flex items-center px-4 py-1.5 rounded-full bg-amber-400/20 border border-amber-400/40 text-amber-300 text-xs font-black tracking-widest uppercase shadow-lg shadow-amber-400/20 animate-pulse">
-            💥 FIRECRACKER CELEBRATION 💥
+            🌸 शुभ नवरात्रि • NAVRATRI GRAND LAUNCH 🌸
           </div>
           <h1 class="text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 tracking-tight drop-shadow-lg font-heading">
-            WEBSITE LAUNCHED!
+            💥 WEBSITE LAUNCHED! 💥
           </h1>
           <p class="text-sm sm:text-base text-slate-200 font-semibold drop-shadow">
-            DigitalLab Cloud Pathology Platform is Now Live & Open Worldwide.
+            DigitalLab Cloud Pathology Platform is Now Live Worldwide on this Auspicious Navratri!
           </p>
           <div class="pt-4 flex items-center justify-center space-x-2 text-xs text-brand-300 font-mono">
             <i class="fa-solid fa-circle-notch fa-spin text-sm"></i>
@@ -75,16 +75,21 @@ interface Confetti {
       <!-- Main Launch Card -->
       <div *ngIf="!showFireworks" class="relative z-10 w-full max-w-md">
         
-        <!-- Header Brand Icon -->
+        <!-- Header Brand Icon & Navratri Badge -->
         <div class="text-center mb-6">
-          <div class="inline-flex p-4 bg-gradient-to-b from-slate-800 to-slate-900 rounded-3xl border border-slate-700/80 shadow-2xl shadow-brand-500/10 mb-4 ring-1 ring-white/10">
-            <i class="fa-solid fa-rocket text-4xl text-transparent bg-clip-text bg-gradient-to-tr from-amber-400 via-orange-400 to-brand-400"></i>
+          <div class="inline-flex items-center px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold tracking-wide uppercase shadow-sm mb-4">
+            🌸 शुभ नवरात्रि • Grand Platform Inauguration 🌸
+          </div>
+          <div class="block">
+            <div class="inline-flex p-4 bg-gradient-to-b from-slate-800 to-slate-900 rounded-3xl border border-slate-700/80 shadow-2xl shadow-brand-500/10 mb-4 ring-1 ring-white/10">
+              <i class="fa-solid fa-rocket text-4xl text-transparent bg-clip-text bg-gradient-to-tr from-amber-400 via-orange-400 to-brand-400"></i>
+            </div>
           </div>
           <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-white font-heading">
-            Official Website Launch
+            Official Production Launch
           </h1>
-          <p class="mt-1.5 text-xs text-slate-400 font-medium">
-            Enter Secret Launch Password to burst crackers & launch the platform
+          <p class="mt-1.5 text-xs text-slate-300 font-medium">
+            Type Password <span class="text-amber-400 font-bold font-mono">8866</span> to burst firecrackers & inaugurate website
           </p>
         </div>
 
@@ -98,7 +103,7 @@ interface Confetti {
               </label>
               
               <div class="relative max-w-xs mx-auto">
-                <input #pinInput type="password" [(ngModel)]="launchCode" name="launchCode" autofocus required
+                <input #pinInput type="password" [(ngModel)]="launchCode" (ngModelChange)="onCodeChange($event)" name="launchCode" autofocus required
                   maxlength="10" placeholder="••••"
                   class="block w-full text-center tracking-[0.6em] text-2xl font-mono font-black py-3.5 bg-slate-950/90 border-2 border-slate-700 focus:border-amber-400 rounded-2xl text-amber-300 placeholder-slate-600 focus:outline-none focus:ring-4 focus:ring-amber-400/20 transition-all shadow-inner">
               </div>
@@ -115,7 +120,7 @@ interface Confetti {
               class="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-slate-950 font-black text-sm hover:brightness-110 active:scale-[0.98] transition-all shadow-xl shadow-amber-500/25 flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-50">
               <i *ngIf="loading" class="fa-solid fa-circle-notch fa-spin text-base"></i>
               <i *ngIf="!loading" class="fa-solid fa-wand-magic-sparkles text-base"></i>
-              <span>{{ loading ? 'Launching Platform...' : '💥 Launch Website with Fireworks' }}</span>
+              <span>{{ loading ? 'Inaugurating Platform...' : '💥 Launch Website with Fireworks' }}</span>
             </button>
           </form>
 
@@ -131,8 +136,8 @@ interface Confetti {
         </div>
 
         <!-- Footer Note -->
-        <p class="text-center text-[11px] text-slate-500 mt-6 font-medium">
-          DigitalLab Cloud Pathology Platform • One-Time Production Launch
+        <p class="text-center text-[11px] text-slate-400 mt-6 font-medium">
+          DigitalLab Cloud Pathology Platform • Auspicious Navratri Launch
         </p>
 
       </div>
@@ -232,6 +237,12 @@ export class SetupComponent implements OnInit, OnDestroy {
     }
   }
 
+  onCodeChange(val: string) {
+    if ((val || '').trim() === '8866') {
+      this.onTriggerLaunch();
+    }
+  }
+
   onTriggerLaunch() {
     const code = (this.launchCode || '').trim();
     if (!code) {
@@ -267,8 +278,11 @@ export class SetupComponent implements OnInit, OnDestroy {
     this.showFireworks = true;
     this.cdr.markForCheck();
 
-    // Store site launched flag
+    // Store site launched flag and current launch date
+    const todayStr = new Date().toISOString().split('T')[0];
     localStorage.setItem('digitlab_site_launched', 'true');
+    localStorage.setItem('digitlab_launch_date', todayStr);
+    sessionStorage.setItem('digitlab_unlocked_session', 'true');
 
     setTimeout(() => {
       this.initCanvas();
