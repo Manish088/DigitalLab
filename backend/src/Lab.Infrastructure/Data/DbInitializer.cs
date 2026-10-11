@@ -176,7 +176,10 @@ public static class DbInitializer
             Console.WriteLine($"[DbInitializer] SystemSettings warning: {ex.Message}");
         }
 
-        // 4. Ensure standard master catalog is seeded for ALL existing tenants (if any)
+        // 4. Always ensure standard master catalog is seeded for Guid.Empty (Global Catalog for SuperAdmin & all new labs)
+        await SeedStandardCatalogForTenantAsync(context, Guid.Empty);
+
+        // 4.1 Ensure standard master catalog is seeded for ALL existing tenants (if any)
         var allTenants = await context.Tenants.ToListAsync();
         foreach (var t in allTenants)
         {
@@ -483,6 +486,148 @@ public static class DbInitializer
                     NormalRanges = { new() { TenantId = tenantId, ApplicableGender = Gender.Both, MinNormalValue = 0.35m, MaxNormalValue = 4.94m, TextualRange = "0.35 - 4.94 uIU/mL" } } }
             };
             await context.TestParameters.AddRangeAsync(tftParams);
+            await context.SaveChangesAsync();
+        }
+
+        // 9. Blood Glucose Post Prandial (PPBS)
+        if (!await context.Tests.IgnoreQueryFilters().AnyAsync(t => t.TenantId == tenantId && t.TestCode == "PPBS"))
+        {
+            var ppbsTest = new TestMaster
+            {
+                TenantId = tenantId,
+                CategoryId = catBio.Id,
+                TestCode = "PPBS",
+                TestName = "Blood Glucose Post Prandial (PPBS / 2 Hrs Post Meal)",
+                ShortName = "Sugar PP",
+                ItemType = TestItemType.SingleTest,
+                SampleType = "Fluoride Plasma",
+                ContainerVialType = "Grey / Sodium Fluoride Tube",
+                Price = 80,
+                CostPrice = 15,
+                TatHours = 2,
+                Methodology = "GOD-POD Enzymatic Method",
+                PreTestInstructions = "Blood sample must be taken exactly 2 hours after completion of meal."
+            };
+            await context.Tests.AddAsync(ppbsTest);
+            await context.SaveChangesAsync();
+
+            var ppbsParam = new TestParameter
+            {
+                TenantId = tenantId,
+                TestId = ppbsTest.Id,
+                ParameterCode = "GLUPP",
+                ParameterName = "Post Prandial Blood Glucose",
+                Unit = "mg/dL",
+                InputType = ParameterInputType.Numeric,
+                DisplayOrder = 1,
+                NormalRanges = { new() { TenantId = tenantId, ApplicableGender = Gender.Both, MinNormalValue = 70, MaxNormalValue = 140, PanicHighValue = 350, TextualRange = "< 140 mg/dL Normal" } }
+            };
+            await context.TestParameters.AddAsync(ppbsParam);
+            await context.SaveChangesAsync();
+        }
+
+        // 10. Glycated Hemoglobin (HbA1c)
+        if (!await context.Tests.IgnoreQueryFilters().AnyAsync(t => t.TenantId == tenantId && t.TestCode == "HBA1C"))
+        {
+            var hba1cTest = new TestMaster
+            {
+                TenantId = tenantId,
+                CategoryId = catBio.Id,
+                TestCode = "HBA1C",
+                TestName = "Glycated Hemoglobin (HbA1c with Estimated Average Glucose)",
+                ShortName = "HbA1c",
+                ItemType = TestItemType.SingleTest,
+                SampleType = "Whole Blood EDTA",
+                ContainerVialType = "Lavender / EDTA Tube",
+                Price = 450,
+                CostPrice = 90,
+                TatHours = 4,
+                Methodology = "High Performance Liquid Chromatography (HPLC)",
+                ClinicalSignificance = "Reflects average blood glucose levels over the past 2 to 3 months for diabetes monitoring."
+            };
+            await context.Tests.AddAsync(hba1cTest);
+            await context.SaveChangesAsync();
+
+            var hba1cParams = new List<TestParameter>
+            {
+                new() { TenantId = tenantId, TestId = hba1cTest.Id, ParameterCode = "HBA1C", ParameterName = "HbA1c (Glycated Hb)", Unit = "%", InputType = ParameterInputType.Numeric, DisplayOrder = 1,
+                    NormalRanges = { new() { TenantId = tenantId, ApplicableGender = Gender.Both, MinNormalValue = 4.0m, MaxNormalValue = 5.6m, TextualRange = "< 5.7% Non-Diabetic, 5.7 - 6.4% Prediabetes, >= 6.5% Diabetes" } } },
+                new() { TenantId = tenantId, TestId = hba1cTest.Id, ParameterCode = "EAG", ParameterName = "Estimated Average Glucose (eAG)", Unit = "mg/dL", InputType = ParameterInputType.Numeric, DisplayOrder = 2,
+                    NormalRanges = { new() { TenantId = tenantId, ApplicableGender = Gender.Both, MinNormalValue = 70, MaxNormalValue = 126, TextualRange = "70 - 126 mg/dL" } } }
+            };
+            await context.TestParameters.AddRangeAsync(hba1cParams);
+            await context.SaveChangesAsync();
+        }
+
+        // 11. Widal Slide Agglutination (Typhoid Fever)
+        if (!await context.Tests.IgnoreQueryFilters().AnyAsync(t => t.TenantId == tenantId && t.TestCode == "WIDAL"))
+        {
+            var widalTest = new TestMaster
+            {
+                TenantId = tenantId,
+                CategoryId = catSer.Id,
+                TestCode = "WIDAL",
+                TestName = "Widal Slide Agglutination Test (Enteric / Typhoid Fever)",
+                ShortName = "Widal Test",
+                ItemType = TestItemType.SingleTest,
+                SampleType = "Serum Clotted",
+                ContainerVialType = "Yellow / Gel SST",
+                Price = 180,
+                CostPrice = 35,
+                TatHours = 2,
+                Methodology = "Rapid Slide Agglutination Method",
+                ClinicalSignificance = "Serological diagnosis of enteric fever caused by Salmonella enterica."
+            };
+            await context.Tests.AddAsync(widalTest);
+            await context.SaveChangesAsync();
+
+            var widalParams = new List<TestParameter>
+            {
+                new() { TenantId = tenantId, TestId = widalTest.Id, ParameterCode = "TYPH_O", ParameterName = "Salmonella Typhi 'O' Antigen", Unit = "Titre", InputType = ParameterInputType.Text, DefaultValue = "Negative (< 1:80)", DisplayOrder = 1,
+                    NormalRanges = { new() { TenantId = tenantId, ApplicableGender = Gender.Both, TextualRange = "Titre < 1:80 is Non-Significant" } } },
+                new() { TenantId = tenantId, TestId = widalTest.Id, ParameterCode = "TYPH_H", ParameterName = "Salmonella Typhi 'H' Antigen", Unit = "Titre", InputType = ParameterInputType.Text, DefaultValue = "Negative (< 1:80)", DisplayOrder = 2,
+                    NormalRanges = { new() { TenantId = tenantId, ApplicableGender = Gender.Both, TextualRange = "Titre < 1:80 is Non-Significant" } } },
+                new() { TenantId = tenantId, TestId = widalTest.Id, ParameterCode = "PARA_AH", ParameterName = "Salmonella Paratyphi 'AH' Antigen", Unit = "Titre", InputType = ParameterInputType.Text, DefaultValue = "Negative (< 1:80)", DisplayOrder = 3,
+                    NormalRanges = { new() { TenantId = tenantId, ApplicableGender = Gender.Both, TextualRange = "Titre < 1:80 is Non-Significant" } } },
+                new() { TenantId = tenantId, TestId = widalTest.Id, ParameterCode = "PARA_BH", ParameterName = "Salmonella Paratyphi 'BH' Antigen", Unit = "Titre", InputType = ParameterInputType.Text, DefaultValue = "Negative (< 1:80)", DisplayOrder = 4,
+                    NormalRanges = { new() { TenantId = tenantId, ApplicableGender = Gender.Both, TextualRange = "Titre < 1:80 is Non-Significant" } } }
+            };
+            await context.TestParameters.AddRangeAsync(widalParams);
+            await context.SaveChangesAsync();
+        }
+
+        // 12. Dengue Combo (NS1 Antigen + IgG/IgM Antibodies)
+        if (!await context.Tests.IgnoreQueryFilters().AnyAsync(t => t.TenantId == tenantId && t.TestCode == "DENGUE"))
+        {
+            var dengueTest = new TestMaster
+            {
+                TenantId = tenantId,
+                CategoryId = catSer.Id,
+                TestCode = "DENGUE",
+                TestName = "Dengue Duo / Combo (NS1 Antigen + IgG & IgM Antibodies)",
+                ShortName = "Dengue Combo",
+                ItemType = TestItemType.SingleTest,
+                SampleType = "Serum Clotted",
+                ContainerVialType = "Yellow / Gel SST",
+                Price = 750,
+                CostPrice = 180,
+                TatHours = 2,
+                Methodology = "Rapid Immunochromatographic Card Test",
+                ClinicalSignificance = "Rapid differential detection of early Dengue NS1 antigen and secondary IgG/IgM immune response."
+            };
+            await context.Tests.AddAsync(dengueTest);
+            await context.SaveChangesAsync();
+
+            var dengueParams = new List<TestParameter>
+            {
+                new() { TenantId = tenantId, TestId = dengueTest.Id, ParameterCode = "DENG_NS1", ParameterName = "Dengue NS1 Antigen", Unit = "", InputType = ParameterInputType.Text, DefaultValue = "Negative", DisplayOrder = 1,
+                    NormalRanges = { new() { TenantId = tenantId, ApplicableGender = Gender.Both, TextualRange = "Negative / Non-Reactive" } } },
+                new() { TenantId = tenantId, TestId = dengueTest.Id, ParameterCode = "DENG_IGM", ParameterName = "Dengue IgM Antibody", Unit = "", InputType = ParameterInputType.Text, DefaultValue = "Negative", DisplayOrder = 2,
+                    NormalRanges = { new() { TenantId = tenantId, ApplicableGender = Gender.Both, TextualRange = "Negative / Non-Reactive" } } },
+                new() { TenantId = tenantId, TestId = dengueTest.Id, ParameterCode = "DENG_IGG", ParameterName = "Dengue IgG Antibody", Unit = "", InputType = ParameterInputType.Text, DefaultValue = "Negative", DisplayOrder = 3,
+                    NormalRanges = { new() { TenantId = tenantId, ApplicableGender = Gender.Both, TextualRange = "Negative / Non-Reactive" } } }
+            };
+            await context.TestParameters.AddRangeAsync(dengueParams);
             await context.SaveChangesAsync();
         }
     }

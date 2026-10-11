@@ -436,7 +436,7 @@ export class LetterheadComponent implements OnInit {
   getImageUrl(url?: string): string {
     if (!url) return '';
     if (url.startsWith('http') || url.startsWith('data:')) return url;
-    return `http://localhost:5000${url.startsWith('/') ? '' : '/'}${url}`;
+    return `${url.startsWith('/') ? '' : '/'}${url}`;
   }
 
   onFileSelected(event: Event, assetType: string): void {

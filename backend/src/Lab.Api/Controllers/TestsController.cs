@@ -2,6 +2,7 @@ using Lab.Application.Common.Interfaces;
 using Lab.Application.DTOs;
 using Lab.Domain.Entities;
 using Lab.Domain.Enums;
+using Lab.Infrastructure.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -23,6 +24,14 @@ public class TestsController : ControllerBase
     [HttpGet("categories")]
     public async Task<ActionResult<List<TestCategoryDto>>> GetCategories()
     {
+        if (!await _context.TestCategories.IgnoreQueryFilters().AnyAsync())
+        {
+            if (_context is ApplicationDbContext appDb)
+            {
+                await DbInitializer.SeedStandardCatalogForTenantAsync(appDb, Guid.Empty);
+            }
+        }
+
         var list = await _context.TestCategories
             .Include(c => c.Tests)
             .OrderBy(c => c.DisplayOrder)
@@ -59,6 +68,14 @@ public class TestsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<List<TestMasterDto>>> GetTests([FromQuery] string? search, [FromQuery] Guid? categoryId)
     {
+        if (!await _context.Tests.IgnoreQueryFilters().AnyAsync())
+        {
+            if (_context is ApplicationDbContext appDb)
+            {
+                await DbInitializer.SeedStandardCatalogForTenantAsync(appDb, Guid.Empty);
+            }
+        }
+
         var query = _context.Tests
             .AsNoTracking()
             .Include(t => t.Category)

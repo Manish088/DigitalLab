@@ -1,27 +1,8 @@
-import { Component, signal, computed, OnInit, OnDestroy, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, signal, computed, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
-export interface FlowerPetal {
-  x: number;
-  y: number;
-  size: number;
-  speedY: number;
-  speedX: number;
-  swayAngle: number;
-  swaySpeed: number;
-  swayRadius: number;
-  rotation: number;
-  rotationSpeed: number;
-  flipAngle: number;
-  flipSpeed: number;
-  opacity: number;
-  type: 'rose' | 'marigold' | 'jasmine';
-  color: string;
-  colorLight: string;
-  colorDark: string;
-}
 
 @Component({
   selector: 'app-landing-page',
@@ -30,16 +11,6 @@ export interface FlowerPetal {
   template: `
     <div class="min-h-screen bg-white text-slate-900 font-sans selection:bg-brand-500 selection:text-white relative overflow-hidden">
       
-      <!-- Celebratory Flower Shower Canvas (फूलों की बारिश) -->
-      <canvas #flowerCanvas class="fixed inset-0 pointer-events-none z-50 w-full h-full" [style.display]="flowerShowerActive() ? 'block' : 'none'"></canvas>
-
-      <!-- Auspicious Launch Celebratory Pill Banner -->
-      <div *ngIf="flowerShowerActive()"
-        class="fixed top-32 sm:top-36 left-1/2 -translate-x-1/2 z-[60] px-5 py-2.5 rounded-full bg-gradient-to-r from-rose-600 via-amber-500 to-rose-600 text-white font-bold text-xs sm:text-sm shadow-2xl flex items-center space-x-2 animate-bounce pointer-events-none border border-white/40 shadow-rose-500/30 backdrop-blur-md">
-        <span class="text-base">🌸</span>
-        <span class="tracking-wide font-black uppercase text-[11px] sm:text-xs">शुभ आरंभ • Auspicious Launch Celebration</span>
-        <span class="text-base">🌸</span>
-      </div>
 
       <!-- Background Ambient Glow & Tech Grid -->
       <div class="fixed inset-0 bg-[linear-gradient(to_right,#e2e8f060_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f060_1px,transparent_1px)] bg-[size:4rem_4rem] pointer-events-none -z-10"></div>
@@ -58,13 +29,13 @@ export interface FlowerPetal {
       </div>
 
       <!-- Main Navigation -->
-      <nav class="border-b border-slate-200/80 backdrop-blur-xl sticky top-0 z-50 bg-white/90">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+      <nav class="border-b border-slate-200/80 backdrop-blur-xl sticky top-0 z-50 bg-white/95">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between">
           <!-- Logo Brand -->
-          <a routerLink="/home" class="flex items-center space-x-3 group">
-            <img src="logo.png" alt="DigitalLab" class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl shadow-md object-contain group-hover:scale-105 transition-transform">
+          <a routerLink="/home" class="flex items-center space-x-2.5 sm:space-x-3 group">
+            <img src="logo.png" alt="DigitalLab" class="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl shadow-md object-contain group-hover:scale-105 transition-transform">
             <div>
-              <span class="text-2xl font-black text-slate-900 font-heading tracking-tight">DigitalLab</span>
+              <span class="text-xl sm:text-2xl font-black text-slate-900 font-heading tracking-tight">DigitalLab</span>
             </div>
           </a>
 
@@ -89,7 +60,7 @@ export interface FlowerPetal {
 
           <!-- Mobile Hamburger -->
           <button type="button" (click)="mobileMenuOpen.set(!mobileMenuOpen())"
-            class="lg:hidden p-2.5 rounded-xl bg-slate-100 border border-slate-200 text-slate-700 hover:text-slate-900 focus:outline-none">
+            class="lg:hidden p-2 rounded-xl bg-slate-100 border border-slate-200 text-slate-700 hover:text-slate-900 focus:outline-none">
             <i class="fa-solid" [ngClass]="mobileMenuOpen() ? 'fa-xmark text-lg' : 'fa-bars text-lg'"></i>
           </button>
         </div>
@@ -111,119 +82,119 @@ export interface FlowerPetal {
       </nav>
 
       <!-- HERO SECTION -->
-      <header class="relative pt-12 pb-20 md:pt-20 md:pb-28 overflow-hidden bg-gradient-to-b from-slate-50/80 via-white to-white">
+      <header class="relative pt-8 pb-14 md:pt-20 md:pb-28 overflow-hidden bg-gradient-to-b from-slate-50/80 via-white to-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           
-          <div class="text-center space-y-6 max-w-4xl mx-auto">
+          <div class="text-center space-y-4 sm:space-y-6 max-w-4xl mx-auto">
             <!-- Badge -->
-            <div class="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-brand-50 border border-brand-200 text-xs font-bold text-brand-700 shadow-sm">
-              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-              <span>Next-Gen Pathology Automation for Modern Diagnostics</span>
+            <div class="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-brand-50 border border-brand-200 text-[11px] sm:text-xs font-bold text-brand-700 shadow-sm max-w-full">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping shrink-0"></span>
+              <span class="truncate">Next-Gen Pathology Automation for Modern Diagnostics</span>
             </div>
 
             <!-- Hero Headline -->
-            <h1 class="text-4xl sm:text-6xl lg:text-7xl font-black font-heading tracking-tight text-slate-900 leading-[1.15]">
+            <h1 class="text-3xl sm:text-5xl lg:text-7xl font-black font-heading tracking-tight text-slate-900 leading-[1.18] sm:leading-[1.15]">
               Run Your Entire Pathology Lab On
               <span class="bg-gradient-to-r from-brand-600 via-cyan-600 to-emerald-600 bg-clip-text text-transparent block mt-1">100% Autopilot Cloud</span>
             </h1>
 
             <!-- Subtitle -->
-            <p class="text-sm sm:text-lg text-slate-600 max-w-3xl mx-auto leading-relaxed">
+            <p class="text-xs sm:text-base lg:text-lg text-slate-600 max-w-3xl mx-auto leading-relaxed px-1">
               Say goodbye to manual register books, sample tube mix-ups, and report delays. Get <strong>Instant Barcode Tube Labels</strong>, <strong>WhatsApp PDF Reports with QR Verification</strong>, <strong>Dynamic Normal Reference Ranges</strong>, and <strong>Automated Doctor Commission Payout Vouchers</strong>.
             </p>
 
             <!-- Dual Action CTAs -->
-            <div class="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-4">
-              <a routerLink="/login" class="w-full sm:w-auto px-8 py-4 rounded-2xl font-black text-sm sm:text-base bg-gradient-to-r from-cyan-600 via-brand-600 to-emerald-600 text-white shadow-xl shadow-brand-500/25 hover:scale-105 hover:shadow-brand-500/35 transition-all flex items-center justify-center space-x-2 cursor-pointer">
-                <i class="fa-solid fa-rocket text-amber-300 text-lg"></i>
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-3 pt-3 sm:pt-4">
+              <a routerLink="/login" class="w-full sm:w-auto px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl font-black text-xs sm:text-base bg-gradient-to-r from-cyan-600 via-brand-600 to-emerald-600 text-white shadow-xl shadow-brand-500/25 hover:scale-105 transition-all flex items-center justify-center space-x-2 cursor-pointer">
+                <i class="fa-solid fa-rocket text-amber-300 text-base sm:text-lg"></i>
                 <span>Start 14-Day Free Trial (Instant Setup)</span>
               </a>
               <a href="#video-tour"
-                class="w-full sm:w-auto px-7 py-4 rounded-2xl font-bold text-sm sm:text-base bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 shadow-md hover:border-brand-500 transition-all flex items-center justify-center space-x-2 cursor-pointer">
-                <i class="fa-solid fa-circle-play text-brand-600 text-xl"></i>
+                class="w-full sm:w-auto px-5 sm:px-7 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl font-bold text-xs sm:text-base bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 shadow-md hover:border-brand-500 transition-all flex items-center justify-center space-x-2 cursor-pointer">
+                <i class="fa-solid fa-circle-play text-brand-600 text-lg sm:text-xl"></i>
                 <span>Watch Video Tour (3 Min)</span>
               </a>
             </div>
 
             <!-- 4 Trust Numbers -->
-            <div class="pt-8 grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 max-w-4xl mx-auto text-xs">
-              <div class="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm text-center">
-                <div class="text-2xl font-black text-slate-900 font-heading">1,200+</div>
-                <div class="text-[11px] text-slate-500 mt-0.5 font-medium">Active Pathology Labs</div>
+            <div class="pt-6 sm:pt-8 grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-4 max-w-4xl mx-auto text-xs">
+              <div class="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-white border border-slate-200/90 shadow-sm text-center">
+                <div class="text-lg sm:text-2xl font-black text-slate-900 font-heading">1,200+</div>
+                <div class="text-[10px] sm:text-[11px] text-slate-500 mt-0.5 font-medium">Active Pathology Labs</div>
               </div>
-              <div class="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm text-center">
-                <div class="text-2xl font-black text-emerald-600 font-heading">50,000+</div>
-                <div class="text-[11px] text-slate-500 mt-0.5 font-medium">Daily Reports Delivered</div>
+              <div class="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-white border border-slate-200/90 shadow-sm text-center">
+                <div class="text-lg sm:text-2xl font-black text-emerald-600 font-heading">50,000+</div>
+                <div class="text-[10px] sm:text-[11px] text-slate-500 mt-0.5 font-medium">Daily Reports Delivered</div>
               </div>
-              <div class="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm text-center">
-                <div class="text-2xl font-black text-brand-600 font-heading">10 Seconds</div>
-                <div class="text-[11px] text-slate-500 mt-0.5 font-medium">Patient Intake Time</div>
+              <div class="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-white border border-slate-200/90 shadow-sm text-center">
+                <div class="text-lg sm:text-2xl font-black text-brand-600 font-heading">10 Seconds</div>
+                <div class="text-[10px] sm:text-[11px] text-slate-500 mt-0.5 font-medium">Patient Intake Time</div>
               </div>
-              <div class="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm text-center">
-                <div class="text-2xl font-black text-amber-600 font-heading">100% Free</div>
-                <div class="text-[11px] text-slate-500 mt-0.5 font-medium">No Credit Card Needed</div>
+              <div class="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-white border border-slate-200/90 shadow-sm text-center">
+                <div class="text-lg sm:text-2xl font-black text-amber-600 font-heading">100% Free</div>
+                <div class="text-[10px] sm:text-[11px] text-slate-500 mt-0.5 font-medium">No Credit Card Needed</div>
               </div>
             </div>
 
           </div>
 
           <!-- Interactive Live UI Preview Window -->
-          <div class="mt-14 max-w-5xl mx-auto rounded-3xl p-3 sm:p-5 bg-white border border-slate-200/90 shadow-2xl shadow-slate-300/40 relative">
+          <div class="mt-8 sm:mt-14 max-w-5xl mx-auto rounded-2xl sm:rounded-3xl p-2.5 sm:p-5 bg-white border border-slate-200/90 shadow-2xl shadow-slate-300/40 relative">
             
             <!-- Window Bar -->
-            <div class="flex items-center justify-between px-3 py-2 border-b border-slate-100 text-xs text-slate-500 bg-slate-50/80 rounded-t-2xl">
+            <div class="flex items-center justify-between px-3 py-2 border-b border-slate-100 text-xs text-slate-500 bg-slate-50/80 rounded-t-xl sm:rounded-t-2xl">
               <div class="flex items-center space-x-2">
-                <span class="w-3 h-3 rounded-full bg-rose-400 inline-block"></span>
-                <span class="w-3 h-3 rounded-full bg-amber-400 inline-block"></span>
-                <span class="w-3 h-3 rounded-full bg-emerald-400 inline-block"></span>
+                <span class="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-rose-400 inline-block"></span>
+                <span class="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-amber-400 inline-block"></span>
+                <span class="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-emerald-400 inline-block"></span>
                 <span class="ml-2 font-mono text-[11px] text-slate-600 hidden sm:inline">DigitalLab Cloud LIMS v2.0 • Live Counter & Testing Desk</span>
               </div>
-              <span class="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold border border-emerald-200">
+              <span class="px-2 sm:px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold border border-emerald-200">
                 <i class="fa-solid fa-circle text-[7px] text-emerald-500 mr-1 animate-ping"></i> LIVE DESK
               </span>
             </div>
 
             <!-- Preview Dashboard Content -->
-            <div class="p-4 sm:p-6 space-y-4">
+            <div class="p-2.5 sm:p-6 space-y-3 sm:space-y-4">
               <!-- KPI Row -->
-              <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                  <div class="text-[11px] text-slate-500 font-semibold">Today's Registered Cases</div>
-                  <div class="text-2xl font-black text-slate-900 mt-1">54 <span class="text-xs text-emerald-600 font-bold">+22%</span></div>
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
+                <div class="bg-slate-50 p-2.5 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-200">
+                  <div class="text-[10px] sm:text-[11px] text-slate-500 font-semibold truncate">Today's Cases</div>
+                  <div class="text-base sm:text-2xl font-black text-slate-900 mt-0.5 sm:mt-1 flex items-baseline gap-1">54 <span class="text-[10px] sm:text-xs text-emerald-600 font-bold">+22%</span></div>
                 </div>
-                <div class="bg-emerald-50/60 p-4 rounded-2xl border border-emerald-200">
-                  <div class="text-[11px] text-emerald-800 font-semibold">Cash in Counter Drawer</div>
-                  <div class="text-2xl font-black text-emerald-700 mt-1">₹38,450.00</div>
+                <div class="bg-emerald-50/60 p-2.5 sm:p-4 rounded-xl sm:rounded-2xl border border-emerald-200">
+                  <div class="text-[10px] sm:text-[11px] text-emerald-800 font-semibold truncate">Cash Drawer</div>
+                  <div class="text-base sm:text-2xl font-black text-emerald-700 mt-0.5 sm:mt-1 truncate">₹38,450</div>
                 </div>
-                <div class="bg-cyan-50/60 p-4 rounded-2xl border border-cyan-200">
-                  <div class="text-[11px] text-cyan-800 font-semibold">UPI / QR Collections</div>
-                  <div class="text-2xl font-black text-cyan-700 mt-1">₹24,900.00</div>
+                <div class="bg-cyan-50/60 p-2.5 sm:p-4 rounded-xl sm:rounded-2xl border border-cyan-200">
+                  <div class="text-[10px] sm:text-[11px] text-cyan-800 font-semibold truncate">UPI Collections</div>
+                  <div class="text-base sm:text-2xl font-black text-cyan-700 mt-0.5 sm:mt-1 truncate">₹24,900</div>
                 </div>
-                <div class="bg-purple-50/60 p-4 rounded-2xl border border-purple-200">
-                  <div class="text-[11px] text-purple-800 font-semibold">Approved & WhatsApp Shared</div>
-                  <div class="text-2xl font-black text-purple-700 mt-1">51 / 54</div>
+                <div class="bg-purple-50/60 p-2.5 sm:p-4 rounded-xl sm:rounded-2xl border border-purple-200">
+                  <div class="text-[10px] sm:text-[11px] text-purple-800 font-semibold truncate">Approved & WhatsApp</div>
+                  <div class="text-base sm:text-2xl font-black text-purple-700 mt-0.5 sm:mt-1">51 / 54</div>
                 </div>
               </div>
 
               <!-- Live Patient Case Strip Preview -->
-              <div class="bg-slate-50 rounded-2xl border border-slate-200 p-4 flex flex-col md:flex-row items-center justify-between gap-4">
-                <div class="flex items-center space-x-3.5">
-                  <div class="w-11 h-11 rounded-2xl bg-brand-100 text-brand-600 border border-brand-200 flex items-center justify-center text-lg font-bold shrink-0">
+              <div class="bg-slate-50 rounded-xl sm:rounded-2xl border border-slate-200 p-3 sm:p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 sm:gap-4">
+                <div class="flex items-start sm:items-center space-x-3 min-w-0 w-full md:w-auto">
+                  <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-brand-100 text-brand-600 border border-brand-200 flex items-center justify-center text-base sm:text-lg font-bold shrink-0">
                     <i class="fa-solid fa-file-medical"></i>
                   </div>
-                  <div>
-                    <div class="flex items-center space-x-2">
-                      <span class="text-sm font-black text-slate-900">Complete Blood Count (CBC with ESR)</span>
-                      <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-brand-100 text-brand-700">#CASE-2026-0842</span>
+                  <div class="min-w-0 flex-1">
+                    <div class="flex flex-wrap items-center gap-1.5">
+                      <span class="text-xs sm:text-sm font-black text-slate-900 leading-snug">Complete Blood Count (CBC with ESR)</span>
+                      <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-brand-100 text-brand-700 shrink-0 whitespace-nowrap">#CASE-2026-0842</span>
                     </div>
-                    <div class="text-xs text-slate-500 mt-0.5">Patient: Ramesh Verma (48 Y / Male) • Ref Doc: Dr. S. K. Gupta (Cardiology)</div>
+                    <div class="text-[11px] sm:text-xs text-slate-500 mt-0.5 truncate">Patient: Ramesh Verma (48 Y / Male) • Ref Doc: Dr. S. K. Gupta</div>
                   </div>
                 </div>
-                <div class="flex items-center space-x-2">
-                  <span class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 flex items-center">
+                <div class="w-full md:w-auto flex items-center justify-between md:justify-end gap-2 pt-2 md:pt-0 border-t border-slate-200/80 md:border-0">
+                  <span class="px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 flex items-center shrink-0">
                     <i class="fa-solid fa-circle-check text-emerald-600 mr-1.5"></i> Pathologist Approved
                   </span>
-                  <a routerLink="/login" class="px-3.5 py-1.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold shadow-md transition-all">
+                  <a routerLink="/login" class="px-3 py-1.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold shadow-md transition-all shrink-0">
                     Open in Software &rarr;
                   </a>
                 </div>
@@ -372,7 +343,7 @@ export interface FlowerPetal {
                           ⚡ 8 Sec Intake
                         </span>
                       </div>
-                      <div class="grid grid-cols-2 gap-2.5 text-xs">
+                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                         <div class="p-2.5 bg-slate-950 rounded-xl border border-slate-800">
                           <div class="text-[10px] text-slate-400">Mobile Number Search</div>
                           <div class="font-bold text-white mt-0.5">+91 77060 87066 <span class="text-emerald-400 text-[10px]">✓ Found</span></div>
@@ -596,7 +567,7 @@ export interface FlowerPetal {
           </div>
 
           <!-- Interactive Calculator Widget Card -->
-          <div class="bg-white rounded-3xl p-6 sm:p-10 border border-slate-200 max-w-4xl mx-auto shadow-xl grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+          <div class="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-10 border border-slate-200 max-w-4xl mx-auto shadow-xl grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 items-center">
             
             <!-- Sliders Column -->
             <div class="space-y-6 text-xs">
@@ -1130,36 +1101,18 @@ export interface FlowerPetal {
         </div>
       </footer>
 
-      <!-- FLOATING CONTINUOUS FLOWER SHOWER BUTTON -->
-      <button type="button" (click)="toggleFlowerShower()"
-        class="fixed bottom-6 left-6 z-50 px-4 py-3 bg-white/95 hover:bg-white text-rose-700 hover:text-rose-800 border border-rose-200/90 rounded-2xl shadow-xl shadow-rose-500/15 flex items-center space-x-2.5 hover:scale-105 transition-all group cursor-pointer backdrop-blur-md"
-        [title]="flowerShowerActive() ? 'फूलों की बारिश चालू है' : 'फूलों की बारिश शुरू करें'">
-        <span class="text-xl group-hover:rotate-12 transition-transform">🌸</span>
-        <span class="font-bold text-xs hidden sm:inline text-slate-800">फूलों की बारिश</span>
-        <span class="text-[10px] px-2 py-0.5 rounded-full font-extrabold uppercase tracking-wide"
-          [ngClass]="flowerShowerActive() ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-600'">
-          {{ flowerShowerActive() ? 'चालू 🌸' : 'शुरू करें' }}
-        </span>
-      </button>
-
       <!-- FLOATING WHATSAPP BUTTON -->
       <a href="https://wa.me/917706087066?text=Hello%20DigitalLab%20Team%2C%20I%20want%20to%20learn%20more%20about%20the%20Pathology%20Software" target="_blank"
-        class="fixed bottom-6 right-6 z-50 p-3.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl shadow-2xl shadow-emerald-500/40 flex items-center space-x-2 hover:scale-105 transition-all group cursor-pointer"
+        class="fixed bottom-4 right-4 z-40 p-3 sm:p-3.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full sm:rounded-2xl shadow-xl shadow-emerald-500/30 flex items-center space-x-2 hover:scale-105 transition-all group cursor-pointer"
         title="Chat with WhatsApp Support">
-        <i class="fa-brands fa-whatsapp text-2xl"></i>
+        <i class="fa-brands fa-whatsapp text-xl sm:text-2xl"></i>
         <span class="hidden sm:inline font-bold text-xs pr-1">Live Help</span>
       </a>
 
     </div>
   `
 })
-export class LandingPageComponent implements OnInit, AfterViewInit, OnDestroy {
-  @ViewChild('flowerCanvas') flowerCanvasRef!: ElementRef<HTMLCanvasElement>;
-  flowerShowerActive = signal(true);
-  private flowerAnimId: number | null = null;
-  private petals: FlowerPetal[] = [];
-  private onResizeBound = () => this.handleCanvasResize();
-
+export class LandingPageComponent implements OnInit, OnDestroy {
   mobileMenuOpen = signal(false);
   billingCycle = signal<'Monthly' | 'Annual'>('Annual');
   activeVideoFeature = signal(0);
@@ -1234,21 +1187,9 @@ export class LandingPageComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  ngAfterViewInit(): void {
-    if (typeof window !== 'undefined') {
-      window.addEventListener('resize', this.onResizeBound);
-      // Auto trigger flower shower upon opening the landing / index page
-      setTimeout(() => this.initFlowerShower(), 150);
-    }
-  }
-
   ngOnDestroy(): void {
     this.stopPlaybackTimer();
     this.stopVoiceNarration();
-    this.stopFlowerShower();
-    if (typeof window !== 'undefined') {
-      window.removeEventListener('resize', this.onResizeBound);
-    }
   }
 
   selectFeature(idx: number): void {
@@ -1405,240 +1346,4 @@ export class LandingPageComponent implements OnInit, AfterViewInit, OnDestroy {
   hoursSaved = computed(() => Math.round(this.dailyCases() * 1.8));
   monthlyDoctorCommission = computed(() => Math.round(this.monthlyRevenue() * (this.doctorCommissionPct() / 100)));
   netProfit = computed(() => Math.round(this.monthlyRevenue() - this.monthlyDoctorCommission() - 499));
-
-  // ==========================================
-  // FESTIVE FLOWER SHOWER (फूलों की बारिश - CONTINUOUS)
-  // ==========================================
-  toggleFlowerShower(): void {
-    if (this.flowerShowerActive()) {
-      this.flowerShowerActive.set(false);
-      this.stopFlowerShower();
-    } else {
-      this.flowerShowerActive.set(true);
-      this.initFlowerShower();
-    }
-  }
-
-  triggerFlowerShower(): void {
-    this.flowerShowerActive.set(true);
-    this.initFlowerShower();
-  }
-
-  private stopFlowerShower(): void {
-    if (this.flowerAnimId) {
-      cancelAnimationFrame(this.flowerAnimId);
-      this.flowerAnimId = null;
-    }
-    this.petals = [];
-  }
-
-  private handleCanvasResize(): void {
-    const canvas = this.flowerCanvasRef?.nativeElement;
-    if (canvas && typeof window !== 'undefined') {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    }
-  }
-
-  private initFlowerShower(): void {
-    if (typeof window === 'undefined') return;
-    this.stopFlowerShower();
-
-    const canvas = this.flowerCanvasRef?.nativeElement;
-    if (!canvas) {
-      setTimeout(() => this.initFlowerShower(), 100);
-      return;
-    }
-
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    this.flowerShowerActive.set(true);
-
-    const count = window.innerWidth < 640 ? 55 : 85;
-    this.petals = [];
-    for (let i = 0; i < count; i++) {
-      this.petals.push(this.createPetal(false));
-    }
-
-    this.flowerAnimId = requestAnimationFrame(() => this.updateAndDrawPetals());
-  }
-
-  private createPetal(spawnAtTop: boolean): FlowerPetal {
-    const width = typeof window !== 'undefined' ? window.innerWidth : 1200;
-    const height = typeof window !== 'undefined' ? window.innerHeight : 800;
-
-    const types: ('rose' | 'marigold' | 'jasmine')[] = ['rose', 'rose', 'marigold', 'marigold', 'jasmine'];
-    const type = types[Math.floor(Math.random() * types.length)];
-
-    let color = '#e11d48';
-    let colorLight = '#fecdd3';
-    let colorDark = '#9f1239';
-
-    if (type === 'rose') {
-      const shades = [
-        { c: '#e11d48', cl: '#fecdd3', cd: '#9f1239' }, // vibrant rose
-        { c: '#be123c', cl: '#fda4af', cd: '#881337' }, // crimson red
-        { c: '#f43f5e', cl: '#ffe4e6', cd: '#be123c' }, // bright pink rose
-      ];
-      const s = shades[Math.floor(Math.random() * shades.length)];
-      color = s.c;
-      colorLight = s.cl;
-      colorDark = s.cd;
-    } else if (type === 'marigold') {
-      const shades = [
-        { c: '#f59e0b', cl: '#fef08a', cd: '#b45309' }, // golden marigold
-        { c: '#ea580c', cl: '#fed7aa', cd: '#9a3412' }, // festive saffron/orange
-        { c: '#fbbf24', cl: '#fef9c3', cd: '#d97706' }, // bright golden yellow
-      ];
-      const s = shades[Math.floor(Math.random() * shades.length)];
-      color = s.c;
-      colorLight = s.cl;
-      colorDark = s.cd;
-    } else {
-      // Jasmine / Bela
-      color = '#fef9c3';
-      colorLight = '#ffffff';
-      colorDark = '#fef08a';
-    }
-
-    const size = type === 'marigold'
-      ? Math.random() * 8 + 12
-      : (type === 'rose' ? Math.random() * 9 + 14 : Math.random() * 6 + 9);
-
-    return {
-      x: Math.random() * width,
-      y: spawnAtTop ? -size - Math.random() * 90 : Math.random() * height * 0.75,
-      size,
-      speedY: Math.random() * 1.6 + 1.2,
-      speedX: (Math.random() - 0.5) * 0.9,
-      swayAngle: Math.random() * Math.PI * 2,
-      swaySpeed: Math.random() * 0.03 + 0.015,
-      swayRadius: Math.random() * 1.8 + 0.8,
-      rotation: Math.random() * Math.PI * 2,
-      rotationSpeed: (Math.random() - 0.5) * 0.025,
-      flipAngle: Math.random() * Math.PI * 2,
-      flipSpeed: Math.random() * 0.04 + 0.02,
-      opacity: Math.random() * 0.25 + 0.75,
-      type,
-      color,
-      colorLight,
-      colorDark
-    };
-  }
-
-  private updateAndDrawPetals(): void {
-    const canvas = this.flowerCanvasRef?.nativeElement;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const height = canvas.height;
-
-    for (let i = 0; i < this.petals.length; i++) {
-      const p = this.petals[i];
-
-      // Physics update: sway side-to-side, fall with gravity, rotate and 3D flip
-      p.swayAngle += p.swaySpeed;
-      p.x += Math.sin(p.swayAngle) * p.swayRadius + p.speedX;
-      p.y += p.speedY;
-      p.rotation += p.rotationSpeed;
-      p.flipAngle += p.flipSpeed;
-
-      // CONTINUOUS: As soon as a petal reaches the bottom, respawn it at the top!
-      if (p.y > height + p.size * 2) {
-        this.petals[i] = this.createPetal(true);
-      }
-
-      this.drawSinglePetal(ctx, p);
-    }
-
-    if (this.flowerShowerActive()) {
-      this.flowerAnimId = requestAnimationFrame(() => this.updateAndDrawPetals());
-    }
-  }
-
-  private drawSinglePetal(ctx: CanvasRenderingContext2D, p: FlowerPetal): void {
-    ctx.save();
-    ctx.translate(p.x, p.y);
-    ctx.rotate(p.rotation);
-    // 3D tumble flip along horizontal axis
-    const flip = Math.cos(p.flipAngle);
-    ctx.scale(flip, 1);
-    ctx.globalAlpha = p.opacity;
-
-    if (p.type === 'rose') {
-      // Elegant curved rose petal
-      ctx.beginPath();
-      ctx.moveTo(0, -p.size);
-      ctx.bezierCurveTo(
-        p.size * 0.95, -p.size * 0.65,
-        p.size * 1.15, p.size * 0.6,
-        0, p.size
-      );
-      ctx.bezierCurveTo(
-        -p.size * 1.15, p.size * 0.6,
-        -p.size * 0.95, -p.size * 0.65,
-        0, -p.size
-      );
-      const grad = ctx.createRadialGradient(0, 0, 1, 0, 0, p.size);
-      grad.addColorStop(0, p.colorLight);
-      grad.addColorStop(0.65, p.color);
-      grad.addColorStop(1, p.colorDark);
-      ctx.fillStyle = grad;
-      ctx.fill();
-
-      // Subtle curved petal vein
-      ctx.strokeStyle = p.colorDark;
-      ctx.lineWidth = 0.6;
-      ctx.beginPath();
-      ctx.moveTo(0, -p.size * 0.7);
-      ctx.quadraticCurveTo(p.size * 0.1, 0, 0, p.size * 0.6);
-      ctx.stroke();
-
-    } else if (p.type === 'marigold') {
-      // Elongated marigold floret with soft tip
-      ctx.beginPath();
-      ctx.moveTo(0, -p.size * 1.25);
-      ctx.bezierCurveTo(
-        p.size * 0.55, -p.size * 0.6,
-        p.size * 0.55, p.size * 0.7,
-        0, p.size
-      );
-      ctx.bezierCurveTo(
-        -p.size * 0.55, p.size * 0.7,
-        -p.size * 0.55, -p.size * 0.6,
-        0, -p.size * 1.25
-      );
-      const grad = ctx.createLinearGradient(0, -p.size * 1.25, 0, p.size);
-      grad.addColorStop(0, p.colorLight);
-      grad.addColorStop(0.6, p.color);
-      grad.addColorStop(1, p.colorDark);
-      ctx.fillStyle = grad;
-      ctx.fill();
-
-      // Soft spine line
-      ctx.strokeStyle = p.colorLight;
-      ctx.lineWidth = 0.5;
-      ctx.beginPath();
-      ctx.moveTo(0, -p.size * 0.9);
-      ctx.lineTo(0, p.size * 0.5);
-      ctx.stroke();
-
-    } else {
-      // Jasmine / Bela petal
-      ctx.beginPath();
-      ctx.ellipse(0, 0, p.size * 0.6, p.size, 0, 0, Math.PI * 2);
-      const grad = ctx.createRadialGradient(0, 0, 1, 0, 0, p.size);
-      grad.addColorStop(0, '#ffffff');
-      grad.addColorStop(0.7, p.color);
-      grad.addColorStop(1, p.colorDark);
-      ctx.fillStyle = grad;
-      ctx.fill();
-    }
-
-    ctx.restore();
-  }
 }
-

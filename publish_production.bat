@@ -43,8 +43,7 @@ echo [4/5] Merging Frontend assets into wwwroot...
 xcopy /s /e /y "%ROOT_DIR%frontend\dist\frontend\browser\*" "%OUTPUT_DIR%\wwwroot\"
 
 echo [5/5] Creating single production zip package with normalized Unix forward-slashes...
-cd /d "%ROOT_DIR%"
-powershell -NoProfile -Command "$sourceDir = '%OUTPUT_DIR%'; $zipPath = '%ROOT_DIR%digitlab_production_package.zip'; if (Test-Path $zipPath) { Remove-Item $zipPath -Force }; Add-Type -AssemblyName System.IO.Compression.FileSystem; $zipFile = [System.IO.Compression.ZipFile]::Open($zipPath, [System.IO.Compression.ZipArchiveMode]::Create); Get-ChildItem -Path $sourceDir -Recurse -File | ForEach-Object { $rel = $_.FullName.Substring($sourceDir.Length + 1).Replace('\', '/'); [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zipFile, $_.FullName, $rel, [System.IO.Compression.CompressionLevel]::Optimal) }; $zipFile.Dispose()"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$sourceDir = '%OUTPUT_DIR%'; $zipPath = '%ROOT_DIR%digitlab_production_package.zip'; if (Test-Path $zipPath) { Remove-Item $zipPath -Force }; Add-Type -AssemblyName System.IO.Compression; Add-Type -AssemblyName System.IO.Compression.FileSystem; $stream = [System.IO.File]::Create($zipPath); $zip = New-Object System.IO.Compression.ZipArchive($stream, [System.IO.Compression.ZipArchiveMode]::Create); try { Get-ChildItem -Path $sourceDir -Recurse -File | ForEach-Object { $rel = $_.FullName.Substring($sourceDir.Length + 1).Replace('\', '/'); [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, $_.FullName, $rel, [System.IO.Compression.CompressionLevel]::Optimal) } } finally { $zip.Dispose(); $stream.Dispose() }"
 
 echo.
 echo ====================================================================

@@ -264,9 +264,18 @@ public class LetterheadController : ControllerBase
         return Ok(new { message = "Letterhead and branding settings updated." });
     }
 
+public class LetterheadUploadDto
+{
+    public IFormFile File { get; set; } = null!;
+    public string AssetType { get; set; } = string.Empty;
+}
+
     [HttpPost("upload")]
-    public async Task<IActionResult> UploadAsset([FromForm] IFormFile file, [FromForm] string assetType)
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> UploadAsset([FromForm] LetterheadUploadDto dto)
     {
+        var file = dto.File;
+        var assetType = dto.AssetType ?? string.Empty;
         if (file == null || file.Length == 0)
             return BadRequest(new { message = "No file was uploaded." });
 
