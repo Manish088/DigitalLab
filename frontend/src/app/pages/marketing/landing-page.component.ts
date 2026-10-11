@@ -1,7 +1,27 @@
-import { Component, signal, computed, OnInit, OnDestroy } from '@angular/core';
+import { Component, signal, computed, OnInit, OnDestroy, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+
+export interface FlowerPetal {
+  x: number;
+  y: number;
+  size: number;
+  speedY: number;
+  speedX: number;
+  swayAngle: number;
+  swaySpeed: number;
+  swayRadius: number;
+  rotation: number;
+  rotationSpeed: number;
+  flipAngle: number;
+  flipSpeed: number;
+  opacity: number;
+  type: 'rose' | 'marigold' | 'jasmine';
+  color: string;
+  colorLight: string;
+  colorDark: string;
+}
 
 @Component({
   selector: 'app-landing-page',
@@ -10,6 +30,17 @@ import { RouterLink } from '@angular/router';
   template: `
     <div class="min-h-screen bg-white text-slate-900 font-sans selection:bg-brand-500 selection:text-white relative overflow-hidden">
       
+      <!-- Celebratory Flower Shower Canvas (फूलों की बारिश) -->
+      <canvas #flowerCanvas class="fixed inset-0 pointer-events-none z-50 w-full h-full" [style.display]="flowerShowerActive() ? 'block' : 'none'"></canvas>
+
+      <!-- Auspicious Launch Celebratory Pill Banner -->
+      <div *ngIf="flowerShowerActive()"
+        class="fixed top-24 left-1/2 -translate-x-1/2 z-50 px-5 py-2 rounded-full bg-gradient-to-r from-rose-600 via-amber-500 to-rose-600 text-white font-bold text-xs sm:text-sm shadow-2xl flex items-center space-x-2 animate-bounce pointer-events-none border border-white/40 shadow-rose-500/25 backdrop-blur-md">
+        <span class="text-base">🌸</span>
+        <span class="tracking-wide font-black uppercase text-[11px] sm:text-xs">शुभ आरंभ • Auspicious Launch Celebration</span>
+        <span class="text-base">🌸</span>
+      </div>
+
       <!-- Background Ambient Glow & Tech Grid -->
       <div class="fixed inset-0 bg-[linear-gradient(to_right,#e2e8f060_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f060_1px,transparent_1px)] bg-[size:4rem_4rem] pointer-events-none -z-10"></div>
       <div class="fixed top-0 left-1/3 w-[550px] h-[550px] bg-cyan-100/60 rounded-full blur-[140px] pointer-events-none -z-10 animate-pulse"></div>
@@ -1099,6 +1130,15 @@ import { RouterLink } from '@angular/router';
         </div>
       </footer>
 
+      <!-- FLOATING REPLAY FLOWER SHOWER BUTTON -->
+      <button type="button" (click)="triggerFlowerShower()"
+        class="fixed bottom-6 left-6 z-50 px-4 py-3 bg-white/95 hover:bg-white text-rose-700 hover:text-rose-800 border border-rose-200/90 rounded-2xl shadow-xl shadow-rose-500/15 flex items-center space-x-2.5 hover:scale-105 transition-all group cursor-pointer backdrop-blur-md"
+        title="फूलों की बारिश (Shower Festive Flower Petals)">
+        <span class="text-xl group-hover:rotate-12 transition-transform">🌸</span>
+        <span class="font-bold text-xs hidden sm:inline text-slate-800">फूलों की बारिश</span>
+        <span class="text-[10px] bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full font-extrabold uppercase tracking-wide">Replay</span>
+      </button>
+
       <!-- FLOATING WHATSAPP BUTTON -->
       <a href="https://wa.me/917706087066?text=Hello%20DigitalLab%20Team%2C%20I%20want%20to%20learn%20more%20about%20the%20Pathology%20Software" target="_blank"
         class="fixed bottom-6 right-6 z-50 p-3.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl shadow-2xl shadow-emerald-500/40 flex items-center space-x-2 hover:scale-105 transition-all group cursor-pointer"
@@ -1110,7 +1150,15 @@ import { RouterLink } from '@angular/router';
     </div>
   `
 })
-export class LandingPageComponent implements OnInit, OnDestroy {
+export class LandingPageComponent implements OnInit, AfterViewInit, OnDestroy {
+  @ViewChild('flowerCanvas') flowerCanvasRef!: ElementRef<HTMLCanvasElement>;
+  flowerShowerActive = signal(true);
+  private flowerAnimId: number | null = null;
+  private showerStartTime = 0;
+  private readonly SHOWER_DURATION_MS = 14000;
+  private petals: FlowerPetal[] = [];
+  private onResizeBound = () => this.handleCanvasResize();
+
   mobileMenuOpen = signal(false);
   billingCycle = signal<'Monthly' | 'Annual'>('Annual');
   activeVideoFeature = signal(0);
@@ -1185,9 +1233,21 @@ export class LandingPageComponent implements OnInit, OnDestroy {
     }
   }
 
+  ngAfterViewInit(): void {
+    if (typeof window !== 'undefined') {
+      window.addEventListener('resize', this.onResizeBound);
+      // Auto trigger flower shower upon opening the landing / index page
+      setTimeout(() => this.initFlowerShower(), 150);
+    }
+  }
+
   ngOnDestroy(): void {
     this.stopPlaybackTimer();
     this.stopVoiceNarration();
+    this.stopFlowerShower();
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('resize', this.onResizeBound);
+    }
   }
 
   selectFeature(idx: number): void {
@@ -1344,5 +1404,242 @@ export class LandingPageComponent implements OnInit, OnDestroy {
   hoursSaved = computed(() => Math.round(this.dailyCases() * 1.8));
   monthlyDoctorCommission = computed(() => Math.round(this.monthlyRevenue() * (this.doctorCommissionPct() / 100)));
   netProfit = computed(() => Math.round(this.monthlyRevenue() - this.monthlyDoctorCommission() - 499));
+
+  // ==========================================
+  // FESTIVE FLOWER SHOWER (फूलों की बारिश)
+  // ==========================================
+  triggerFlowerShower(): void {
+    this.flowerShowerActive.set(true);
+    this.initFlowerShower();
+  }
+
+  private stopFlowerShower(): void {
+    if (this.flowerAnimId) {
+      cancelAnimationFrame(this.flowerAnimId);
+      this.flowerAnimId = null;
+    }
+    this.petals = [];
+  }
+
+  private handleCanvasResize(): void {
+    const canvas = this.flowerCanvasRef?.nativeElement;
+    if (canvas && typeof window !== 'undefined') {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+  }
+
+  private initFlowerShower(): void {
+    if (typeof window === 'undefined') return;
+    this.stopFlowerShower();
+
+    const canvas = this.flowerCanvasRef?.nativeElement;
+    if (!canvas) {
+      setTimeout(() => this.initFlowerShower(), 100);
+      return;
+    }
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    this.showerStartTime = Date.now();
+    this.flowerShowerActive.set(true);
+
+    const count = window.innerWidth < 640 ? 50 : 85;
+    this.petals = [];
+    for (let i = 0; i < count; i++) {
+      this.petals.push(this.createPetal(false));
+    }
+
+    this.flowerAnimId = requestAnimationFrame(() => this.updateAndDrawPetals());
+  }
+
+  private createPetal(spawnAtTop: boolean): FlowerPetal {
+    const width = typeof window !== 'undefined' ? window.innerWidth : 1200;
+    const height = typeof window !== 'undefined' ? window.innerHeight : 800;
+
+    const types: ('rose' | 'marigold' | 'jasmine')[] = ['rose', 'rose', 'marigold', 'marigold', 'jasmine'];
+    const type = types[Math.floor(Math.random() * types.length)];
+
+    let color = '#e11d48';
+    let colorLight = '#fecdd3';
+    let colorDark = '#9f1239';
+
+    if (type === 'rose') {
+      const shades = [
+        { c: '#e11d48', cl: '#fecdd3', cd: '#9f1239' }, // vibrant rose
+        { c: '#be123c', cl: '#fda4af', cd: '#881337' }, // crimson red
+        { c: '#f43f5e', cl: '#ffe4e6', cd: '#be123c' }, // bright pink rose
+      ];
+      const s = shades[Math.floor(Math.random() * shades.length)];
+      color = s.c;
+      colorLight = s.cl;
+      colorDark = s.cd;
+    } else if (type === 'marigold') {
+      const shades = [
+        { c: '#f59e0b', cl: '#fef08a', cd: '#b45309' }, // golden marigold
+        { c: '#ea580c', cl: '#fed7aa', cd: '#9a3412' }, // festive saffron/orange
+        { c: '#fbbf24', cl: '#fef9c3', cd: '#d97706' }, // bright golden yellow
+      ];
+      const s = shades[Math.floor(Math.random() * shades.length)];
+      color = s.c;
+      colorLight = s.cl;
+      colorDark = s.cd;
+    } else {
+      // Jasmine / Bela
+      color = '#fef9c3';
+      colorLight = '#ffffff';
+      colorDark = '#fef08a';
+    }
+
+    const size = type === 'marigold'
+      ? Math.random() * 8 + 12
+      : (type === 'rose' ? Math.random() * 9 + 14 : Math.random() * 6 + 9);
+
+    return {
+      x: Math.random() * width,
+      y: spawnAtTop ? -size - Math.random() * 90 : Math.random() * height * 0.75,
+      size,
+      speedY: Math.random() * 1.6 + 1.2,
+      speedX: (Math.random() - 0.5) * 0.9,
+      swayAngle: Math.random() * Math.PI * 2,
+      swaySpeed: Math.random() * 0.03 + 0.015,
+      swayRadius: Math.random() * 1.8 + 0.8,
+      rotation: Math.random() * Math.PI * 2,
+      rotationSpeed: (Math.random() - 0.5) * 0.025,
+      flipAngle: Math.random() * Math.PI * 2,
+      flipSpeed: Math.random() * 0.04 + 0.02,
+      opacity: Math.random() * 0.25 + 0.75,
+      type,
+      color,
+      colorLight,
+      colorDark
+    };
+  }
+
+  private updateAndDrawPetals(): void {
+    const canvas = this.flowerCanvasRef?.nativeElement;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const now = Date.now();
+    const isActivelySpawning = (now - this.showerStartTime) < this.SHOWER_DURATION_MS;
+    const height = canvas.height;
+
+    for (let i = this.petals.length - 1; i >= 0; i--) {
+      const p = this.petals[i];
+
+      // Physics update: sway side-to-side, fall with gravity, rotate and 3D flip
+      p.swayAngle += p.swaySpeed;
+      p.x += Math.sin(p.swayAngle) * p.swayRadius + p.speedX;
+      p.y += p.speedY;
+      p.rotation += p.rotationSpeed;
+      p.flipAngle += p.flipSpeed;
+
+      // Check if fallen past bottom
+      if (p.y > height + p.size * 2) {
+        if (isActivelySpawning) {
+          this.petals[i] = this.createPetal(true);
+        } else {
+          this.petals.splice(i, 1);
+          continue;
+        }
+      }
+
+      this.drawSinglePetal(ctx, p);
+    }
+
+    if (this.petals.length > 0) {
+      this.flowerAnimId = requestAnimationFrame(() => this.updateAndDrawPetals());
+    } else {
+      this.flowerShowerActive.set(false);
+      this.flowerAnimId = null;
+    }
+  }
+
+  private drawSinglePetal(ctx: CanvasRenderingContext2D, p: FlowerPetal): void {
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.rotation);
+    // 3D tumble flip along horizontal axis
+    const flip = Math.cos(p.flipAngle);
+    ctx.scale(flip, 1);
+    ctx.globalAlpha = p.opacity;
+
+    if (p.type === 'rose') {
+      // Elegant curved rose petal
+      ctx.beginPath();
+      ctx.moveTo(0, -p.size);
+      ctx.bezierCurveTo(
+        p.size * 0.95, -p.size * 0.65,
+        p.size * 1.15, p.size * 0.6,
+        0, p.size
+      );
+      ctx.bezierCurveTo(
+        -p.size * 1.15, p.size * 0.6,
+        -p.size * 0.95, -p.size * 0.65,
+        0, -p.size
+      );
+      const grad = ctx.createRadialGradient(0, 0, 1, 0, 0, p.size);
+      grad.addColorStop(0, p.colorLight);
+      grad.addColorStop(0.65, p.color);
+      grad.addColorStop(1, p.colorDark);
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // Subtle curved petal vein
+      ctx.strokeStyle = p.colorDark;
+      ctx.lineWidth = 0.6;
+      ctx.beginPath();
+      ctx.moveTo(0, -p.size * 0.7);
+      ctx.quadraticCurveTo(p.size * 0.1, 0, 0, p.size * 0.6);
+      ctx.stroke();
+
+    } else if (p.type === 'marigold') {
+      // Elongated marigold floret with soft tip
+      ctx.beginPath();
+      ctx.moveTo(0, -p.size * 1.25);
+      ctx.bezierCurveTo(
+        p.size * 0.55, -p.size * 0.6,
+        p.size * 0.55, p.size * 0.7,
+        0, p.size
+      );
+      ctx.bezierCurveTo(
+        -p.size * 0.55, p.size * 0.7,
+        -p.size * 0.55, -p.size * 0.6,
+        0, -p.size * 1.25
+      );
+      const grad = ctx.createLinearGradient(0, -p.size * 1.25, 0, p.size);
+      grad.addColorStop(0, p.colorLight);
+      grad.addColorStop(0.6, p.color);
+      grad.addColorStop(1, p.colorDark);
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // Soft spine line
+      ctx.strokeStyle = p.colorLight;
+      ctx.lineWidth = 0.5;
+      ctx.beginPath();
+      ctx.moveTo(0, -p.size * 0.9);
+      ctx.lineTo(0, p.size * 0.5);
+      ctx.stroke();
+
+    } else {
+      // Jasmine / Bela petal
+      ctx.beginPath();
+      ctx.ellipse(0, 0, p.size * 0.6, p.size, 0, 0, Math.PI * 2);
+      const grad = ctx.createRadialGradient(0, 0, 1, 0, 0, p.size);
+      grad.addColorStop(0, '#ffffff');
+      grad.addColorStop(0.7, p.color);
+      grad.addColorStop(1, p.colorDark);
+      ctx.fillStyle = grad;
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
 }
 
