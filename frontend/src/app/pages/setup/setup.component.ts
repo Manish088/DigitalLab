@@ -291,7 +291,7 @@ export class SetupComponent implements OnInit, OnDestroy {
 
     // After 3.8 seconds of fireworks celebration, transition to first page
     setTimeout(() => {
-      this.router.navigate(['/']);
+      this.router.navigate(['/home']);
     }, 3800);
   }
 

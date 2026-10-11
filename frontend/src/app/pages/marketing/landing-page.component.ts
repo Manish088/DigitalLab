@@ -61,7 +61,7 @@ export interface FlowerPetal {
       <nav class="border-b border-slate-200/80 backdrop-blur-xl sticky top-0 z-50 bg-white/90">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           <!-- Logo Brand -->
-          <a routerLink="/" class="flex items-center space-x-3 group">
+          <a routerLink="/home" class="flex items-center space-x-3 group">
             <img src="logo.png" alt="DigitalLab" class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl shadow-md object-contain group-hover:scale-105 transition-transform">
             <div>
               <span class="text-2xl font-black text-slate-900 font-heading tracking-tight">DigitalLab</span>
