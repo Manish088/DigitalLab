@@ -1,6 +1,7 @@
 # Visual Studio & C# / .NET
 **/bin/
 **/obj/
+**/publish/
 .vs/
 *.user
 *.userosscache
@@ -13,6 +14,8 @@
 **/node_modules/
 **/.angular/
 **/dist/
+**/dist_production/
+*.zip
 **/coverage/
 .npm
 npm-debug.log*

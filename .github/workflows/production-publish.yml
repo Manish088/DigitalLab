@@ -1,0 +1,55 @@
+name: Build & Package Full-Stack Production Artifacts
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-package:
+    name: Build Frontend, Backend & Database Package
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Frontend Dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Build Angular Frontend (Production)
+        working-directory: ./frontend
+        run: npm run build -- --configuration production
+
+      - name: Publish ASP.NET Core Backend API
+        run: dotnet publish backend/src/Lab.Api/Lab.Api.csproj -c Release -o ./publish-output
+
+      - name: Merge Frontend into Backend wwwroot
+        run: |
+          mkdir -p ./publish-output/wwwroot
+          mkdir -p ./publish-output/database
+          cp -r ./frontend/dist/frontend/browser/* ./publish-output/wwwroot/
+          cp ./database/schema.sql ./publish-output/database/schema.sql
+
+      - name: Upload Production Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: digitlab-production-package
+          path: ./publish-output/
+          retention-days: 30
