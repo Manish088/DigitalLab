@@ -39,13 +39,12 @@ echo Cleaning unnecessary localization language folders to prevent unzipper erro
 powershell -NoProfile -Command "$langs = @('cs', 'de', 'es', 'fr', 'it', 'ja', 'ko', 'pl', 'pt-BR', 'ru', 'tr', 'zh-Hans', 'zh-Hant'); foreach ($l in $langs) { $p = '%OUTPUT_DIR%\' + $l; if (Test-Path $p) { Remove-Item -Path $p -Recurse -Force } }"
 powershell -NoProfile -Command "Get-ChildItem '%OUTPUT_DIR%\runtimes' | Where-Object { $_.Name -notlike 'win*' } | Remove-Item -Recurse -Force"
 
-echo [4/5] Merging Frontend assets into wwwroot and copying database schema...
+echo [4/5] Merging Frontend assets into wwwroot...
 xcopy /s /e /y "%ROOT_DIR%frontend\dist\frontend\browser\*" "%OUTPUT_DIR%\wwwroot\"
-copy /y "%ROOT_DIR%database\schema.sql" "%OUTPUT_DIR%\database\schema.sql"
 
-echo [5/5] Creating single production zip package...
+echo [5/5] Creating single production zip package with normalized Unix forward-slashes...
 cd /d "%ROOT_DIR%"
-powershell -NoProfile -Command "Compress-Archive -Path '%OUTPUT_DIR%\*' -DestinationPath '%ROOT_DIR%digitlab_production_package.zip' -Force"
+powershell -NoProfile -Command "$sourceDir = '%OUTPUT_DIR%'; $zipPath = '%ROOT_DIR%digitlab_production_package.zip'; if (Test-Path $zipPath) { Remove-Item $zipPath -Force }; Add-Type -AssemblyName System.IO.Compression.FileSystem; $zipFile = [System.IO.Compression.ZipFile]::Open($zipPath, [System.IO.Compression.ZipArchiveMode]::Create); Get-ChildItem -Path $sourceDir -Recurse -File | ForEach-Object { $rel = $_.FullName.Substring($sourceDir.Length + 1).Replace('\', '/'); [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zipFile, $_.FullName, $rel, [System.IO.Compression.CompressionLevel]::Optimal) }; $zipFile.Dispose()"
 
 echo.
 echo ====================================================================
