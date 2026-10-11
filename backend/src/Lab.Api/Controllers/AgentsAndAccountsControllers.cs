@@ -327,7 +327,7 @@ public class LetterheadUploadDto
     }
 }
 
-[Authorize]
+[Authorize(Roles = "LabAdmin,LabManager,SuperAdmin")]
 [ApiController]
 [Route("api/[controller]")]
 public class StaffController : ControllerBase

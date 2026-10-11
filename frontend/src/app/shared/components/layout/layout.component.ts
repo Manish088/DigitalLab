@@ -174,7 +174,7 @@ import { ToastService } from '../../../core/services/toast.service';
             <i class="fa-solid fa-signature w-5 text-center mr-2.5"></i> Letterhead & Branding
           </a>
 
-          <a routerLink="/staff" (click)="closeMobileMenu()" routerLinkActive="bg-brand-600 text-white shadow-lg" class="flex items-center px-3 py-2 text-xs font-medium rounded-xl hover:bg-slate-800 transition-all">
+          <a *ngIf="canManageStaff()" routerLink="/staff" (click)="closeMobileMenu()" routerLinkActive="bg-brand-600 text-white shadow-lg" class="flex items-center px-3 py-2 text-xs font-medium rounded-xl hover:bg-slate-800 transition-all">
             <i class="fa-solid fa-users-gear w-5 text-center mr-2.5"></i> Staff & Permissions
           </a>
 
@@ -245,7 +245,7 @@ import { ToastService } from '../../../core/services/toast.service';
               <i class="fa-solid fa-signature w-5 text-center mr-3"></i> Letterhead & Branding
             </a>
 
-            <a routerLink="/staff" routerLinkActive="bg-brand-600 text-white shadow-lg shadow-brand-600/30" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg hover:bg-slate-800 transition-all">
+            <a *ngIf="canManageStaff()" routerLink="/staff" routerLinkActive="bg-brand-600 text-white shadow-lg shadow-brand-600/30" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg hover:bg-slate-800 transition-all">
               <i class="fa-solid fa-users-gear w-5 text-center mr-3"></i> Staff & Permissions
             </a>
 
@@ -289,6 +289,7 @@ export class LayoutComponent implements OnInit {
 
   currentUser = this.authService.currentUserSignal;
   isSuperAdmin = this.authService.isSuperAdmin;
+  canManageStaff = this.authService.canManageStaff;
   isImpersonating = this.authService.isImpersonatingSignal;
 
   mobileMenuOpen = false;

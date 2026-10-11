@@ -29,6 +29,18 @@ export const superAdminGuard: CanActivateFn = () => {
   return false;
 };
 
+export const staffManagementGuard: CanActivateFn = () => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+
+  if (authService.canManageStaff()) {
+    return true;
+  }
+
+  router.navigate(['/dashboard']);
+  return false;
+};
+
 export const subscriptionActiveGuard: CanActivateFn = () => {
   const authService = inject(AuthService);
   const apiService = inject(ApiService);

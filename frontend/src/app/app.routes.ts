@@ -17,7 +17,7 @@ import { StaffComponent } from './pages/staff/staff.component';
 import { SubscriptionComponent } from './pages/subscription/subscription.component';
 import { SupportComponent } from './pages/support/support.component';
 import { SuperAdminComponent } from './pages/super-admin/super-admin.component';
-import { authGuard, superAdminGuard, subscriptionActiveGuard } from './core/guards/auth.guard';
+import { authGuard, superAdminGuard, subscriptionActiveGuard, staffManagementGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   { path: '', component: LandingPageComponent },
@@ -42,7 +42,7 @@ export const routes: Routes = [
       { path: 'agents', component: AgentsComponent, canActivate: [subscriptionActiveGuard] },
       { path: 'transactions', component: TransactionsComponent, canActivate: [subscriptionActiveGuard] },
       { path: 'letterhead', component: LetterheadComponent, canActivate: [subscriptionActiveGuard] },
-      { path: 'staff', component: StaffComponent, canActivate: [subscriptionActiveGuard] },
+      { path: 'staff', component: StaffComponent, canActivate: [subscriptionActiveGuard, staffManagementGuard] },
       { path: 'subscription', component: SubscriptionComponent },
       { path: 'support', component: SupportComponent },
       { path: 'admin-dashboard', component: SuperAdminComponent, canActivate: [superAdminGuard] }

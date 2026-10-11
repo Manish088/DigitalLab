@@ -21,6 +21,10 @@ export class AuthService {
   isLoggedIn = computed(() => !!this.currentUserSignal());
   isSuperAdmin = computed(() => this.currentUserSignal()?.role === 'SuperAdmin');
   isLabAdmin = computed(() => this.currentUserSignal()?.role === 'LabAdmin');
+  canManageStaff = computed(() => {
+    const role = this.currentUserSignal()?.role;
+    return role === 'LabAdmin' || role === 'LabManager' || role === 'SuperAdmin';
+  });
 
   constructor(private http: HttpClient, private router: Router) {}
 
