@@ -1130,13 +1130,16 @@ export interface FlowerPetal {
         </div>
       </footer>
 
-      <!-- FLOATING REPLAY FLOWER SHOWER BUTTON -->
-      <button type="button" (click)="triggerFlowerShower()"
+      <!-- FLOATING CONTINUOUS FLOWER SHOWER BUTTON -->
+      <button type="button" (click)="toggleFlowerShower()"
         class="fixed bottom-6 left-6 z-50 px-4 py-3 bg-white/95 hover:bg-white text-rose-700 hover:text-rose-800 border border-rose-200/90 rounded-2xl shadow-xl shadow-rose-500/15 flex items-center space-x-2.5 hover:scale-105 transition-all group cursor-pointer backdrop-blur-md"
-        title="फूलों की बारिश (Shower Festive Flower Petals)">
+        [title]="flowerShowerActive() ? 'फूलों की बारिश चालू है' : 'फूलों की बारिश शुरू करें'">
         <span class="text-xl group-hover:rotate-12 transition-transform">🌸</span>
         <span class="font-bold text-xs hidden sm:inline text-slate-800">फूलों की बारिश</span>
-        <span class="text-[10px] bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full font-extrabold uppercase tracking-wide">Replay</span>
+        <span class="text-[10px] px-2 py-0.5 rounded-full font-extrabold uppercase tracking-wide"
+          [ngClass]="flowerShowerActive() ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-600'">
+          {{ flowerShowerActive() ? 'चालू 🌸' : 'शुरू करें' }}
+        </span>
       </button>
 
       <!-- FLOATING WHATSAPP BUTTON -->
@@ -1154,8 +1157,6 @@ export class LandingPageComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('flowerCanvas') flowerCanvasRef!: ElementRef<HTMLCanvasElement>;
   flowerShowerActive = signal(true);
   private flowerAnimId: number | null = null;
-  private showerStartTime = 0;
-  private readonly SHOWER_DURATION_MS = 14000;
   private petals: FlowerPetal[] = [];
   private onResizeBound = () => this.handleCanvasResize();
 
@@ -1406,8 +1407,18 @@ export class LandingPageComponent implements OnInit, AfterViewInit, OnDestroy {
   netProfit = computed(() => Math.round(this.monthlyRevenue() - this.monthlyDoctorCommission() - 499));
 
   // ==========================================
-  // FESTIVE FLOWER SHOWER (फूलों की बारिश)
+  // FESTIVE FLOWER SHOWER (फूलों की बारिश - CONTINUOUS)
   // ==========================================
+  toggleFlowerShower(): void {
+    if (this.flowerShowerActive()) {
+      this.flowerShowerActive.set(false);
+      this.stopFlowerShower();
+    } else {
+      this.flowerShowerActive.set(true);
+      this.initFlowerShower();
+    }
+  }
+
   triggerFlowerShower(): void {
     this.flowerShowerActive.set(true);
     this.initFlowerShower();
@@ -1442,10 +1453,9 @@ export class LandingPageComponent implements OnInit, AfterViewInit, OnDestroy {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    this.showerStartTime = Date.now();
     this.flowerShowerActive.set(true);
 
-    const count = window.innerWidth < 640 ? 50 : 85;
+    const count = window.innerWidth < 640 ? 55 : 85;
     this.petals = [];
     for (let i = 0; i < count; i++) {
       this.petals.push(this.createPetal(false));
@@ -1524,12 +1534,9 @@ export class LandingPageComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!ctx) return;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    const now = Date.now();
-    const isActivelySpawning = (now - this.showerStartTime) < this.SHOWER_DURATION_MS;
     const height = canvas.height;
 
-    for (let i = this.petals.length - 1; i >= 0; i--) {
+    for (let i = 0; i < this.petals.length; i++) {
       const p = this.petals[i];
 
       // Physics update: sway side-to-side, fall with gravity, rotate and 3D flip
@@ -1539,24 +1546,16 @@ export class LandingPageComponent implements OnInit, AfterViewInit, OnDestroy {
       p.rotation += p.rotationSpeed;
       p.flipAngle += p.flipSpeed;
 
-      // Check if fallen past bottom
+      // CONTINUOUS: As soon as a petal reaches the bottom, respawn it at the top!
       if (p.y > height + p.size * 2) {
-        if (isActivelySpawning) {
-          this.petals[i] = this.createPetal(true);
-        } else {
-          this.petals.splice(i, 1);
-          continue;
-        }
+        this.petals[i] = this.createPetal(true);
       }
 
       this.drawSinglePetal(ctx, p);
     }
 
-    if (this.petals.length > 0) {
+    if (this.flowerShowerActive()) {
       this.flowerAnimId = requestAnimationFrame(() => this.updateAndDrawPetals());
-    } else {
-      this.flowerShowerActive.set(false);
-      this.flowerAnimId = null;
     }
   }
 
