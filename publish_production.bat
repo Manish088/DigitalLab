@@ -35,6 +35,10 @@ if %ERRORLEVEL% NEQ 0 (
     exit /b %ERRORLEVEL%
 )
 
+echo Cleaning unnecessary localization language folders to prevent unzipper errors...
+powershell -NoProfile -Command "$langs = @('cs', 'de', 'es', 'fr', 'it', 'ja', 'ko', 'pl', 'pt-BR', 'ru', 'tr', 'zh-Hans', 'zh-Hant'); foreach ($l in $langs) { $p = '%OUTPUT_DIR%\' + $l; if (Test-Path $p) { Remove-Item -Path $p -Recurse -Force } }"
+powershell -NoProfile -Command "Get-ChildItem '%OUTPUT_DIR%\runtimes' | Where-Object { $_.Name -notlike 'win*' } | Remove-Item -Recurse -Force"
+
 echo [4/5] Merging Frontend assets into wwwroot and copying database schema...
 xcopy /s /e /y "%ROOT_DIR%frontend\dist\frontend\browser\*" "%OUTPUT_DIR%\wwwroot\"
 copy /y "%ROOT_DIR%database\schema.sql" "%OUTPUT_DIR%\database\schema.sql"
