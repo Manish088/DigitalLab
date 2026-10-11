@@ -16,10 +16,32 @@ builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 builder.Logging.AddDebug();
 
-// 1. Add Database Context (Flexible: SQLite default for instant zero-dependency execution, SQL Server configurable)
-var dbProvider = builder.Configuration["DatabaseProvider"] ?? "Sqlite";
+var dbProvider = builder.Configuration["DatabaseProvider"] ?? "SqlServer";
 var sqliteConn = builder.Configuration.GetConnectionString("SqliteConnection") ?? "Data Source=lab_lims.db";
-var sqlServerConn = builder.Configuration.GetConnectionString("DefaultConnection") ?? "Server=(localdb)\\mssqllocaldb;Database=LabLimsDb;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True";
+
+// Smart Environment-Aware Connection String Selection:
+var sqlServerConn = builder.Configuration.GetConnectionString("DefaultConnection");
+if (builder.Environment.IsProduction())
+{
+    if (string.IsNullOrWhiteSpace(sqlServerConn) ||
+        sqlServerConn.Contains("Server=.") ||
+        sqlServerConn.Contains("localhost") ||
+        sqlServerConn.Contains("(localdb)"))
+    {
+        var prodConn = builder.Configuration.GetConnectionString("ProductionConnection");
+        if (!string.IsNullOrWhiteSpace(prodConn))
+        {
+            sqlServerConn = prodConn;
+        }
+    }
+}
+else
+{
+    if (string.IsNullOrWhiteSpace(sqlServerConn))
+    {
+        sqlServerConn = "Server=.;Database=LabLimsDb;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True;";
+    }
+}
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
