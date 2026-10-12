@@ -17,4 +17,10 @@
     <ProjectReference Include="..\Lab.Application\Lab.Application.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Exclude local test uploaded files from production publish -->
+    <Content Remove="wwwroot\uploads\**" />
+    <None Include="wwwroot\uploads\**" CopyToPublishDirectory="Never" />
+  </ItemGroup>
+
 </Project>
