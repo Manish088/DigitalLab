@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
 import { LetterheadConfig } from '../../core/models/lims.models';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-letterhead',
@@ -436,7 +437,11 @@ export class LetterheadComponent implements OnInit {
   getImageUrl(url?: string): string {
     if (!url) return '';
     if (url.startsWith('http') || url.startsWith('data:')) return url;
-    return `${url.startsWith('/') ? '' : '/'}${url}`;
+    const clean = url.startsWith('/') ? url : `/${url}`;
+    const baseServer = (environment.apiUrl && environment.apiUrl.startsWith('http'))
+      ? environment.apiUrl.replace(/\/api\/?$/, '')
+      : '';
+    return `${baseServer}${clean}`;
   }
 
   onFileSelected(event: Event, assetType: string): void {

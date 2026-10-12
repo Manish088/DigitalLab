@@ -106,7 +106,7 @@ public class ReportsController : ControllerBase
     [AllowAnonymous]
     [HttpGet("public/{token}/download")]
     [Produces("application/pdf")]
-    public async Task<IActionResult> DownloadPublicReportPdf(Guid token)
+    public async Task<IActionResult> DownloadPublicReportPdf(Guid token, [FromQuery] bool letterheadMode = true)
     {
         var caseOrder = await _context.CaseOrders
             .IgnoreQueryFilters()
@@ -121,7 +121,7 @@ public class ReportsController : ControllerBase
         if (caseOrder.Status != CaseStatus.Approved)
             return BadRequest(new { message = "Report is currently under lab testing/processing and has not been approved yet." });
 
-        var pdfBytes = await _pdfReportService.GeneratePatientReportPdfAsync(caseOrder.Id, false);
+        var pdfBytes = await _pdfReportService.GeneratePatientReportPdfAsync(caseOrder.Id, letterheadMode);
         Response.Headers.Append("Content-Disposition", $"inline; filename=Report_{caseOrder.CaseNumber}.pdf");
         return File(pdfBytes, "application/pdf");
     }

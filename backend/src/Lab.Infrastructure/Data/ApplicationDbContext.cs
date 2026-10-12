@@ -81,19 +81,19 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>, IApplica
 
         builder.Entity<CaseOrder>()
             .HasOne(c => c.Patient)
-            .WithMany()
+            .WithMany(p => p.CaseOrders)
             .HasForeignKey(c => c.PatientId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.Entity<CaseOrder>()
             .HasOne(c => c.ReferringDoctor)
-            .WithMany()
+            .WithMany(d => d.CaseOrders)
             .HasForeignKey(c => c.ReferringDoctorId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.Entity<CaseOrder>()
             .HasOne(c => c.CollectionAgent)
-            .WithMany()
+            .WithMany(a => a.CaseOrders)
             .HasForeignKey(c => c.CollectionAgentId)
             .OnDelete(DeleteBehavior.Restrict);
 
@@ -111,7 +111,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>, IApplica
 
         builder.Entity<DoctorCommissionPayout>()
             .HasOne(d => d.Doctor)
-            .WithMany()
+            .WithMany(d => d.Payouts)
             .HasForeignKey(d => d.DoctorId)
             .OnDelete(DeleteBehavior.Restrict);
 

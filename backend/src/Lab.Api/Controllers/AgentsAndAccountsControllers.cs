@@ -283,7 +283,8 @@ public class LetterheadUploadDto
         var lab = await _context.Tenants.FirstOrDefaultAsync(t => t.Id == tenantId);
         if (lab == null) return NotFound(new { message = "Laboratory tenant not found." });
 
-        var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+        // Lab-wise isolated folder: wwwroot/uploads/{tenantId}
+        var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", tenantId.ToString());
         if (!Directory.Exists(uploadsFolder))
         {
             Directory.CreateDirectory(uploadsFolder);
@@ -296,7 +297,7 @@ public class LetterheadUploadDto
             return BadRequest(new { message = "Invalid image format. Allowed formats: PNG, JPG, JPEG, WEBP, SVG." });
         }
 
-        var fileName = $"{tenantId}_{assetType.ToLowerInvariant()}_{DateTime.UtcNow.Ticks}{ext}";
+        var fileName = $"{assetType.ToLowerInvariant()}_{DateTime.UtcNow.Ticks}{ext}";
         var filePath = Path.Combine(uploadsFolder, fileName);
 
         using (var stream = new FileStream(filePath, FileMode.Create))
@@ -304,7 +305,7 @@ public class LetterheadUploadDto
             await file.CopyToAsync(stream);
         }
 
-        var relativeUrl = $"/uploads/{fileName}";
+        var relativeUrl = $"/uploads/{tenantId}/{fileName}";
 
         switch (assetType.ToLowerInvariant())
         {

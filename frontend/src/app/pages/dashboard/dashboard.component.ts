@@ -451,7 +451,7 @@ declare var Chart: any;
         </div>
         <div class="bg-slate-900 text-white p-4 rounded-xl flex items-center justify-between">
           <div>
-            <div class="text-xs text-slate-400">Referred Doctors</div>
+            <div class="text-xs text-slate-400">Referring Doctors</div>
             <div class="text-lg font-bold">{{ stats.totalDoctors }}</div>
           </div>
           <i class="fa-solid fa-user-doctor text-slate-600 text-xl"></i>

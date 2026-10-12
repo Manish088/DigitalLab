@@ -35,6 +35,10 @@ test_*.svg
 *.log
 *.tmp
 
+# Uploaded Assets
+**/wwwroot/uploads/**
+!**/wwwroot/uploads/.gitkeep
+
 # OS & Editor
 .DS_Store
 Thumbs.db

@@ -273,7 +273,7 @@ export interface DoctorReferral {
   phone?: string;
   email?: string;
   address?: string;
-  commissionType: number;
+  commissionType: number | string;
   defaultCommissionValue: number;
   isActive: boolean;
   totalCasesCount: number;

@@ -92,7 +92,7 @@ import { DoctorReferral, DoctorPayoutRecord, LetterheadConfig } from '../../core
                   </td>
                   <td class="p-3.5">
                     <span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-brand-50 text-brand-700 border border-brand-200">
-                      {{ doc.defaultCommissionValue }}{{ doc.commissionType === 1 ? '%' : ' Flat' }}
+                      {{ (doc.commissionType === 1 || doc.commissionType === 'Percentage') ? (doc.defaultCommissionValue + '%') : ('₹' + doc.defaultCommissionValue + ' Flat') }}
                     </span>
                   </td>
                   <td class="p-3.5 font-bold text-slate-800">
@@ -695,7 +695,8 @@ export class DoctorReferralsComponent implements OnInit {
     };
 
     const rows = this.doctors.map(doc => {
-      const rateStr = `${doc.defaultCommissionValue}${doc.commissionType === 1 ? '%' : ' Flat'}`;
+      const isPercent = doc.commissionType === 1 || doc.commissionType === 'Percentage';
+      const rateStr = isPercent ? `${doc.defaultCommissionValue}%` : `₹${doc.defaultCommissionValue} Flat`;
       return [
         escapeCsv(doc.doctorCode),
         escapeCsv(doc.doctorName),
