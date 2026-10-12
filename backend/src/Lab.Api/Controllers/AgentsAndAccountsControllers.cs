@@ -230,6 +230,47 @@ public class LetterheadController : ControllerBase
         var lab = await _context.Tenants.FirstOrDefaultAsync(t => t.Id == tenantId);
         if (lab == null) return NotFound();
 
+        // If any asset is cleared/removed, delete its physical file from disk
+        if (string.IsNullOrWhiteSpace(dto.HeaderImageUrl) && !string.IsNullOrWhiteSpace(lab.HeaderImageUrl))
+        {
+            DeletePhysicalFile(lab.HeaderImageUrl);
+            lab.HeaderImageUrl = null;
+        }
+        else
+        {
+            lab.HeaderImageUrl = dto.HeaderImageUrl;
+        }
+
+        if (string.IsNullOrWhiteSpace(dto.LogoUrl) && !string.IsNullOrWhiteSpace(lab.LogoUrl))
+        {
+            DeletePhysicalFile(lab.LogoUrl);
+            lab.LogoUrl = null;
+        }
+        else
+        {
+            lab.LogoUrl = dto.LogoUrl;
+        }
+
+        if (string.IsNullOrWhiteSpace(dto.FooterImageUrl) && !string.IsNullOrWhiteSpace(lab.FooterImageUrl))
+        {
+            DeletePhysicalFile(lab.FooterImageUrl);
+            lab.FooterImageUrl = null;
+        }
+        else
+        {
+            lab.FooterImageUrl = dto.FooterImageUrl;
+        }
+
+        if (string.IsNullOrWhiteSpace(dto.DigitalSignatureUrl) && !string.IsNullOrWhiteSpace(lab.DigitalSignatureUrl))
+        {
+            DeletePhysicalFile(lab.DigitalSignatureUrl);
+            lab.DigitalSignatureUrl = null;
+        }
+        else
+        {
+            lab.DigitalSignatureUrl = dto.DigitalSignatureUrl;
+        }
+
         lab.LabName = dto.LabName;
         lab.Tagline = dto.Tagline;
         lab.OwnerName = dto.OwnerName;
@@ -241,10 +282,6 @@ public class LetterheadController : ControllerBase
         lab.Pincode = dto.Pincode;
         lab.Gstin = dto.Gstin;
         lab.NablNumber = dto.NablNumber;
-        lab.LogoUrl = dto.LogoUrl;
-        lab.HeaderImageUrl = dto.HeaderImageUrl;
-        lab.FooterImageUrl = dto.FooterImageUrl;
-        lab.DigitalSignatureUrl = dto.DigitalSignatureUrl;
         lab.PathologistName = dto.PathologistName;
         lab.PathologistDegree = dto.PathologistDegree;
         lab.PathologistRegNo = dto.PathologistRegNo;
@@ -284,7 +321,7 @@ public class LetterheadUploadDto
         if (lab == null) return NotFound(new { message = "Laboratory tenant not found." });
 
         // Lab-wise isolated folder: wwwroot/uploads/{tenantId}
-        var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", tenantId.ToString());
+        var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", tenantId?.ToString() ?? "common");
         if (!Directory.Exists(uploadsFolder))
         {
             Directory.CreateDirectory(uploadsFolder);
@@ -296,6 +333,17 @@ public class LetterheadUploadDto
         {
             return BadRequest(new { message = "Invalid image format. Allowed formats: PNG, JPG, JPEG, WEBP, SVG." });
         }
+
+        // Auto-delete previous image of the same asset type to prevent disk bloat
+        string? previousUrl = assetType.ToLowerInvariant() switch
+        {
+            "header" => lab.HeaderImageUrl,
+            "logo" => lab.LogoUrl,
+            "footer" => lab.FooterImageUrl,
+            "signature" => lab.DigitalSignatureUrl,
+            _ => null
+        };
+        DeletePhysicalFile(previousUrl);
 
         var fileName = $"{assetType.ToLowerInvariant()}_{DateTime.UtcNow.Ticks}{ext}";
         var filePath = Path.Combine(uploadsFolder, fileName);
@@ -325,6 +373,61 @@ public class LetterheadUploadDto
 
         await _context.SaveChangesAsync();
         return Ok(new { url = relativeUrl, assetType = assetType, message = $"{assetType} uploaded successfully." });
+    }
+
+    [HttpDelete("asset/{assetType}")]
+    public async Task<IActionResult> DeleteAsset(string assetType)
+    {
+        var tenantId = _currentUserService.TenantId;
+        var lab = await _context.Tenants.FirstOrDefaultAsync(t => t.Id == tenantId);
+        if (lab == null) return NotFound(new { message = "Laboratory tenant not found." });
+
+        string? oldUrl = null;
+        switch (assetType.ToLowerInvariant())
+        {
+            case "header":
+                oldUrl = lab.HeaderImageUrl;
+                lab.HeaderImageUrl = null;
+                break;
+            case "logo":
+                oldUrl = lab.LogoUrl;
+                lab.LogoUrl = null;
+                break;
+            case "footer":
+                oldUrl = lab.FooterImageUrl;
+                lab.FooterImageUrl = null;
+                break;
+            case "signature":
+                oldUrl = lab.DigitalSignatureUrl;
+                lab.DigitalSignatureUrl = null;
+                break;
+            default:
+                return BadRequest(new { message = "Invalid asset type." });
+        }
+
+        DeletePhysicalFile(oldUrl);
+        await _context.SaveChangesAsync();
+        return Ok(new { message = $"{assetType} deleted successfully." });
+    }
+
+    private static void DeletePhysicalFile(string? relativeUrl)
+    {
+        if (string.IsNullOrWhiteSpace(relativeUrl)) return;
+        try
+        {
+            var trimmed = relativeUrl.TrimStart('/', '\\');
+            var uploadsBase = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads"));
+            var targetPath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", trimmed));
+
+            if (targetPath.StartsWith(uploadsBase, StringComparison.OrdinalIgnoreCase) && System.IO.File.Exists(targetPath))
+            {
+                System.IO.File.Delete(targetPath);
+            }
+        }
+        catch
+        {
+            // Silently ignore to avoid breaking operation
+        }
     }
 }
 

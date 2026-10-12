@@ -222,6 +222,10 @@ export class ApiService {
     return this.http.post(`${this.baseUrl}/letterhead/upload`, formData);
   }
 
+  deleteLetterheadAsset(assetType: string): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/letterhead/asset/${assetType}`);
+  }
+
   // Staff
   getStaff(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/staff`);

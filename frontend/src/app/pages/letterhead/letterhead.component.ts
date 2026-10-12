@@ -479,6 +479,15 @@ export class LetterheadComponent implements OnInit {
     if (assetType === 'footer') this.config.footerImageUrl = undefined;
     if (assetType === 'signature') this.config.digitalSignatureUrl = undefined;
     this.cdr.detectChanges();
+
+    this.api.deleteLetterheadAsset(assetType).subscribe({
+      next: () => {
+        this.toast.info(`${assetType.toUpperCase()} graphic removed from server.`);
+      },
+      error: () => {
+        // Fallback: will be saved when user clicks Save Settings
+      }
+    });
   }
 
   saveConfig(): void {
