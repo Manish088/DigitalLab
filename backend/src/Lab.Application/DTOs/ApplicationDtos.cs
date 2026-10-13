@@ -521,3 +521,72 @@ public record AdminTicketReplyRequest(
     string? AttachmentUrl,
     TicketStatus? NewStatus
 );
+
+// Ad Campaigns & Monetization DTOs
+public record AdCampaignDto(
+    Guid Id,
+    string CampaignTitle,
+    string SponsorName,
+    string? SponsorContact,
+    string BannerImageUrl,
+    int TargetType,
+    string? TargetCity,
+    string? TargetState,
+    DateTime StartDate,
+    DateTime EndDate,
+    int DurationDays,
+    bool IsActive,
+    decimal? DealAmount,
+    string PaymentStatus,
+    string? TargetUrl,
+    string? QrCodeUrl,
+    string? WhatsAppNote,
+    long TotalImpressionsCount,
+    List<Guid> TargetLabIds,
+    List<string> TargetLabNames,
+    bool IsExpired
+);
+
+public record CreateAdCampaignRequest(
+    string CampaignTitle,
+    string SponsorName,
+    string? SponsorContact,
+    string BannerImageUrl,
+    int TargetType,
+    string? TargetCity,
+    string? TargetState,
+    DateTime StartDate,
+    int DurationDays,
+    decimal? DealAmount,
+    string PaymentStatus,
+    string? TargetUrl,
+    string? QrCodeUrl,
+    string? WhatsAppNote,
+    List<Guid>? TargetLabIds
+);
+
+public record UpdateAdCampaignRequest(
+    string? CampaignTitle,
+    string? SponsorName,
+    string? SponsorContact,
+    string? BannerImageUrl,
+    int? ExtendDays,
+    DateTime? NewEndDate,
+    decimal? DealAmount,
+    string? PaymentStatus,
+    string? WhatsAppNote
+);
+
+public record LabAdStatusDto(
+    Guid TenantId,
+    string LabName,
+    string? LabCode,
+    string? City,
+    string? State,
+    bool IsAdFree,
+    bool IsBooked,
+    Guid? CurrentCampaignId,
+    string? CurrentCampaignTitle,
+    string? CurrentSponsorName,
+    DateTime? AdExpiryDate
+);

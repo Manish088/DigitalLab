@@ -88,6 +88,33 @@ public class PdfReportService : IPdfReportService
             .ToList();
         var sampleTypeDisplay = sampleTypes.Any() ? string.Join(", ", sampleTypes) : "Blood / Serum";
 
+        // Query active Sponsor / Ad Campaign for this Lab
+        AdCampaign? activeAd = null;
+        byte[]? sponsorBannerBytes = null;
+        if (lab != null && !lab.IsAdFree)
+        {
+            var now = DateTime.UtcNow;
+            activeAd = await _context.AdCampaigns
+                .IgnoreQueryFilters()
+                .Include(c => c.TargetLabs)
+                .Where(c => c.IsActive && c.StartDate <= now && c.EndDate >= now)
+                .Where(c => c.TargetLabs.Any(tl => tl.TenantId == lab.Id) ||
+                            (c.TargetType == AdTargetType.CityWise && !string.IsNullOrWhiteSpace(lab.City) && c.TargetCity == lab.City))
+                .OrderByDescending(c => c.TargetLabs.Any(tl => tl.TenantId == lab.Id))
+                .FirstOrDefaultAsync();
+
+            if (activeAd != null && !string.IsNullOrWhiteSpace(activeAd.BannerImageUrl))
+            {
+                sponsorBannerBytes = LoadImageBytes(activeAd.BannerImageUrl);
+                try
+                {
+                    activeAd.TotalImpressionsCount++;
+                    await _context.SaveChangesAsync();
+                }
+                catch { /* Ignore tracking error */ }
+            }
+        }
+
         var document = Document.Create(container =>
         {
             container.Page(page =>
@@ -100,20 +127,40 @@ public class PdfReportService : IPdfReportService
                 page.DefaultTextStyle(x => x.FontFamily(Fonts.Arial).FontSize(8.5f));
 
                 // 1. Header Section
-                if (isLetterheadMode)
+                if (isLetterheadMode || sponsorBannerBytes != null)
                 {
-                    var headerImageBytes = LoadImageBytes(lab?.HeaderImageUrl);
-                    var logoImageBytes = LoadImageBytes(lab?.LogoUrl);
+                    var headerImageBytes = isLetterheadMode ? LoadImageBytes(lab?.HeaderImageUrl) : null;
+                    var logoImageBytes = isLetterheadMode ? LoadImageBytes(lab?.LogoUrl) : null;
 
                     page.Header().Column(col =>
                     {
-                        if (headerImageBytes != null)
+                        // Sponsor Ad Banner (Above Header) - Clean, full-width header strip banner
+                        if (sponsorBannerBytes != null)
                         {
-                            col.Item().PaddingBottom(4).Image(headerImageBytes).FitWidth();
+                            var (imgW, imgH) = GetImageDimensions(sponsorBannerBytes);
+                            float aspectRatio = imgH > 0 ? (float)imgW / imgH : 8f;
+
+                            // If horizontal strip banner (aspect ratio >= 4.0), span full width edge-to-edge
+                            if (aspectRatio >= 4.0f)
+                            {
+                                col.Item().PaddingBottom(4).Image(sponsorBannerBytes).FitWidth();
+                            }
+                            else
+                            {
+                                // If square or moderate aspect ratio, constrain height safely (+20-30px taller)
+                                col.Item().PaddingBottom(4).Height(65).AlignCenter().Image(sponsorBannerBytes).FitArea();
+                            }
                         }
-                        else
+
+                        if (isLetterheadMode)
                         {
-                            col.Item().Table(table =>
+                            if (headerImageBytes != null)
+                            {
+                                col.Item().PaddingBottom(4).Image(headerImageBytes).FitWidth();
+                            }
+                            else
+                            {
+                                col.Item().Table(table =>
                             {
                                 table.ColumnsDefinition(cols =>
                                 {
@@ -175,14 +222,11 @@ public class PdfReportService : IPdfReportService
                                     });
                                 });
                             });
-
-                            col.Item().PaddingTop(3).LineHorizontal(1.5f).LineColor(primaryColor);
                         }
-                    });
-                }
-                else
-                {
-                    page.Header().Column(col =>
+
+                        col.Item().PaddingTop(3).LineHorizontal(1.5f).LineColor(primaryColor);
+                    }
+                    else
                     {
                         col.Item().Table(table =>
                         {
@@ -197,8 +241,9 @@ public class PdfReportService : IPdfReportService
                         });
 
                         col.Item().PaddingTop(2).LineHorizontal(0.5f).LineColor("#cbd5e1");
-                    });
-                }
+                    }
+                });
+            }
 
                 // 2. Content Section
                 page.Content().Column(col =>
@@ -945,5 +990,80 @@ public class PdfReportService : IPdfReportService
         }
 
         return null;
+    }
+
+    private static (int width, int height) GetImageDimensions(byte[]? data)
+    {
+        if (data == null || data.Length < 30) return (1200, 150);
+
+        try
+        {
+            // 1. PNG: 0x89 'P' 'N' 'G'
+            if (data[0] == 0x89 && data[1] == 0x50 && data[2] == 0x4E && data[3] == 0x47 && data.Length >= 24)
+            {
+                int width = (data[16] << 24) | (data[17] << 16) | (data[18] << 8) | data[19];
+                int height = (data[20] << 24) | (data[21] << 16) | (data[22] << 8) | data[23];
+                if (width > 0 && height > 0) return (width, height);
+            }
+
+            // 2. JPEG: 0xFF 0xD8
+            if (data[0] == 0xFF && data[1] == 0xD8)
+            {
+                int i = 2;
+                while (i < data.Length - 8)
+                {
+                    if (data[i] == 0xFF)
+                    {
+                        byte marker = data[i + 1];
+                        if (marker == 0xD9 || marker == 0xDA) break;
+
+                        if ((marker >= 0xC0 && marker <= 0xC3) || (marker >= 0xC5 && marker <= 0xC7) ||
+                            (marker >= 0xC9 && marker <= 0xCB) || (marker >= 0xCD && marker <= 0xCF))
+                        {
+                            int height = (data[i + 5] << 8) | data[i + 6];
+                            int width = (data[i + 7] << 8) | data[i + 8];
+                            if (width > 0 && height > 0) return (width, height);
+                        }
+
+                        if (i + 3 < data.Length)
+                        {
+                            int blockLength = (data[i + 2] << 8) | data[i + 3];
+                            i += 2 + blockLength;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        i++;
+                    }
+                }
+            }
+
+            // 3. GIF: 'G' 'I' 'F'
+            if (data[0] == 0x47 && data[1] == 0x49 && data[2] == 0x46 && data.Length >= 10)
+            {
+                int width = data[6] | (data[7] << 8);
+                int height = data[8] | (data[9] << 8);
+                if (width > 0 && height > 0) return (width, height);
+            }
+
+            // 4. WEBP: 'R' 'I' 'F' 'F' ... 'W' 'E' 'B' 'P'
+            if (data[0] == 0x52 && data[1] == 0x49 && data[2] == 0x46 && data[3] == 0x46 &&
+                data[8] == 0x57 && data[9] == 0x45 && data[10] == 0x42 && data[11] == 0x50 && data.Length >= 30)
+            {
+                if (data[12] == 0x56 && data[13] == 0x50 && data[14] == 0x38 && data[15] == 0x58)
+                {
+                    int width = 1 + (data[24] | (data[25] << 8) | (data[26] << 16));
+                    int height = 1 + (data[27] | (data[28] << 8) | (data[29] << 16));
+                    if (width > 0 && height > 0) return (width, height);
+                }
+            }
+        }
+        catch { /* Fallback to default */ }
+
+        return (1200, 150);
     }
 }

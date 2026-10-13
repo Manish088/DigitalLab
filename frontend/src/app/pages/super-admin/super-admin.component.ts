@@ -4,7 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
+import { AdCampaign, CreateAdCampaignRequest, UpdateAdCampaignRequest, LabAdStatus } from '../../core/models/lims.models';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-super-admin',
@@ -135,6 +137,13 @@ import { Router } from '@angular/router';
           class="px-4 py-2.5 rounded-xl transition-all flex items-center space-x-2 shrink-0 cursor-pointer">
           <i class="fa-solid fa-chart-line"></i>
           <span>Geo & Revenue Insights</span>
+        </button>
+
+        <button (click)="activeTab = 'monetization'"
+          [ngClass]="activeTab === 'monetization' ? 'bg-slate-900 text-white shadow-md' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
+          class="px-4 py-2.5 rounded-xl transition-all flex items-center space-x-2 shrink-0 cursor-pointer">
+          <i class="fa-solid fa-rectangle-ad text-emerald-400"></i>
+          <span>Report Advertising & Monetization ({{ campaigns.length }})</span>
         </button>
       </div>
 
@@ -747,6 +756,266 @@ import { Router } from '@angular/router';
         </div>
       </div>
 
+      <!-- TAB 7: REPORT ADVERTISING & MONETIZATION -->
+      <div *ngIf="activeTab === 'monetization'" class="space-y-5">
+        <!-- Monetization Header & KPIs -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
+          <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm relative overflow-hidden">
+            <div class="text-[11px] sm:text-xs text-slate-500 font-bold uppercase tracking-wider">Total Campaigns</div>
+            <div class="text-2xl sm:text-3xl font-black text-slate-900 mt-1">{{ campaigns.length }}</div>
+            <div class="text-[11px] text-emerald-600 font-bold mt-1 flex items-center">
+              <i class="fa-solid fa-circle-check mr-1"></i> {{ getActiveCampaignsCount() }} Live Now
+            </div>
+          </div>
+
+          <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm relative overflow-hidden">
+            <div class="text-[11px] sm:text-xs text-slate-500 font-bold uppercase tracking-wider">Total Impressions (Proof)</div>
+            <div class="text-2xl sm:text-3xl font-black text-indigo-600 mt-1">{{ getTotalImpressions() | number }}</div>
+            <div class="text-[11px] text-slate-500 font-semibold mt-1">Reports delivered with ads</div>
+          </div>
+
+          <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm relative overflow-hidden">
+            <div class="text-[11px] sm:text-xs text-slate-500 font-bold uppercase tracking-wider">Ad Revenue Booked</div>
+            <div class="text-2xl sm:text-3xl font-black text-emerald-600 mt-1">₹{{ getTotalAdRevenue() | number:'1.0-0' }}</div>
+            <div class="text-[11px] text-emerald-700 font-semibold mt-1">Direct sponsor income</div>
+          </div>
+
+          <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm relative overflow-hidden">
+            <div class="text-[11px] sm:text-xs text-slate-500 font-bold uppercase tracking-wider">Lab Booking Status</div>
+            <div class="text-2xl sm:text-3xl font-black text-slate-900 mt-1">{{ getAvailableLabsCount() }} / {{ labAdStatuses.length }}</div>
+            <div class="text-[11px] text-emerald-600 font-semibold mt-1">{{ getAvailableLabsCount() }} Labs Free for new ads</div>
+          </div>
+        </div>
+
+        <!-- Sub Tabs & Actions Bar -->
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="flex items-center space-x-2">
+            <button (click)="monetizationSubTab = 'campaigns'"
+              [ngClass]="monetizationSubTab === 'campaigns' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
+              class="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer">
+              <i class="fa-solid fa-rectangle-ad"></i>
+              <span>Active Campaigns ({{ campaigns.length }})</span>
+            </button>
+            <button (click)="monetizationSubTab = 'labMatrix'"
+              [ngClass]="monetizationSubTab === 'labMatrix' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
+              class="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer">
+              <i class="fa-solid fa-hospital-user"></i>
+              <span>Lab Exclusivity & Ad-Free Matrix ({{ labAdStatuses.length }})</span>
+            </button>
+          </div>
+
+          <div class="flex items-center space-x-2">
+            <button (click)="openCreateCampaignModal()"
+              class="px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs rounded-xl shadow-md shadow-emerald-900/20 transition-all flex items-center space-x-1.5 cursor-pointer">
+              <i class="fa-solid fa-plus-circle"></i>
+              <span>Create New Ad Campaign</span>
+            </button>
+            <button (click)="loadAdCampaigns(); loadLabAdStatuses();" class="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-all cursor-pointer" title="Refresh">
+              <i class="fa-solid fa-arrows-rotate"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Sub Tab 1: Campaigns List -->
+        <div *ngIf="monetizationSubTab === 'campaigns'" class="space-y-4">
+          <div *ngIf="campaigns.length === 0" class="bg-white p-12 rounded-3xl border border-slate-200 text-center space-y-3">
+            <div class="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 mx-auto flex items-center justify-center text-2xl">
+              <i class="fa-solid fa-rectangle-ad"></i>
+            </div>
+            <h4 class="font-bold text-slate-800 text-base">No Ad Campaigns Yet</h4>
+            <p class="text-xs text-slate-500 max-w-md mx-auto">Create your first healthcare sponsor campaign to monetize patient reports with local hospitals and clinics.</p>
+            <button (click)="openCreateCampaignModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm cursor-pointer">
+              + Launch First Campaign
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4" *ngIf="campaigns.length > 0">
+            <div *ngFor="let camp of campaigns" class="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden flex flex-col justify-between hover:shadow-md transition-shadow">
+              <div>
+                <!-- Top banner header -->
+                <div class="p-4 border-b border-slate-100 flex items-start justify-between gap-3 bg-slate-50/50">
+                  <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-base shrink-0">
+                      <i class="fa-solid fa-handshake"></i>
+                    </div>
+                    <div>
+                      <h4 class="font-bold text-slate-900 text-sm leading-tight">{{ camp.campaignTitle }}</h4>
+                      <p class="text-[11px] text-slate-500 flex items-center gap-1.5 mt-0.5">
+                        <span class="font-semibold text-slate-700">Sponsor:</span> {{ camp.sponsorName }}
+                        <span *ngIf="camp.sponsorContact" class="text-slate-400">• {{ camp.sponsorContact }}</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center space-x-1.5 shrink-0">
+                    <span *ngIf="!camp.isExpired && camp.isActive" class="px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200">
+                      LIVE ACTIVE
+                    </span>
+                    <span *ngIf="camp.isExpired" class="px-2.5 py-1 rounded-full text-[10px] font-black bg-slate-100 text-slate-600 border border-slate-200">
+                      EXPIRED
+                    </span>
+                    <span *ngIf="!camp.isExpired && !camp.isActive" class="px-2.5 py-1 rounded-full text-[10px] font-black bg-amber-100 text-amber-800 border border-amber-200">
+                      PAUSED
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Banner Preview -->
+                <div class="p-4 bg-slate-900/5 flex items-center justify-center border-b border-slate-100 max-h-28 overflow-hidden">
+                  <img [src]="getImageUrl(camp.bannerImageUrl)" alt="Sponsor Banner" class="max-h-24 w-auto object-contain rounded-lg border border-slate-200/80 shadow-xs">
+                </div>
+
+                <!-- Details Grid -->
+                <div class="p-4 space-y-3 text-xs">
+                  <div class="grid grid-cols-2 gap-2 text-slate-600">
+                    <div>
+                      <span class="text-slate-400 block text-[10px] uppercase font-bold">Target Scope:</span>
+                      <span class="font-semibold text-slate-800" *ngIf="camp.targetType === 1">City-Wide ({{ camp.targetCity || 'All Cities' }})</span>
+                      <span class="font-semibold text-slate-800" *ngIf="camp.targetType === 2">{{ camp.targetLabNames?.length || 0 }} Specific Labs</span>
+                      <span class="font-semibold text-slate-800" *ngIf="camp.targetType === 3">Pan-India (All Labs)</span>
+                    </div>
+
+                    <div>
+                      <span class="text-slate-400 block text-[10px] uppercase font-bold">Validity Period:</span>
+                      <span class="font-semibold text-slate-800">{{ camp.startDate | date:'dd MMM' }} → {{ camp.endDate | date:'dd MMM yyyy' }}</span>
+                      <span class="text-[10px] block" [ngClass]="camp.isExpired ? 'text-slate-400' : 'text-emerald-600 font-bold'">
+                        {{ camp.isExpired ? '(Finished)' : getDaysRemainingText(camp.endDate) }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div class="grid grid-cols-2 gap-2 text-slate-600 pt-2 border-t border-slate-100">
+                    <div>
+                      <span class="text-slate-400 block text-[10px] uppercase font-bold">Impressions (Verified):</span>
+                      <span class="font-black text-indigo-600 text-sm flex items-center gap-1">
+                        <i class="fa-solid fa-eye"></i> {{ camp.totalImpressionsCount | number }} Reports
+                      </span>
+                    </div>
+
+                    <div>
+                      <span class="text-slate-400 block text-[10px] uppercase font-bold">Deal Amount:</span>
+                      <span class="font-black text-emerald-600 text-sm">₹{{ (camp.dealAmount || 0) | number:'1.0-0' }}</span>
+                      <span class="text-[10px] ml-1.5 px-1.5 py-0.2 rounded font-bold" [ngClass]="camp.paymentStatus === 'Paid' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'">
+                        {{ camp.paymentStatus }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div *ngIf="camp.whatsAppNote" class="p-2 rounded-lg bg-emerald-50/70 border border-emerald-100 text-[11px] text-emerald-900 flex items-center gap-1.5">
+                    <i class="fa-brands fa-whatsapp text-emerald-600"></i>
+                    <span><strong>WhatsApp Tag:</strong> {{ camp.whatsAppNote }}</span>
+                  </div>
+
+                  <!-- Labs assigned tags -->
+                  <div *ngIf="camp.targetLabNames && camp.targetLabNames.length > 0" class="pt-1">
+                    <span class="text-[10px] text-slate-400 font-bold block mb-1">Targeted Labs:</span>
+                    <div class="flex flex-wrap gap-1">
+                      <span *ngFor="let labName of camp.targetLabNames" class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[10px] font-semibold">
+                        {{ labName }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Footer Actions -->
+              <div class="px-4 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-xs">
+                <button type="button" (click)="toggleCampaignStatus(camp)"
+                  [ngClass]="camp.isActive ? 'text-amber-600 hover:text-amber-700' : 'text-emerald-600 hover:text-emerald-700'"
+                  class="font-bold flex items-center space-x-1 cursor-pointer">
+                  <i class="fa-solid" [ngClass]="camp.isActive ? 'fa-pause' : 'fa-play'"></i>
+                  <span>{{ camp.isActive ? 'Pause' : 'Resume' }}</span>
+                </button>
+
+                <div class="flex items-center space-x-2">
+                  <button type="button" (click)="openEditCampaignModal(camp)"
+                    class="px-2.5 py-1 rounded-lg text-indigo-700 hover:bg-indigo-50 border border-indigo-200 font-bold flex items-center space-x-1 cursor-pointer transition-colors shadow-xs">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                    <span>Edit / Extend</span>
+                  </button>
+
+                  <button type="button" (click)="deleteCampaign(camp)" class="text-rose-600 hover:text-rose-700 font-bold flex items-center space-x-1 cursor-pointer">
+                    <i class="fa-solid fa-trash-can"></i>
+                    <span>Delete</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sub Tab 2: Lab Exclusivity Matrix -->
+        <div *ngIf="monetizationSubTab === 'labMatrix'" class="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden">
+          <div class="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h4 class="font-bold text-slate-900 text-sm">Lab Exclusivity & Booking Matrix</h4>
+              <p class="text-[11px] text-slate-500">Every lab can only run 1 active ad at a time to prevent conflicts. Premium labs can be marked Ad-Free.</p>
+            </div>
+            <div class="flex items-center space-x-2 text-xs">
+              <span class="flex items-center gap-1 text-emerald-700 font-bold bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+                <i class="fa-solid fa-circle-check"></i> {{ getAvailableLabsCount() }} Available
+              </span>
+              <span class="flex items-center gap-1 text-rose-700 font-bold bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-200">
+                <i class="fa-solid fa-lock"></i> {{ getBookedLabsCount() }} Booked
+              </span>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="bg-slate-50 text-slate-500 font-bold border-b border-slate-200/80">
+                  <th class="p-3.5">Laboratory Name</th>
+                  <th class="p-3.5">City / Location</th>
+                  <th class="p-3.5">Current Ad Status</th>
+                  <th class="p-3.5">Active Sponsor & Campaign</th>
+                  <th class="p-3.5">Expiry Date</th>
+                  <th class="p-3.5 text-right">Ad-Free Setting</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                <tr *ngFor="let lab of labAdStatuses" class="hover:bg-slate-50/60 transition-colors">
+                  <td class="p-3.5">
+                    <div class="font-bold text-slate-800">{{ lab.labName }}</div>
+                    <div class="text-[10px] text-slate-400 font-mono">{{ lab.labCode || 'LAB' }}</div>
+                  </td>
+                  <td class="p-3.5 font-semibold text-slate-700">
+                    {{ lab.city || '—' }} {{ lab.state ? '(' + lab.state + ')' : '' }}
+                  </td>
+                  <td class="p-3.5">
+                    <span *ngIf="lab.isAdFree" class="px-2 py-0.5 rounded-full text-[10px] font-black bg-purple-100 text-purple-800 border border-purple-200">
+                      🛡️ AD-FREE PREMIUM
+                    </span>
+                    <span *ngIf="!lab.isAdFree && lab.isBooked" class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-100 text-rose-800 border border-rose-200">
+                      🔒 BOOKED & LOCKED
+                    </span>
+                    <span *ngIf="!lab.isAdFree && !lab.isBooked" class="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200">
+                      🟢 AVAILABLE FOR ADS
+                    </span>
+                  </td>
+                  <td class="p-3.5">
+                    <div *ngIf="lab.currentCampaignTitle" class="font-bold text-slate-800">{{ lab.currentCampaignTitle }}</div>
+                    <div *ngIf="lab.currentSponsorName" class="text-[11px] text-slate-500">Sponsor: {{ lab.currentSponsorName }}</div>
+                    <span *ngIf="!lab.currentCampaignTitle" class="text-slate-400">— None —</span>
+                  </td>
+                  <td class="p-3.5 font-semibold text-slate-600">
+                    <span *ngIf="lab.adExpiryDate">{{ lab.adExpiryDate | date:'dd MMM yyyy' }}</span>
+                    <span *ngIf="!lab.adExpiryDate" class="text-slate-400">—</span>
+                  </td>
+                  <td class="p-3.5 text-right">
+                    <button type="button" (click)="toggleLabAdFree(lab)"
+                      [ngClass]="lab.isAdFree ? 'bg-purple-100 text-purple-700 hover:bg-purple-200 border-purple-300' : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-300'"
+                      class="px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all cursor-pointer">
+                      {{ lab.isAdFree ? 'Disable Ad-Free (Allow Ads)' : 'Set as Ad-Free (Block Ads)' }}
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
       <!-- MODAL 1: ONBOARD NEW LAB MODAL -->
       <div *ngIf="showCreateLabModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4 overflow-y-auto">
         <div class="bg-white w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden border border-slate-100 my-auto flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-200">
@@ -1145,6 +1414,357 @@ import { Router } from '@angular/router';
         </div>
       </div>
 
+      <!-- MODAL: CREATE AD CAMPAIGN MODAL -->
+      <div *ngIf="showCreateCampaignModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4 overflow-y-auto">
+        <div class="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden border border-slate-100 my-auto flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-200">
+          <div class="bg-gradient-to-r from-emerald-600 to-teal-700 px-6 py-4 text-white flex items-center justify-between shrink-0 shadow-sm">
+            <div class="flex items-center space-x-3">
+              <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-white text-base font-bold">
+                <i class="fa-solid fa-rectangle-ad"></i>
+              </div>
+              <div>
+                <h3 class="text-sm font-bold font-heading">Launch Report Ad Campaign</h3>
+                <p class="text-[11px] text-emerald-100">Assign sponsor banners to targeted patient reports with exclusivity lock.</p>
+              </div>
+            </div>
+            <button (click)="showCreateCampaignModal = false" class="text-white/80 hover:text-white bg-black/10 hover:bg-black/20 w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer">
+              <i class="fa-solid fa-xmark text-sm"></i>
+            </button>
+          </div>
+
+          <div class="p-6 space-y-4 overflow-y-auto flex-1 text-xs text-slate-700">
+            <!-- Campaign Title & Sponsor -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block font-bold text-slate-800 mb-1">Campaign Title *</label>
+                <input type="text" [(ngModel)]="newCampaignForm.campaignTitle" placeholder="e.g. Apex MRI 20% Off Promotion"
+                  class="w-full px-3 py-2 border border-slate-300 rounded-xl font-semibold outline-none focus:ring-2 focus:ring-emerald-500">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-800 mb-1">Sponsor / Brand Name *</label>
+                <input type="text" [(ngModel)]="newCampaignForm.sponsorName" placeholder="e.g. Apex Advanced Imaging Center"
+                  class="w-full px-3 py-2 border border-slate-300 rounded-xl font-semibold outline-none focus:ring-2 focus:ring-emerald-500">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block font-bold text-slate-800 mb-1">Sponsor Helpline / Phone</label>
+                <input type="text" [(ngModel)]="newCampaignForm.sponsorContact" placeholder="e.g. +91 98765 43210"
+                  class="w-full px-3 py-2 border border-slate-300 rounded-xl font-semibold outline-none focus:ring-2 focus:ring-emerald-500">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-800 mb-1">WhatsApp Text Note (Optional)</label>
+                <input type="text" [(ngModel)]="newCampaignForm.whatsAppNote" placeholder="e.g. In association with Apex MRI (Call: 9876543210)"
+                  class="w-full px-3 py-2 border border-slate-300 rounded-xl font-semibold outline-none focus:ring-2 focus:ring-emerald-500">
+              </div>
+            </div>
+
+            <!-- Banner Upload -->
+            <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+              <div class="flex items-center justify-between">
+                <label class="block font-bold text-slate-800 text-xs">Sponsor Banner Graphic *</label>
+                <span class="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full flex items-center space-x-1">
+                  <i class="fa-solid fa-wand-magic-sparkles mr-1"></i>
+                  <span>Auto-Fits Any Image to 1200×150 px</span>
+                </span>
+              </div>
+
+              <div *ngIf="newCampaignForm.bannerImageUrl" class="rounded-lg overflow-hidden border border-slate-300 bg-white p-1.5">
+                <div class="w-full h-16 sm:h-20 rounded bg-slate-100 flex items-center justify-center overflow-hidden border border-slate-200">
+                  <img [src]="getImageUrl(newCampaignForm.bannerImageUrl)" alt="Preview" class="w-full h-full object-cover">
+                </div>
+                <div class="text-[10px] text-slate-500 mt-1 flex items-center justify-between px-1">
+                  <span>Standard Full-Width Ribbon Banner</span>
+                  <span class="text-emerald-600 font-bold"><i class="fa-solid fa-circle-check"></i> Standardized (1200 × 150 px)</span>
+                </div>
+              </div>
+
+              <div class="flex items-center space-x-2">
+                <label class="cursor-pointer inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-bold bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 shadow-sm transition-all">
+                  <i *ngIf="uploadingBanner" class="fa-solid fa-spinner fa-spin mr-1.5 text-emerald-600"></i>
+                  <i *ngIf="!uploadingBanner" class="fa-solid fa-image mr-1.5 text-emerald-600"></i>
+                  {{ newCampaignForm.bannerImageUrl ? 'Change Banner Image' : 'Upload Banner Image' }}
+                  <input type="file" accept="image/*" (change)="onBannerSelected($event)" class="hidden">
+                </label>
+                <span class="text-[11px] text-slate-400">Kisi bhi size ka image upload karein — auto-fit ho jayega!</span>
+              </div>
+            </div>
+
+            <!-- Duration Selector -->
+            <div>
+              <label class="block font-bold text-slate-800 mb-1.5">Campaign Duration (Auto-Expiry)</label>
+              <div class="grid grid-cols-5 gap-2">
+                <button type="button" (click)="setDuration(7)"
+                  [ngClass]="newCampaignForm.durationDays === 7 ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
+                  class="py-2 rounded-xl text-center font-semibold text-xs border border-transparent transition-all cursor-pointer">
+                  7 Days
+                </button>
+                <button type="button" (click)="setDuration(15)"
+                  [ngClass]="newCampaignForm.durationDays === 15 ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
+                  class="py-2 rounded-xl text-center font-semibold text-xs border border-transparent transition-all cursor-pointer">
+                  15 Days
+                </button>
+                <button type="button" (click)="setDuration(30)"
+                  [ngClass]="newCampaignForm.durationDays === 30 ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
+                  class="py-2 rounded-xl text-center font-semibold text-xs border border-transparent transition-all cursor-pointer">
+                  1 Month (30d)
+                </button>
+                <button type="button" (click)="setDuration(90)"
+                  [ngClass]="newCampaignForm.durationDays === 90 ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
+                  class="py-2 rounded-xl text-center font-semibold text-xs border border-transparent transition-all cursor-pointer">
+                  3 Months (90d)
+                </button>
+                <button type="button" (click)="setDuration(180)"
+                  [ngClass]="newCampaignForm.durationDays === 180 ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
+                  class="py-2 rounded-xl text-center font-semibold text-xs border border-transparent transition-all cursor-pointer">
+                  6 Months (180d)
+                </button>
+              </div>
+
+              <div class="mt-2 text-[11px] text-emerald-800 bg-emerald-50 p-2 rounded-lg border border-emerald-200 flex items-center justify-between">
+                <span>⏱️ Campaign will run for <strong>{{ newCampaignForm.durationDays }} Days</strong></span>
+                <span>Auto-Expires on: <strong>{{ getCalculatedEndDate() | date:'dd MMM yyyy' }}</strong></span>
+              </div>
+            </div>
+
+            <!-- Targeting Mode -->
+            <div>
+              <label class="block font-bold text-slate-800 mb-1.5">Targeting Mode</label>
+              <div class="grid grid-cols-2 gap-2">
+                <label class="p-3 border rounded-xl flex items-center space-x-2.5 cursor-pointer"
+                  [ngClass]="newCampaignForm.targetType === 2 ? 'border-emerald-500 bg-emerald-50/50' : 'border-slate-200'">
+                  <input type="radio" name="targetType" [value]="2" [(ngModel)]="newCampaignForm.targetType" class="text-emerald-600">
+                  <div>
+                    <span class="font-bold text-slate-800 block text-xs">Direct Lab Selection</span>
+                    <span class="text-[10px] text-slate-500">Pick specific individual laboratories</span>
+                  </div>
+                </label>
+
+                <label class="p-3 border rounded-xl flex items-center space-x-2.5 cursor-pointer"
+                  [ngClass]="newCampaignForm.targetType === 1 ? 'border-emerald-500 bg-emerald-50/50' : 'border-slate-200'">
+                  <input type="radio" name="targetType" [value]="1" [(ngModel)]="newCampaignForm.targetType" class="text-emerald-600">
+                  <div>
+                    <span class="font-bold text-slate-800 block text-xs">City / Location Wise</span>
+                    <span class="text-[10px] text-slate-500">Apply to all labs in a specific city</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Target Mode 1: City Wise -->
+            <div *ngIf="newCampaignForm.targetType === 1" class="space-y-2">
+              <label class="block font-bold text-slate-800">Select Target City</label>
+              <select [(ngModel)]="newCampaignForm.targetCity" class="w-full px-3 py-2 border border-slate-300 rounded-xl font-semibold outline-none focus:ring-2 focus:ring-emerald-500">
+                <option value="">-- Choose City --</option>
+                <option *ngFor="let city of getUniqueCities()" [value]="city">{{ city }}</option>
+              </select>
+            </div>
+
+            <!-- Target Mode 2: Direct Lab Selection with EXCLUSIVITY LOCK -->
+            <div *ngIf="newCampaignForm.targetType === 2" class="space-y-2">
+              <div class="flex items-center justify-between">
+                <label class="font-bold text-slate-800">Select Available Labs (Exclusivity Lock Enforced)</label>
+                <span class="text-[11px] text-slate-500">{{ newCampaignForm.targetLabIds?.length || 0 }} Labs Selected</span>
+              </div>
+
+              <div class="border border-slate-200 rounded-xl p-2 max-h-48 overflow-y-auto space-y-1.5 divide-y divide-slate-100">
+                <div *ngFor="let lab of labAdStatuses" class="pt-1.5 flex items-center justify-between text-xs">
+                  <label class="flex items-center space-x-2 cursor-pointer flex-1" [class.opacity-60]="lab.isBooked || lab.isAdFree">
+                    <input type="checkbox"
+                      [disabled]="lab.isBooked || lab.isAdFree"
+                      [checked]="isLabSelected(lab.tenantId)"
+                      (change)="toggleLabSelection(lab.tenantId)"
+                      class="rounded text-emerald-600 focus:ring-emerald-500 disabled:opacity-50">
+                    <div>
+                      <span class="font-bold text-slate-800">{{ lab.labName }}</span>
+                      <span class="text-slate-400 text-[10px] ml-1.5">{{ lab.city || 'No City' }}</span>
+                    </div>
+                  </label>
+
+                  <div>
+                    <span *ngIf="lab.isBooked" class="text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
+                      🔒 Booked till {{ lab.adExpiryDate | date:'dd MMM' }}
+                    </span>
+                    <span *ngIf="lab.isAdFree" class="text-[10px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
+                      🛡️ Ad-Free Premium
+                    </span>
+                    <span *ngIf="!lab.isBooked && !lab.isAdFree" class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                      ✓ Available
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Financials -->
+            <div class="grid grid-cols-2 gap-3 pt-2 border-t border-slate-100">
+              <div>
+                <label class="block font-bold text-slate-800 mb-1">Deal Amount (₹)</label>
+                <input type="number" [(ngModel)]="newCampaignForm.dealAmount" placeholder="e.g. 10000"
+                  class="w-full px-3 py-2 border border-slate-300 rounded-xl font-semibold outline-none focus:ring-2 focus:ring-emerald-500">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-800 mb-1">Payment Status</label>
+                <select [(ngModel)]="newCampaignForm.paymentStatus" class="w-full px-3 py-2 border border-slate-300 rounded-xl font-semibold outline-none focus:ring-2 focus:ring-emerald-500">
+                  <option value="Paid">Paid</option>
+                  <option value="Pending">Pending</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-slate-50 px-6 py-3.5 border-t border-slate-100 flex items-center justify-end space-x-2 shrink-0">
+            <button type="button" (click)="showCreateCampaignModal = false" class="px-4 py-2 border border-slate-300 rounded-xl font-semibold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer">
+              Cancel
+            </button>
+            <button type="button" (click)="submitCreateCampaign()" [disabled]="creatingCampaign || uploadingBanner"
+              class="px-5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl shadow-md transition-all flex items-center space-x-1.5 cursor-pointer disabled:opacity-50">
+              <i *ngIf="creatingCampaign" class="fa-solid fa-spinner fa-spin mr-1"></i>
+              <i *ngIf="!creatingCampaign" class="fa-solid fa-rocket mr-1"></i>
+              <span>{{ creatingCampaign ? 'Launching...' : 'Launch Campaign' }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- MODAL: EDIT / EXTEND CAMPAIGN MODAL -->
+      <div *ngIf="showEditCampaignModal && selectedCampaignForEdit" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4 overflow-y-auto">
+        <div class="bg-white w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden border border-slate-100 my-auto flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-200">
+          <div class="bg-gradient-to-r from-indigo-700 to-purple-800 px-6 py-4 text-white flex items-center justify-between shrink-0 shadow-sm">
+            <div class="flex items-center space-x-3">
+              <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-white text-base font-bold">
+                <i class="fa-solid fa-pen-to-square"></i>
+              </div>
+              <div>
+                <h3 class="text-sm font-bold font-heading">Edit Campaign & Extend Duration</h3>
+                <p class="text-[11px] text-indigo-200">Re-upload banner graphic or extend days without deleting campaign.</p>
+              </div>
+            </div>
+            <button type="button" (click)="showEditCampaignModal = false" class="text-white/80 hover:text-white text-lg cursor-pointer">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+
+          <div class="p-6 space-y-4 overflow-y-auto flex-1 text-xs">
+            <!-- 1. Change Banner Image -->
+            <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+              <div class="flex items-center justify-between">
+                <label class="block font-bold text-slate-800 text-xs">Change Banner Graphic (Bina delete kiye)</label>
+                <span class="text-[10px] font-bold text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded-full flex items-center space-x-1">
+                  <i class="fa-solid fa-wand-magic-sparkles mr-1"></i>
+                  <span>Auto-Fits to 1200×150 px</span>
+                </span>
+              </div>
+
+              <!-- Current / New Banner Preview -->
+              <div class="rounded-lg overflow-hidden border border-slate-300 bg-white p-1.5">
+                <div class="w-full h-16 sm:h-20 rounded bg-slate-100 flex items-center justify-center overflow-hidden border border-slate-200">
+                  <img [src]="getImageUrl(editCampaignForm.bannerImageUrl)" alt="Banner Graphic" class="w-full h-full object-cover">
+                </div>
+              </div>
+
+              <div class="flex items-center space-x-2 pt-1">
+                <label class="cursor-pointer inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-bold bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 shadow-sm transition-all">
+                  <i *ngIf="uploadingEditBanner" class="fa-solid fa-spinner fa-spin mr-1.5 text-indigo-600"></i>
+                  <i *ngIf="!uploadingEditBanner" class="fa-solid fa-image mr-1.5 text-indigo-600"></i>
+                  {{ editCampaignForm.bannerImageUrl ? 'Change / Re-upload Banner' : 'Upload Banner Image' }}
+                  <input type="file" accept="image/*" (change)="onEditBannerSelected($event)" class="hidden">
+                </label>
+                <span class="text-[11px] text-slate-500">Naya banner select karein — auto-replace ho jayega!</span>
+              </div>
+            </div>
+
+            <!-- 2. Extend Validity (Add Days) -->
+            <div class="p-3.5 bg-indigo-50/50 border border-indigo-200 rounded-xl space-y-2.5">
+              <div class="flex items-center justify-between">
+                <label class="block font-bold text-slate-800 text-xs">Extend Validity (Add Days)</label>
+                <span class="text-[11px] text-slate-600">
+                  Current Expiry: <strong>{{ selectedCampaignForEdit.endDate | date:'dd MMM yyyy' }}</strong>
+                </span>
+              </div>
+
+              <div class="grid grid-cols-4 gap-2">
+                <button type="button" (click)="setExtendDays(7)"
+                  [ngClass]="editCampaignForm.extendDays === 7 ? 'bg-indigo-600 text-white font-bold' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'"
+                  class="py-2 rounded-xl text-center font-semibold text-xs transition-all cursor-pointer">
+                  +7 Days
+                </button>
+                <button type="button" (click)="setExtendDays(15)"
+                  [ngClass]="editCampaignForm.extendDays === 15 ? 'bg-indigo-600 text-white font-bold' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'"
+                  class="py-2 rounded-xl text-center font-semibold text-xs transition-all cursor-pointer">
+                  +15 Days
+                </button>
+                <button type="button" (click)="setExtendDays(30)"
+                  [ngClass]="editCampaignForm.extendDays === 30 ? 'bg-indigo-600 text-white font-bold' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'"
+                  class="py-2 rounded-xl text-center font-semibold text-xs transition-all cursor-pointer">
+                  +1 Month (30d)
+                </button>
+                <button type="button" (click)="setExtendDays(90)"
+                  [ngClass]="editCampaignForm.extendDays === 90 ? 'bg-indigo-600 text-white font-bold' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'"
+                  class="py-2 rounded-xl text-center font-semibold text-xs transition-all cursor-pointer">
+                  +3 Months (90d)
+                </button>
+              </div>
+
+              <div class="flex items-center space-x-2 pt-1">
+                <span class="text-slate-600 font-bold shrink-0">Custom Extra Days:</span>
+                <input type="number" [(ngModel)]="editCampaignForm.extendDays" min="0" placeholder="0"
+                  class="w-24 px-3 py-1.5 border border-slate-300 rounded-lg font-bold text-center outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                <span class="text-slate-500 text-[11px]">extra days</span>
+              </div>
+
+              <div class="text-[11px] text-indigo-900 bg-white p-2.5 rounded-lg border border-indigo-200 flex items-center justify-between">
+                <span>⏱️ Extension: <strong>+{{ editCampaignForm.extendDays || 0 }} Days</strong></span>
+                <span>New Expiry: <strong class="text-emerald-700">{{ getNewEndDatePreview() | date:'dd MMM yyyy' }}</strong></span>
+              </div>
+            </div>
+
+            <!-- 3. Campaign & Sponsor Details -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block font-bold text-slate-800 mb-1">Campaign Title</label>
+                <input type="text" [(ngModel)]="editCampaignForm.campaignTitle"
+                  class="w-full px-3 py-2 border border-slate-300 rounded-xl font-semibold outline-none focus:ring-2 focus:ring-indigo-500">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-800 mb-1">Sponsor Name</label>
+                <input type="text" [(ngModel)]="editCampaignForm.sponsorName"
+                  class="w-full px-3 py-2 border border-slate-300 rounded-xl font-semibold outline-none focus:ring-2 focus:ring-indigo-500">
+              </div>
+            </div>
+
+            <!-- 4. Financial & Payment -->
+            <div class="grid grid-cols-2 gap-3 pt-2 border-t border-slate-100">
+              <div>
+                <label class="block font-bold text-slate-800 mb-1">Deal Amount (₹)</label>
+                <input type="number" [(ngModel)]="editCampaignForm.dealAmount"
+                  class="w-full px-3 py-2 border border-slate-300 rounded-xl font-semibold outline-none focus:ring-2 focus:ring-indigo-500">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-800 mb-1">Payment Status</label>
+                <select [(ngModel)]="editCampaignForm.paymentStatus" class="w-full px-3 py-2 border border-slate-300 rounded-xl font-semibold outline-none focus:ring-2 focus:ring-indigo-500">
+                  <option value="Paid">Paid</option>
+                  <option value="Pending">Pending</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-slate-50 px-6 py-3.5 border-t border-slate-100 flex items-center justify-end space-x-2 shrink-0">
+            <button type="button" (click)="showEditCampaignModal = false" class="px-4 py-2 border border-slate-300 rounded-xl font-semibold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer">
+              Cancel
+            </button>
+            <button type="button" (click)="submitUpdateCampaign()" [disabled]="updatingCampaign || uploadingEditBanner"
+              class="px-5 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold rounded-xl shadow-md transition-all flex items-center space-x-1.5 cursor-pointer disabled:opacity-50">
+              <i *ngIf="updatingCampaign" class="fa-solid fa-spinner fa-spin mr-1"></i>
+              <i *ngIf="!updatingCampaign" class="fa-solid fa-check mr-1"></i>
+              <span>{{ updatingCampaign ? 'Saving...' : 'Save & Update' }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
     </div>
   `
 })
@@ -1153,11 +1773,12 @@ export class SuperAdminComponent implements OnInit {
   private auth = inject(AuthService);
   private toast = inject(ToastService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   private cdr = inject(ChangeDetectorRef);
 
   Math = Math;
 
-  activeTab: 'labs' | 'payments' | 'plans' | 'tickets' | 'announcement' | 'analytics' = 'labs';
+  activeTab: 'labs' | 'payments' | 'plans' | 'tickets' | 'announcement' | 'analytics' | 'monetization' = 'labs';
 
   loading = false;
   adminStats: any = null;
@@ -1165,6 +1786,47 @@ export class SuperAdminComponent implements OnInit {
   transactions: any[] = [];
   plans: any[] = [];
   tickets: any[] = [];
+
+  // Report Advertising & Monetization
+  campaigns: AdCampaign[] = [];
+  labAdStatuses: LabAdStatus[] = [];
+  monetizationSubTab: 'campaigns' | 'labMatrix' = 'campaigns';
+  showCreateCampaignModal = false;
+  creatingCampaign = false;
+  uploadingBanner = false;
+
+  newCampaignForm: CreateAdCampaignRequest = {
+    campaignTitle: '',
+    sponsorName: '',
+    sponsorContact: '',
+    bannerImageUrl: '',
+    targetType: 2,
+    targetCity: '',
+    targetState: '',
+    durationDays: 30,
+    dealAmount: 5000,
+    paymentStatus: 'Paid',
+    targetUrl: '',
+    qrCodeUrl: '',
+    whatsAppNote: '',
+    targetLabIds: []
+  };
+
+  // Edit & Extend Campaign Modal
+  showEditCampaignModal = false;
+  selectedCampaignForEdit: AdCampaign | null = null;
+  updatingCampaign = false;
+  uploadingEditBanner = false;
+  editCampaignForm: UpdateAdCampaignRequest = {
+    campaignTitle: '',
+    sponsorName: '',
+    sponsorContact: '',
+    bannerImageUrl: '',
+    extendDays: 0,
+    dealAmount: 0,
+    paymentStatus: 'Paid',
+    whatsAppNote: ''
+  };
 
   // Search & Filters
   labSearchQuery = '';
@@ -1242,6 +1904,11 @@ export class SuperAdminComponent implements OnInit {
   savingAnnouncement = false;
 
   ngOnInit(): void {
+    this.route.queryParams.subscribe(params => {
+      if (params['tab']) {
+        this.activeTab = params['tab'] as any;
+      }
+    });
     this.loadData();
     this.loadAnnouncement();
   }
@@ -1391,6 +2058,9 @@ export class SuperAdminComponent implements OnInit {
         this.cdr.detectChanges();
       }
     });
+
+    this.loadAdCampaigns();
+    this.loadLabAdStatuses();
   }
 
   loadAnnouncement(): void {
@@ -1788,5 +2458,397 @@ export class SuperAdminComponent implements OnInit {
       });
     });
     return list.sort((a, b) => b.count - a.count);
+  }
+
+  // Ad Campaigns & Monetization Methods
+  loadAdCampaigns(): void {
+    this.api.getAdCampaigns().subscribe({
+      next: (res) => {
+        this.campaigns = res || [];
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  loadLabAdStatuses(): void {
+    this.api.getLabAdStatuses().subscribe({
+      next: (res) => {
+        this.labAdStatuses = res || [];
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  getActiveCampaignsCount(): number {
+    return this.campaigns.filter(c => c.isActive && !c.isExpired).length;
+  }
+
+  getTotalImpressions(): number {
+    return this.campaigns.reduce((acc, c) => acc + (c.totalImpressionsCount || 0), 0);
+  }
+
+  getTotalAdRevenue(): number {
+    return this.campaigns.reduce((acc, c) => acc + (c.dealAmount || 0), 0);
+  }
+
+  getAvailableLabsCount(): number {
+    return this.labAdStatuses.filter(l => !l.isBooked && !l.isAdFree).length;
+  }
+
+  getBookedLabsCount(): number {
+    return this.labAdStatuses.filter(l => l.isBooked).length;
+  }
+
+  getUniqueCities(): string[] {
+    const cities = this.labAdStatuses
+      .map(l => l.city)
+      .filter(c => !!c) as string[];
+    return Array.from(new Set(cities));
+  }
+
+  openCreateCampaignModal(): void {
+    this.newCampaignForm = {
+      campaignTitle: '',
+      sponsorName: '',
+      sponsorContact: '',
+      bannerImageUrl: '',
+      targetType: 2,
+      targetCity: '',
+      targetState: '',
+      durationDays: 30,
+      dealAmount: 5000,
+      paymentStatus: 'Paid',
+      targetUrl: '',
+      qrCodeUrl: '',
+      whatsAppNote: '',
+      targetLabIds: []
+    };
+    this.loadLabAdStatuses();
+    this.showCreateCampaignModal = true;
+    this.cdr.detectChanges();
+  }
+
+  setDuration(days: number): void {
+    this.newCampaignForm.durationDays = days;
+    this.cdr.detectChanges();
+  }
+
+  getCalculatedEndDate(): Date {
+    const d = new Date();
+    d.setDate(d.getDate() + (this.newCampaignForm.durationDays || 30));
+    return d;
+  }
+
+  isLabSelected(tenantId: string): boolean {
+    return !!this.newCampaignForm.targetLabIds?.includes(tenantId);
+  }
+
+  toggleLabSelection(tenantId: string): void {
+    if (!this.newCampaignForm.targetLabIds) {
+      this.newCampaignForm.targetLabIds = [];
+    }
+    const idx = this.newCampaignForm.targetLabIds.indexOf(tenantId);
+    if (idx >= 0) {
+      this.newCampaignForm.targetLabIds.splice(idx, 1);
+    } else {
+      this.newCampaignForm.targetLabIds.push(tenantId);
+    }
+    this.cdr.detectChanges();
+  }
+
+  normalizeBannerImage(file: File, targetW = 1200, targetH = 150): Promise<Blob> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e: any) => {
+        const img = new Image();
+        img.onload = () => {
+          try {
+            const canvas = document.createElement('canvas');
+            canvas.width = targetW;
+            canvas.height = targetH;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+              return reject(new Error('Canvas 2D context not available'));
+            }
+
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+
+            // Clean background fill
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, targetW, targetH);
+
+            const imgAspect = img.width / img.height;
+
+            if (imgAspect >= 2.0) {
+              // Horizontal strip banner: scale to fill whole banner area edge-to-edge
+              ctx.drawImage(img, 0, 0, targetW, targetH);
+            } else {
+              // Square, flyer or photo: scale proportionally to fit targetH, centered horizontally
+              const scale = targetH / img.height;
+              const drawW = img.width * scale;
+              const offsetX = Math.max(0, (targetW - drawW) / 2);
+              ctx.drawImage(img, offsetX, 0, drawW, targetH);
+            }
+
+            canvas.toBlob((blob) => {
+              if (blob) {
+                resolve(blob);
+              } else {
+                reject(new Error('Canvas toBlob failed'));
+              }
+            }, 'image/png', 0.95);
+          } catch (err) {
+            reject(err);
+          }
+        };
+        img.onerror = () => reject(new Error('Failed to load image in browser'));
+        img.src = e.target.result;
+      };
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  onBannerSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+
+    const file = input.files[0];
+    this.uploadingBanner = true;
+    this.cdr.detectChanges();
+
+    // Auto-normalize ANY uploaded image to standard 1200x150 banner strip
+    this.normalizeBannerImage(file, 1200, 150)
+      .then(blob => {
+        const normalizedFile = new File([blob], `banner_${Date.now()}.png`, { type: 'image/png' });
+        this.api.uploadAdBanner(normalizedFile).subscribe({
+          next: (res) => {
+            this.uploadingBanner = false;
+            this.newCampaignForm.bannerImageUrl = res.url;
+            this.toast.success('Sponsor banner auto-fitted to standard size (1200×150 px) & uploaded!');
+            this.cdr.detectChanges();
+          },
+          error: (err) => {
+            this.uploadingBanner = false;
+            this.toast.error(err.error?.message || 'Failed to upload banner graphic.');
+            this.cdr.detectChanges();
+          }
+        });
+      })
+      .catch(() => {
+        // Fallback: upload original file if canvas processing is not supported
+        this.api.uploadAdBanner(file).subscribe({
+          next: (res) => {
+            this.uploadingBanner = false;
+            this.newCampaignForm.bannerImageUrl = res.url;
+            this.toast.success('Sponsor banner uploaded successfully!');
+            this.cdr.detectChanges();
+          },
+          error: (err) => {
+            this.uploadingBanner = false;
+            this.toast.error(err.error?.message || 'Failed to upload banner graphic.');
+            this.cdr.detectChanges();
+          }
+        });
+      });
+  }
+
+  submitCreateCampaign(): void {
+    if (!this.newCampaignForm.campaignTitle || !this.newCampaignForm.sponsorName) {
+      this.toast.warning('Please enter Campaign Title and Sponsor Name.');
+      return;
+    }
+    if (!this.newCampaignForm.bannerImageUrl) {
+      this.toast.warning('Please upload a sponsor banner graphic.');
+      return;
+    }
+    if (this.newCampaignForm.targetType === 2 && (!this.newCampaignForm.targetLabIds || this.newCampaignForm.targetLabIds.length === 0)) {
+      this.toast.warning('Please select at least 1 available laboratory.');
+      return;
+    }
+    if (this.newCampaignForm.targetType === 1 && !this.newCampaignForm.targetCity) {
+      this.toast.warning('Please select a target city.');
+      return;
+    }
+
+    this.creatingCampaign = true;
+    this.cdr.detectChanges();
+
+    this.api.createAdCampaign(this.newCampaignForm).subscribe({
+      next: (res) => {
+        this.creatingCampaign = false;
+        this.showCreateCampaignModal = false;
+        this.toast.success(res.message || 'Ad campaign launched successfully!');
+        this.loadAdCampaigns();
+        this.loadLabAdStatuses();
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.creatingCampaign = false;
+        this.toast.error(err.error?.message || 'Error creating ad campaign.');
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  toggleCampaignStatus(camp: AdCampaign): void {
+    this.api.toggleAdCampaignStatus(camp.id).subscribe({
+      next: (res) => {
+        camp.isActive = res.isActive;
+        this.toast.success(res.message || 'Campaign status updated.');
+        this.loadLabAdStatuses();
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.toast.error(err.error?.message || 'Error updating campaign status.');
+      }
+    });
+  }
+
+  deleteCampaign(camp: AdCampaign): void {
+    if (!confirm(`Are you sure you want to delete ad campaign '${camp.campaignTitle}'?`)) {
+      return;
+    }
+
+    this.api.deleteAdCampaign(camp.id).subscribe({
+      next: () => {
+        this.toast.success('Ad campaign deleted successfully.');
+        this.loadAdCampaigns();
+        this.loadLabAdStatuses();
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.toast.error(err.error?.message || 'Error deleting ad campaign.');
+      }
+    });
+  }
+
+  toggleLabAdFree(lab: LabAdStatus): void {
+    this.api.toggleLabAdFree(lab.tenantId).subscribe({
+      next: (res) => {
+        lab.isAdFree = res.isAdFree;
+        this.toast.success(res.message || 'Lab ad-free status updated.');
+        this.loadLabAdStatuses();
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.toast.error(err.error?.message || 'Error updating ad-free status.');
+      }
+    });
+  }
+
+  openEditCampaignModal(camp: AdCampaign): void {
+    this.selectedCampaignForEdit = camp;
+    this.editCampaignForm = {
+      campaignTitle: camp.campaignTitle,
+      sponsorName: camp.sponsorName,
+      sponsorContact: camp.sponsorContact || '',
+      bannerImageUrl: camp.bannerImageUrl,
+      extendDays: 0,
+      dealAmount: camp.dealAmount || 0,
+      paymentStatus: camp.paymentStatus || 'Paid',
+      whatsAppNote: camp.whatsAppNote || ''
+    };
+    this.showEditCampaignModal = true;
+    this.cdr.detectChanges();
+  }
+
+  setExtendDays(days: number): void {
+    this.editCampaignForm.extendDays = days;
+    this.cdr.detectChanges();
+  }
+
+  getNewEndDatePreview(): Date | null {
+    if (!this.selectedCampaignForEdit) return null;
+    const base = new Date(this.selectedCampaignForEdit.endDate);
+    const today = new Date();
+    const startFrom = base.getTime() > today.getTime() ? base : today;
+    const result = new Date(startFrom);
+    result.setDate(result.getDate() + (this.editCampaignForm.extendDays || 0));
+    return result;
+  }
+
+  onEditBannerSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+
+    const file = input.files[0];
+    this.uploadingEditBanner = true;
+    this.cdr.detectChanges();
+
+    this.normalizeBannerImage(file, 1200, 150)
+      .then(blob => {
+        const normalizedFile = new File([blob], `banner_edit_${Date.now()}.png`, { type: 'image/png' });
+        this.api.uploadAdBanner(normalizedFile).subscribe({
+          next: (res) => {
+            this.uploadingEditBanner = false;
+            this.editCampaignForm.bannerImageUrl = res.url;
+            this.toast.success('Sponsor banner auto-fitted (1200×150 px) & replaced!');
+            this.cdr.detectChanges();
+          },
+          error: (err) => {
+            this.uploadingEditBanner = false;
+            this.toast.error(err.error?.message || 'Failed to upload banner graphic.');
+            this.cdr.detectChanges();
+          }
+        });
+      })
+      .catch(() => {
+        this.api.uploadAdBanner(file).subscribe({
+          next: (res) => {
+            this.uploadingEditBanner = false;
+            this.editCampaignForm.bannerImageUrl = res.url;
+            this.toast.success('Sponsor banner uploaded successfully!');
+            this.cdr.detectChanges();
+          },
+          error: (err) => {
+            this.uploadingEditBanner = false;
+            this.toast.error(err.error?.message || 'Failed to upload banner graphic.');
+            this.cdr.detectChanges();
+          }
+        });
+      });
+  }
+
+  submitUpdateCampaign(): void {
+    if (!this.selectedCampaignForEdit) return;
+    if (!this.editCampaignForm.campaignTitle || !this.editCampaignForm.sponsorName) {
+      this.toast.warning('Please enter Campaign Title and Sponsor Name.');
+      return;
+    }
+    if (!this.editCampaignForm.bannerImageUrl) {
+      this.toast.warning('Banner image cannot be empty.');
+      return;
+    }
+
+    this.updatingCampaign = true;
+    this.cdr.detectChanges();
+
+    this.api.updateAdCampaign(this.selectedCampaignForEdit.id, this.editCampaignForm).subscribe({
+      next: (res) => {
+        this.updatingCampaign = false;
+        this.showEditCampaignModal = false;
+        this.toast.success(res.message || 'Ad campaign updated successfully!');
+        this.loadAdCampaigns();
+        this.loadLabAdStatuses();
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.updatingCampaign = false;
+        this.toast.error(err.error?.message || 'Error updating campaign.');
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  getImageUrl(url?: string): string {
+    if (!url) return '';
+    if (url.startsWith('http') || url.startsWith('data:')) return url;
+    const clean = url.startsWith('/') ? url : `/${url}`;
+    const baseServer = (environment.apiUrl && environment.apiUrl.startsWith('http'))
+      ? environment.apiUrl.replace(/\/api\/?$/, '')
+      : '';
+    return `${baseServer}${clean}`;
   }
 }

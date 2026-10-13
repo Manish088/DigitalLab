@@ -25,6 +25,8 @@ public interface IApplicationDbContext
     DbSet<SubscriptionPlan> SubscriptionPlans { get; }
     DbSet<TenantSubscription> TenantSubscriptions { get; }
     DbSet<SystemSetting> SystemSettings { get; }
+    DbSet<AdCampaign> AdCampaigns { get; }
+    DbSet<AdCampaignLab> AdCampaignLabs { get; }
 
     EntityEntry<TEntity> Entry<TEntity>(TEntity entity) where TEntity : class;
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

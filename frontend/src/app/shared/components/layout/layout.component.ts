@@ -195,6 +195,9 @@ import { ToastService } from '../../../core/services/toast.service';
             <a routerLink="/admin-dashboard" (click)="closeMobileMenu()" routerLinkActive="bg-amber-600 text-white" class="flex items-center px-3 py-2 text-xs font-medium rounded-xl text-amber-200 hover:bg-slate-800 transition-all">
               <i class="fa-solid fa-shield-halved w-5 text-center mr-2.5"></i> SaaS Admin Portal
             </a>
+            <a [routerLink]="['/admin-dashboard']" [queryParams]="{ tab: 'monetization' }" (click)="closeMobileMenu()" class="flex items-center px-3 py-2 text-xs font-medium rounded-xl text-emerald-300 hover:bg-slate-800 transition-all">
+              <i class="fa-solid fa-rectangle-ad w-5 text-center mr-2.5 text-emerald-400"></i> Advertising & Monetization
+            </a>
           </ng-container>
         </div>
 
@@ -267,6 +270,9 @@ import { ToastService } from '../../../core/services/toast.service';
               <div class="text-[11px] font-bold uppercase tracking-wider text-amber-400 px-3 pt-4 pb-1">Super Admin</div>
               <a routerLink="/admin-dashboard" routerLinkActive="bg-amber-600 text-white" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg text-amber-200 hover:bg-slate-800 transition-all">
                 <i class="fa-solid fa-shield-halved w-5 text-center mr-3"></i> SaaS Admin Portal
+              </a>
+              <a [routerLink]="['/admin-dashboard']" [queryParams]="{ tab: 'monetization' }" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg text-emerald-300 hover:bg-slate-800 transition-all">
+                <i class="fa-solid fa-rectangle-ad w-5 text-center mr-3 text-emerald-400"></i> Advertising & Monetization
               </a>
             </ng-container>
           </div>

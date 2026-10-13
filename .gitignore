@@ -32,6 +32,7 @@ yarn-error.log*
 # Test artifacts & generated PDFs / SVGs / Logs
 test_*.pdf
 test_*.svg
+banner*.jpg
 *.log
 *.tmp
 

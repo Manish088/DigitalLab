@@ -391,3 +391,72 @@ export interface SupportTicket {
     createdAt: string;
   }[];
 }
+
+export interface AdCampaign {
+  id: string;
+  campaignTitle: string;
+  sponsorName: string;
+  sponsorContact?: string;
+  bannerImageUrl: string;
+  targetType: number;
+  targetCity?: string;
+  targetState?: string;
+  startDate: string;
+  endDate: string;
+  durationDays: number;
+  isActive: boolean;
+  dealAmount?: number;
+  paymentStatus: string;
+  targetUrl?: string;
+  qrCodeUrl?: string;
+  whatsAppNote?: string;
+  totalImpressionsCount: number;
+  targetLabIds: string[];
+  targetLabNames: string[];
+  isExpired: boolean;
+}
+
+export interface CreateAdCampaignRequest {
+  campaignTitle: string;
+  sponsorName: string;
+  sponsorContact?: string;
+  bannerImageUrl: string;
+  targetType: number;
+  targetCity?: string;
+  targetState?: string;
+  startDate?: string;
+  durationDays: number;
+  dealAmount?: number;
+  paymentStatus?: string;
+  targetUrl?: string;
+  qrCodeUrl?: string;
+  whatsAppNote?: string;
+  targetLabIds?: string[];
+}
+
+export interface UpdateAdCampaignRequest {
+  campaignTitle?: string;
+  sponsorName?: string;
+  sponsorContact?: string;
+  bannerImageUrl?: string;
+  extendDays?: number;
+  newEndDate?: string;
+  dealAmount?: number;
+  paymentStatus?: string;
+  whatsAppNote?: string;
+}
+
+export interface LabAdStatus {
+  tenantId: string;
+  labName: string;
+  labCode?: string;
+  city?: string;
+  state?: string;
+  isAdFree: boolean;
+  isBooked: boolean;
+  currentCampaignId?: string;
+  currentCampaignTitle?: string;
+  currentSponsorName?: string;
+  adExpiryDate?: string;
+}
+

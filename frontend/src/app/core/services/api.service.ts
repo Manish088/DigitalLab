@@ -12,7 +12,11 @@ import {
   CollectionAgent,
   LetterheadConfig,
   SubscriptionPlan,
-  SupportTicket
+  SupportTicket,
+  AdCampaign,
+  CreateAdCampaignRequest,
+  UpdateAdCampaignRequest,
+  LabAdStatus
 } from '../models/lims.models';
 import { environment } from '../../../environments/environment';
 
@@ -361,5 +365,40 @@ export class ApiService {
 
   initializeProduction(payload: any): Observable<any> {
     return this.http.post<any>(`${this.baseUrl}/setup/initialize`, payload);
+  }
+
+  // Ad Campaigns & Monetization
+  getAdCampaigns(): Observable<AdCampaign[]> {
+    return this.http.get<AdCampaign[]>(`${this.baseUrl}/adcampaigns`);
+  }
+
+  getLabAdStatuses(): Observable<LabAdStatus[]> {
+    return this.http.get<LabAdStatus[]>(`${this.baseUrl}/adcampaigns/lab-status`);
+  }
+
+  createAdCampaign(data: CreateAdCampaignRequest): Observable<any> {
+    return this.http.post(`${this.baseUrl}/adcampaigns`, data);
+  }
+
+  updateAdCampaign(id: string, data: UpdateAdCampaignRequest): Observable<any> {
+    return this.http.put(`${this.baseUrl}/adcampaigns/${id}`, data);
+  }
+
+  toggleAdCampaignStatus(id: string): Observable<any> {
+    return this.http.put(`${this.baseUrl}/adcampaigns/${id}/toggle-status`, {});
+  }
+
+  deleteAdCampaign(id: string): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/adcampaigns/${id}`);
+  }
+
+  toggleLabAdFree(tenantId: string): Observable<any> {
+    return this.http.put(`${this.baseUrl}/adcampaigns/toggle-ad-free/${tenantId}`, {});
+  }
+
+  uploadAdBanner(file: File): Observable<{ url: string; message: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<{ url: string; message: string }>(`${this.baseUrl}/adcampaigns/upload-banner`, formData);
   }
 }

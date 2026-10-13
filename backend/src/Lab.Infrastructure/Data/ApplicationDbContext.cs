@@ -38,6 +38,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>, IApplica
     public DbSet<SubscriptionPlan> SubscriptionPlans => Set<SubscriptionPlan>();
     public DbSet<TenantSubscription> TenantSubscriptions => Set<TenantSubscription>();
     public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();
+    public DbSet<AdCampaign> AdCampaigns => Set<AdCampaign>();
+    public DbSet<AdCampaignLab> AdCampaignLabs => Set<AdCampaignLab>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -138,6 +140,18 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>, IApplica
             .WithMany()
             .HasForeignKey(p => p.ChildTestId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<AdCampaignLab>()
+            .HasOne(a => a.AdCampaign)
+            .WithMany(c => c.TargetLabs)
+            .HasForeignKey(a => a.AdCampaignId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<AdCampaignLab>()
+            .HasOne(a => a.Tenant)
+            .WithMany(t => t.AdCampaigns)
+            .HasForeignKey(a => a.TenantId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

@@ -37,6 +37,7 @@ public class TenantLab : BaseEntity
     public string PrimaryColor { get; set; } = "#0284c7";
 
     public bool IsActive { get; set; } = true;
+    public bool IsAdFree { get; set; } = false;
     public Guid? SubscriptionPlanId { get; set; }
     public DateTime? SubscriptionExpiryDate { get; set; }
     public string SubscriptionStatus { get; set; } = "Trial"; // Trial, Active, Expired, Suspended
@@ -45,4 +46,5 @@ public class TenantLab : BaseEntity
     public ICollection<CaseOrder> CaseOrders { get; set; } = new List<CaseOrder>();
     public ICollection<TestMaster> Tests { get; set; } = new List<TestMaster>();
     public ICollection<DoctorReferral> Doctors { get; set; } = new List<DoctorReferral>();
+    public ICollection<AdCampaignLab> AdCampaigns { get; set; } = new List<AdCampaignLab>();
 }
