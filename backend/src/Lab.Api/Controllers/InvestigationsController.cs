@@ -6,6 +6,7 @@ using Lab.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Lab.Api.Controllers;
 
@@ -16,13 +17,16 @@ public class InvestigationsController : ControllerBase
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IMemoryCache _cache;
 
     public InvestigationsController(
         IApplicationDbContext context,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IMemoryCache cache)
     {
         _context = context;
         _currentUserService = currentUserService;
+        _cache = cache;
     }
 
     [HttpGet("{caseOrderId}")]
@@ -288,6 +292,8 @@ public class InvestigationsController : ControllerBase
         caseOrder.Status = CaseStatus.Completed;
 
         await _context.SaveChangesAsync();
+        EvictReportCache(caseOrder.Id, caseOrder.PublicAccessToken);
+
         return Ok(new { 
             message = "All investigation results saved successfully. Ready for verification." 
         });
@@ -354,6 +360,8 @@ public class InvestigationsController : ControllerBase
         }
 
         await _context.SaveChangesAsync();
+        EvictReportCache(caseOrderId, caseOrder.PublicAccessToken);
+
         return Ok(new { message = "Report verified and approved successfully.", ApprovedByName = caseOrder.ApprovedByName, ApprovedAt = caseOrder.ApprovedAt });
     }
 
@@ -390,6 +398,26 @@ public class InvestigationsController : ControllerBase
         }
 
         await _context.SaveChangesAsync();
+        EvictReportCache(caseOrderId, caseOrder.PublicAccessToken);
+
         return Ok(new { message = "Report unlocked successfully. Results can now be edited and re-verified." });
+    }
+
+    private void EvictReportCache(Guid caseOrderId, Guid publicAccessToken)
+    {
+        try
+        {
+            _cache.Remove($"report_pdf_{caseOrderId}_true");
+            _cache.Remove($"report_pdf_{caseOrderId}_false");
+            _cache.Remove($"invoice_pdf_{caseOrderId}");
+            _cache.Remove($"thermal_receipt_{caseOrderId}_80");
+            _cache.Remove($"thermal_receipt_{caseOrderId}_58");
+            if (publicAccessToken != Guid.Empty)
+            {
+                _cache.Remove($"public_report_pdf_{publicAccessToken}_true");
+                _cache.Remove($"public_report_pdf_{publicAccessToken}_false");
+            }
+        }
+        catch { /* Ignore cache eviction failure */ }
     }
 }

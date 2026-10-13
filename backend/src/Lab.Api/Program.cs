@@ -1,10 +1,12 @@
 using System.Text;
+using System.Threading.RateLimiting;
 using Lab.Application.Common.Interfaces;
 using Lab.Infrastructure.Data;
 using Lab.Infrastructure.Identity;
 using Lab.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -103,7 +105,43 @@ builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IBarcodeService, BarcodeService>();
 builder.Services.AddScoped<IPdfReportService, PdfReportService>();
 
-// 5. Configure CORS for Angular Frontend
+// 5. In-Memory Cache for fast repeat PDF retrieval (Anti-DoS)
+builder.Services.AddMemoryCache();
+
+// 6. Rate Limiting Protection against automated curl loops & DoS attacks
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.OnRejected = async (context, token) =>
+    {
+        context.HttpContext.Response.ContentType = "application/json";
+        await context.HttpContext.Response.WriteAsync("{\"message\": \"Too many requests. Please wait 1 minute before downloading again.\", \"statusCode\": 429}", token);
+    };
+
+    // PDF Generation Policy: Max 15 requests per minute per IP address
+    options.AddPolicy("PdfReportPolicy", httpContext =>
+    {
+        var clientIp = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        if (httpContext.Request.Headers.TryGetValue("X-Forwarded-For", out var forwarded))
+        {
+            var ip = forwarded.ToString().Split(',').FirstOrDefault()?.Trim();
+            if (!string.IsNullOrWhiteSpace(ip)) clientIp = ip;
+        }
+
+        return RateLimitPartition.GetSlidingWindowLimiter(
+            clientIp,
+            _ => new SlidingWindowRateLimiterOptions
+            {
+                PermitLimit = 15,
+                Window = TimeSpan.FromMinutes(1),
+                SegmentsPerWindow = 6,
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            });
+    });
+});
+
+// 7. Configure CORS for Angular Frontend
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -192,6 +230,7 @@ if (app.Environment.IsDevelopment() || true)
 }
 
 app.UseCors("AllowAll");
+app.UseRateLimiter();
 
 // Real-Time Enforcement: Disable all HTTP response caching
 app.Use(async (context, next) =>

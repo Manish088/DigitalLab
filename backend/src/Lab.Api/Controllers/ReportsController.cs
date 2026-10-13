@@ -2,23 +2,29 @@ using Lab.Application.Common.Interfaces;
 using Lab.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Lab.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[EnableRateLimiting("PdfReportPolicy")]
 public class ReportsController : ControllerBase
 {
     private readonly IPdfReportService _pdfReportService;
     private readonly IApplicationDbContext _context;
+    private readonly IMemoryCache _cache;
 
     public ReportsController(
         IPdfReportService pdfReportService,
-        IApplicationDbContext context)
+        IApplicationDbContext context,
+        IMemoryCache cache)
     {
         _pdfReportService = pdfReportService;
         _context = context;
+        _cache = cache;
     }
 
     [AllowAnonymous]
@@ -29,7 +35,17 @@ public class ReportsController : ControllerBase
         if (!await IsLabSubscriptionActiveAsync(caseOrderId))
             return StatusCode(403, new { message = "Laboratory subscription has expired. Please renew your plan to generate and download patient reports." });
 
-        var pdfBytes = await _pdfReportService.GeneratePatientReportPdfAsync(caseOrderId, letterheadMode);
+        var cacheKey = $"report_pdf_{caseOrderId}_{letterheadMode}";
+        if (!_cache.TryGetValue(cacheKey, out byte[]? pdfBytes) || pdfBytes == null)
+        {
+            pdfBytes = await _pdfReportService.GeneratePatientReportPdfAsync(caseOrderId, letterheadMode);
+            _cache.Set(cacheKey, pdfBytes, new MemoryCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10),
+                SlidingExpiration = TimeSpan.FromMinutes(3)
+            });
+        }
+
         var disposition = download ? "attachment" : "inline";
         Response.Headers.Append("Content-Disposition", $"{disposition}; filename=DiagnosticReport_{caseOrderId}.pdf");
         return File(pdfBytes, "application/pdf", download ? $"DiagnosticReport_{caseOrderId}.pdf" : null);
@@ -43,7 +59,17 @@ public class ReportsController : ControllerBase
         if (!await IsLabSubscriptionActiveAsync(caseOrderId))
             return StatusCode(403, new { message = "Laboratory subscription has expired. Please renew your plan to download tax invoices and bills." });
 
-        var pdfBytes = await _pdfReportService.GenerateInvoicePdfAsync(caseOrderId);
+        var cacheKey = $"invoice_pdf_{caseOrderId}";
+        if (!_cache.TryGetValue(cacheKey, out byte[]? pdfBytes) || pdfBytes == null)
+        {
+            pdfBytes = await _pdfReportService.GenerateInvoicePdfAsync(caseOrderId);
+            _cache.Set(cacheKey, pdfBytes, new MemoryCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10),
+                SlidingExpiration = TimeSpan.FromMinutes(3)
+            });
+        }
+
         var disposition = download ? "attachment" : "inline";
         Response.Headers.Append("Content-Disposition", $"{disposition}; filename=TaxInvoice_{caseOrderId}.pdf");
         return File(pdfBytes, "application/pdf", download ? $"TaxInvoice_{caseOrderId}.pdf" : null);
@@ -57,7 +83,17 @@ public class ReportsController : ControllerBase
         if (!await IsLabSubscriptionActiveAsync(caseOrderId))
             return StatusCode(403, new { message = "Laboratory subscription has expired. Please renew your plan to download thermal receipts." });
 
-        var pdfBytes = await _pdfReportService.GenerateThermalReceiptPdfAsync(caseOrderId, width);
+        var cacheKey = $"thermal_receipt_{caseOrderId}_{width}";
+        if (!_cache.TryGetValue(cacheKey, out byte[]? pdfBytes) || pdfBytes == null)
+        {
+            pdfBytes = await _pdfReportService.GenerateThermalReceiptPdfAsync(caseOrderId, width);
+            _cache.Set(cacheKey, pdfBytes, new MemoryCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10),
+                SlidingExpiration = TimeSpan.FromMinutes(3)
+            });
+        }
+
         var disposition = download ? "attachment" : "inline";
         Response.Headers.Append("Content-Disposition", $"{disposition}; filename=ThermalReceipt_{caseOrderId}.pdf");
         return File(pdfBytes, "application/pdf", download ? $"ThermalReceipt_{caseOrderId}.pdf" : null);
@@ -121,7 +157,17 @@ public class ReportsController : ControllerBase
         if (caseOrder.Status != CaseStatus.Approved)
             return BadRequest(new { message = "Report is currently under lab testing/processing and has not been approved yet." });
 
-        var pdfBytes = await _pdfReportService.GeneratePatientReportPdfAsync(caseOrder.Id, letterheadMode);
+        var cacheKey = $"public_report_pdf_{token}_{letterheadMode}";
+        if (!_cache.TryGetValue(cacheKey, out byte[]? pdfBytes) || pdfBytes == null)
+        {
+            pdfBytes = await _pdfReportService.GeneratePatientReportPdfAsync(caseOrder.Id, letterheadMode);
+            _cache.Set(cacheKey, pdfBytes, new MemoryCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10),
+                SlidingExpiration = TimeSpan.FromMinutes(3)
+            });
+        }
+
         Response.Headers.Append("Content-Disposition", $"inline; filename=Report_{caseOrder.CaseNumber}.pdf");
         return File(pdfBytes, "application/pdf");
     }
