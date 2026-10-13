@@ -16,6 +16,7 @@ if exist "%OUTPUT_DIR%" (
 mkdir "%OUTPUT_DIR%"
 mkdir "%OUTPUT_DIR%\wwwroot"
 mkdir "%OUTPUT_DIR%\database"
+if exist "%ROOT_DIR%database" xcopy /s /e /y "%ROOT_DIR%database\*" "%OUTPUT_DIR%\database\"
 
 echo [2/5] Building Angular Frontend (Production)...
 cd /d "%ROOT_DIR%frontend"
