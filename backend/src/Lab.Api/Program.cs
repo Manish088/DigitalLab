@@ -108,17 +108,71 @@ builder.Services.AddScoped<IPdfReportService, PdfReportService>();
 // 5. In-Memory Cache for fast repeat PDF retrieval (Anti-DoS)
 builder.Services.AddMemoryCache();
 
-// 6. Rate Limiting Protection against automated curl loops & DoS attacks
+// 6. Comprehensive Anti-Abuse & Rate Limiting Protection across ALL endpoints
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
     options.OnRejected = async (context, token) =>
     {
         context.HttpContext.Response.ContentType = "application/json";
-        await context.HttpContext.Response.WriteAsync("{\"message\": \"Too many requests. Please wait 1 minute before downloading again.\", \"statusCode\": 429}", token);
+        await context.HttpContext.Response.WriteAsync("{\"message\": \"Rate limit exceeded. Automated request spamming is blocked by Security Shield. Please wait 1 minute.\", \"statusCode\": 429}", token);
     };
 
-    // PDF Generation Policy: Max 15 requests per minute per IP address
+    // GLOBAL LIMITER: Automatically protects 100% of ALL endpoints across the entire site
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+    {
+        var clientIp = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        if (httpContext.Request.Headers.TryGetValue("X-Forwarded-For", out var forwarded))
+        {
+            var ip = forwarded.ToString().Split(',').FirstOrDefault()?.Trim();
+            if (!string.IsNullOrWhiteSpace(ip)) clientIp = ip;
+        }
+
+        var path = httpContext.Request.Path.Value?.ToLowerInvariant() ?? "";
+
+        // 1. Strict Auth Protection: /api/auth/login, /api/auth/register (max 10 attempts/min to stop brute force)
+        if (path.StartsWith("/api/auth/login") || path.StartsWith("/api/auth/register"))
+        {
+            return RateLimitPartition.GetFixedWindowLimiter(
+                $"auth_{clientIp}",
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 10,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                    QueueLimit = 0
+                });
+        }
+
+        // 2. Strict PDF & File Exports: /pdf, /invoice, /thermal-receipt (max 15 requests/min per IP)
+        if (path.Contains("/pdf") || path.Contains("/invoice") || path.Contains("/thermal-receipt"))
+        {
+            return RateLimitPartition.GetSlidingWindowLimiter(
+                $"pdf_{clientIp}",
+                _ => new SlidingWindowRateLimiterOptions
+                {
+                    PermitLimit = 15,
+                    Window = TimeSpan.FromMinutes(1),
+                    SegmentsPerWindow = 6,
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                    QueueLimit = 0
+                });
+        }
+
+        // 3. Global Protection for every single API or page hit: Max 60 requests/min per IP
+        return RateLimitPartition.GetSlidingWindowLimiter(
+            $"global_{clientIp}",
+            _ => new SlidingWindowRateLimiterOptions
+            {
+                PermitLimit = 60,
+                Window = TimeSpan.FromMinutes(1),
+                SegmentsPerWindow = 6,
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            });
+    });
+
+    // Specific Named Policy for explicit controller annotations
     options.AddPolicy("PdfReportPolicy", httpContext =>
     {
         var clientIp = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
@@ -129,7 +183,7 @@ builder.Services.AddRateLimiter(options =>
         }
 
         return RateLimitPartition.GetSlidingWindowLimiter(
-            clientIp,
+            $"pdf_policy_{clientIp}",
             _ => new SlidingWindowRateLimiterOptions
             {
                 PermitLimit = 15,
@@ -238,6 +292,27 @@ app.Use(async (context, next) =>
     context.Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0";
     context.Response.Headers["Pragma"] = "no-cache";
     context.Response.Headers["Expires"] = "-1";
+    await next();
+});
+
+// Security Shield: Block known malicious hacking scanners & exploit tools
+app.Use(async (context, next) =>
+{
+    var userAgent = context.Request.Headers["User-Agent"].ToString().ToLowerInvariant();
+    var path = context.Request.Path.Value?.ToLowerInvariant() ?? "";
+
+    if (path.StartsWith("/api/"))
+    {
+        string[] blockedScanners = { "sqlmap", "nikto", "gobuster", "dirbuster", "wpscan", "masscan", "zgrab" };
+        if (blockedScanners.Any(scanner => userAgent.Contains(scanner)))
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync("{\"message\": \"Access denied by Security Shield. Automated scanner detected.\", \"statusCode\": 403}");
+            return;
+        }
+    }
+
     await next();
 });
 
