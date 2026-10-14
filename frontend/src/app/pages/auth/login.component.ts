@@ -1,4 +1,4 @@
-import { Component, inject, ChangeDetectorRef, OnInit } from '@angular/core';
+import { Component, inject, ChangeDetectorRef, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
@@ -90,7 +90,7 @@ import { AuthService } from '../../core/services/auth.service';
           </form>
 
           <!-- Register / 14-Day Free Trial Form -->
-          <form *ngIf="isRegister" (ngSubmit)="onRegister()" class="space-y-3.5">
+          <form *ngIf="isRegister" (ngSubmit)="onInitiateRegister()" class="space-y-3.5">
             <!-- 14-Day Trial Trust Banner -->
             <div class="p-3 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-brand-500/10 border border-emerald-500/30 text-center">
               <div class="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase tracking-wider mb-1 border border-emerald-300">
@@ -158,11 +158,11 @@ import { AuthService } from '../../core/services/auth.service';
               <span class="text-[10px] bg-emerald-200 text-emerald-900 font-bold px-2 py-0.5 rounded-full">+1 Month Free</span>
             </div>
 
-            <button type="submit" [disabled]="loading"
+            <button type="submit" [disabled]="loading || sendingOtp"
               class="w-full mt-3 py-3.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-brand-600 text-white font-black text-xs sm:text-sm hover:from-emerald-500 hover:to-brand-500 transition-all shadow-lg shadow-emerald-600/30 disabled:opacity-50 cursor-pointer flex items-center justify-center space-x-2">
-              <i *ngIf="loading" class="fa-solid fa-spinner fa-spin mr-2"></i>
-              <i *ngIf="!loading" class="fa-solid fa-rocket text-amber-300"></i>
-              <span>{{ loading ? 'Setting up lab & 100+ tests...' : 'Start 14-Day Free Trial (No Card Needed)' }}</span>
+              <i *ngIf="sendingOtp" class="fa-solid fa-spinner fa-spin mr-2"></i>
+              <i *ngIf="!sendingOtp" class="fa-brands fa-whatsapp text-emerald-200 text-base"></i>
+              <span>{{ sendingOtp ? 'Sending WhatsApp OTP...' : 'Verify Mobile & Start 14-Day Free Trial' }}</span>
             </button>
 
             <!-- Features Included in Trial -->
@@ -183,6 +183,72 @@ import { AuthService } from '../../core/services/auth.service';
 
         </div>
 
+        <!-- OTP Verification Modal -->
+        <div *ngIf="showOtpModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div class="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-md w-full p-6 sm:p-8 relative overflow-hidden">
+            
+            <div class="w-14 h-14 mx-auto rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-3xl shadow-inner mb-4">
+              <i class="fa-brands fa-whatsapp"></i>
+            </div>
+
+            <h3 class="text-xl font-black text-center text-slate-900 font-heading">Verify Mobile Number</h3>
+            <p class="text-xs text-center text-slate-500 mt-1.5 leading-relaxed">
+              We sent a 6-digit verification code to <br>
+              <strong class="text-slate-800 text-sm font-bold">+91 {{ regData.phone }}</strong>
+              <button type="button" (click)="showOtpModal = false" class="text-brand-600 hover:underline text-[11px] ml-1.5 font-semibold cursor-pointer">
+                (Change)
+              </button>
+            </p>
+
+            <!-- Demo OTP Helper Badge (for instant demo/testing) -->
+            <div *ngIf="demoOtp" class="mt-4 p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center justify-between">
+              <span class="flex items-center">
+                <i class="fa-solid fa-key text-amber-500 mr-2"></i>
+                <span>Test / Demo OTP:</span>
+              </span>
+              <span class="font-mono font-black text-sm bg-white px-2 py-0.5 rounded-lg border border-amber-200 tracking-wider">
+                {{ demoOtp }}
+              </span>
+            </div>
+
+            <!-- Alert error inside modal -->
+            <div *ngIf="otpError" class="mt-3 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center">
+              <i class="fa-solid fa-circle-exclamation mr-2 text-sm shrink-0"></i>
+              <span>{{ otpError }}</span>
+            </div>
+
+            <!-- 6-digit OTP input -->
+            <div class="mt-5">
+              <label class="block text-xs font-bold text-slate-700 mb-1.5 text-center">Enter 6-Digit Code</label>
+              <input type="text" [(ngModel)]="enteredOtp" maxlength="6" inputmode="numeric" placeholder="• • • • • •"
+                (keyup.enter)="onVerifyAndRegister()"
+                class="block w-full text-center text-2xl tracking-[0.5em] font-mono font-black py-3 px-4 bg-slate-50 border-2 border-slate-200 rounded-2xl text-slate-900 placeholder-slate-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="mt-5 space-y-2.5">
+              <button type="button" (click)="onVerifyAndRegister()" [disabled]="loading || !enteredOtp || enteredOtp.length < 6"
+                class="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-extrabold text-sm hover:from-emerald-500 hover:to-teal-500 transition-all shadow-lg shadow-emerald-600/30 disabled:opacity-50 cursor-pointer flex items-center justify-center space-x-2">
+                <i *ngIf="loading" class="fa-solid fa-spinner fa-spin mr-2"></i>
+                <i *ngIf="!loading" class="fa-solid fa-rocket text-amber-300"></i>
+                <span>{{ loading ? 'Verifying & Setting Up Lab...' : 'Verify OTP & Launch Lab' }}</span>
+              </button>
+
+              <!-- Resend Countdown -->
+              <div class="text-center pt-1">
+                <button *ngIf="otpCountdown === 0" type="button" (click)="resendOtp()" [disabled]="resendingOtp"
+                  class="text-xs font-bold text-brand-600 hover:text-brand-700 underline cursor-pointer">
+                  {{ resendingOtp ? 'Resending...' : "Didn't receive code? Resend OTP" }}
+                </button>
+                <span *ngIf="otpCountdown > 0" class="text-xs text-slate-400 font-medium">
+                  Resend code in <strong class="text-slate-600 font-bold">{{ otpCountdown }}s</strong>
+                </span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
         <p class="text-center text-[11px] text-slate-400 mt-6 font-medium">
           DigitalLab Cloud Pathology & LIMS Platform • Secure & ISO Compliant
         </p>
@@ -190,7 +256,7 @@ import { AuthService } from '../../core/services/auth.service';
     </div>
   `
 })
-export class LoginComponent implements OnInit {
+export class LoginComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
@@ -198,8 +264,17 @@ export class LoginComponent implements OnInit {
 
   isRegister = false;
   loading = false;
+  sendingOtp = false;
+  resendingOtp = false;
   showPassword = false;
   errorMessage = '';
+
+  showOtpModal = false;
+  demoOtp = '';
+  enteredOtp = '';
+  otpError = '';
+  otpCountdown = 0;
+  private otpTimerInterval: any = null;
 
   loginData = {
     emailOrUsername: '',
@@ -232,6 +307,10 @@ export class LoginComponent implements OnInit {
       this.isRegister = true;
       this.cdr.markForCheck();
     }
+  }
+
+  ngOnDestroy(): void {
+    this.clearOtpTimer();
   }
 
   onLogin() {
@@ -273,6 +352,13 @@ export class LoginComponent implements OnInit {
     });
   }
 
+  getSanitizedPhone(): string {
+    let clean = (this.regData.phone || '').replace(/\D/g, '');
+    if (clean.length === 11 && clean.startsWith('0')) clean = clean.substring(1);
+    else if (clean.length === 12 && clean.startsWith('91')) clean = clean.substring(2);
+    return clean;
+  }
+
   get phoneStatus(): { valid: boolean; text: string; color: string } {
     const p = this.regData.phone;
     if (!p) return { valid: false, text: '', color: '' };
@@ -306,20 +392,14 @@ export class LoginComponent implements OnInit {
     this.cdr.markForCheck();
   }
 
-  onRegister() {
+  onInitiateRegister() {
     if (!this.regData.labName?.trim() || !this.regData.ownerName?.trim() || !this.regData.phone?.trim() || !this.regData.password?.trim()) {
       this.errorMessage = 'Please fill in all required fields (Lab Name, Owner/Doctor Name, WhatsApp Number, Password).';
       this.cdr.markForCheck();
       return;
     }
 
-    let cleanPhone = (this.regData.phone || '').replace(/\D/g, '');
-    if (cleanPhone.length === 11 && cleanPhone.startsWith('0')) {
-      cleanPhone = cleanPhone.substring(1);
-    } else if (cleanPhone.length === 12 && cleanPhone.startsWith('91')) {
-      cleanPhone = cleanPhone.substring(2);
-    }
-
+    const cleanPhone = this.getSanitizedPhone();
     if (cleanPhone.length !== 10) {
       this.errorMessage = 'Mobile number must be exactly 10 digits.';
       this.cdr.markForCheck();
@@ -351,10 +431,47 @@ export class LoginComponent implements OnInit {
       return;
     }
 
-    this.loading = true;
+    this.sendingOtp = true;
     this.errorMessage = '';
     this.cdr.markForCheck();
 
+    this.authService.sendOtp(cleanPhone).subscribe({
+      next: (res) => {
+        this.sendingOtp = false;
+        this.demoOtp = res.demoOtp || '';
+        this.enteredOtp = '';
+        this.otpError = '';
+        this.showOtpModal = true;
+        this.startOtpCountdown(30);
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        this.sendingOtp = false;
+        if (err.status === 0) {
+          this.errorMessage = 'Unable to connect to server. Please ensure backend is running.';
+        } else if (err.error?.message) {
+          this.errorMessage = err.error.message;
+        } else {
+          this.errorMessage = 'Failed to send OTP to mobile. Please try again.';
+        }
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  onVerifyAndRegister() {
+    const code = (this.enteredOtp || '').trim();
+    if (!code || code.length !== 6) {
+      this.otpError = 'Please enter the complete 6-digit OTP code.';
+      this.cdr.markForCheck();
+      return;
+    }
+
+    this.loading = true;
+    this.otpError = '';
+    this.cdr.markForCheck();
+
+    const cleanPhone = this.getSanitizedPhone();
     const payload = {
       labName: this.regData.labName.trim(),
       ownerName: this.regData.ownerName.trim(),
@@ -362,26 +479,72 @@ export class LoginComponent implements OnInit {
       phone: cleanPhone,
       city: this.regData.city?.trim() || null,
       password: this.regData.password,
-      referralCode: this.regData.referralCode?.trim() || null
+      referralCode: this.regData.referralCode?.trim() || null,
+      otp: code
     };
 
     this.authService.register(payload).subscribe({
       next: () => {
         this.loading = false;
+        this.showOtpModal = false;
+        this.clearOtpTimer();
         this.cdr.markForCheck();
         this.router.navigate(['/dashboard']);
       },
       error: (err) => {
         this.loading = false;
         if (err.status === 0) {
-          this.errorMessage = 'Unable to connect to server. Please ensure the backend API is running.';
+          this.otpError = 'Unable to connect to server. Please ensure backend is running.';
         } else if (err.error?.message) {
-          this.errorMessage = err.error.message;
+          this.otpError = err.error.message;
         } else {
-          this.errorMessage = 'Registration failed. Please check your details and try again.';
+          this.otpError = 'Registration failed. Please check the code and try again.';
         }
         this.cdr.markForCheck();
       }
     });
+  }
+
+  resendOtp() {
+    const cleanPhone = this.getSanitizedPhone();
+    if (!cleanPhone || cleanPhone.length !== 10) return;
+
+    this.resendingOtp = true;
+    this.otpError = '';
+    this.cdr.markForCheck();
+
+    this.authService.sendOtp(cleanPhone).subscribe({
+      next: (res) => {
+        this.resendingOtp = false;
+        this.demoOtp = res.demoOtp || '';
+        this.startOtpCountdown(30);
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        this.resendingOtp = false;
+        this.otpError = err.error?.message || 'Failed to resend code. Please try again.';
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  startOtpCountdown(seconds: number) {
+    this.clearOtpTimer();
+    this.otpCountdown = seconds;
+    this.otpTimerInterval = setInterval(() => {
+      if (this.otpCountdown > 0) {
+        this.otpCountdown--;
+        this.cdr.markForCheck();
+      } else {
+        this.clearOtpTimer();
+      }
+    }, 1000);
+  }
+
+  clearOtpTimer() {
+    if (this.otpTimerInterval) {
+      clearInterval(this.otpTimerInterval);
+      this.otpTimerInterval = null;
+    }
   }
 }
