@@ -5,7 +5,7 @@ namespace Lab.Application.DTOs;
 // Auth DTOs
 public record LoginRequest(string EmailOrUsername, string Password);
 public record LoginResponse(string Token, string RefreshToken, string UserId, string FullName, string Email, string Role, Guid? TenantId, string? LabName, string? LogoUrl, DateTime ExpiresAt);
-public record RegisterLabRequest(string LabName, string OwnerName, string Email, string Phone, string Password, string? Address, string? City, string? State);
+public record RegisterLabRequest(string LabName, string OwnerName, string? Email, string Phone, string Password, string? Address = null, string? City = null, string? State = null, string? ReferralCode = null);
 public record ChangePasswordRequest(string OldPassword, string NewPassword);
 public record StaffUserDto(string Id, string FullName, string Email, string PhoneNumber, string Role, string Designation, bool IsActive, string? PermissionsJson);
 public record CreateStaffUserRequest(string FullName, string Email, string PhoneNumber, string Password, string Role, string Designation, string? PermissionsJson);

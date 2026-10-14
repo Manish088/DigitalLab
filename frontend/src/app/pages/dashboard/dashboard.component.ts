@@ -45,19 +45,46 @@ declare var Chart: any;
         </div>
       </div>
 
-      <!-- 14-Day Free Trial Onboarding Banner -->
-      <div *ngIf="isTrialMode" class="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-emerald-950 via-teal-900 to-slate-900 border border-emerald-500/40 text-white shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4 animate-in fade-in duration-300">
+      <!-- Day 10 (Trial ke 4 din pehle) Conversion & Retention Alert (Step 5) -->
+      <div *ngIf="isTrialMode && trialDaysLeft <= 4" class="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-amber-950 via-rose-950 to-slate-900 border-2 border-amber-500/60 text-white shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 animate-in fade-in duration-300">
+        <div class="flex items-center space-x-3.5">
+          <div class="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center text-2xl shrink-0">
+            <i class="fa-solid fa-triangle-exclamation animate-bounce"></i>
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <h4 class="font-black text-sm sm:text-base text-amber-300">Aapka Free Trial {{ trialDaysLeft }} Din Me Expire Ho Raha Hai!</h4>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white animate-pulse">RENEW NOW</span>
+            </div>
+            <p class="text-xs text-slate-300 mt-1 leading-relaxed">
+              Apne patient records, WhatsApp test delivery aur printed reports ko bina kisi rukawat chalane ke liye Plan select karein. PhonePe / GooglePay UPI se turant 10 second me instant activate karein!
+            </p>
+          </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-2.5 shrink-0 w-full md:w-auto">
+          <a routerLink="/subscription" class="flex-1 md:flex-initial px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs transition-all shadow-lg flex items-center justify-center">
+            <i class="fa-solid fa-qrcode mr-1.5"></i> Select Plan & Pay via UPI
+          </a>
+          <a href="https://wa.me/917706087066?text=Hello%20DigitalLab%2C%20my%20trial%20is%20expiring%20soon.%20I%20want%20to%20activate%20my%20subscription." target="_blank"
+            class="px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 font-bold text-xs transition-all flex items-center justify-center">
+            <i class="fa-brands fa-whatsapp mr-1.5 text-emerald-400"></i> WhatsApp Help
+          </a>
+        </div>
+      </div>
+
+      <!-- 14-Day Free Trial Onboarding Banner (When > 4 days left) -->
+      <div *ngIf="isTrialMode && trialDaysLeft > 4" class="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-emerald-950 via-teal-900 to-slate-900 border border-emerald-500/40 text-white shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4 animate-in fade-in duration-300">
         <div class="flex items-center space-x-3.5">
           <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center text-2xl shrink-0">
             <i class="fa-solid fa-gift"></i>
           </div>
           <div>
             <div class="flex items-center space-x-2">
-              <h4 class="font-extrabold text-sm sm:text-base text-emerald-200">14-Day Free Trial Active ({{ trialDaysLeft }} Days Left)</h4>
-              <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/30 text-emerald-300 border border-emerald-400/40">FULL ACCESS</span>
+              <h4 class="font-extrabold text-sm sm:text-base text-emerald-200">14-Day Free Trial Active ({{ trialDaysLeft }} Din Baaki)</h4>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/30 text-emerald-300 border border-emerald-400/40">100+ TESTS PRELOADED</span>
             </div>
             <p class="text-xs text-slate-300 mt-0.5">
-              100+ standard diagnostic tests (CBC, LFT, KFT, Blood Sugar, etc.) are pre-loaded in your lab! Try printing a report or registering your first real patient.
+              Aapke software me CBC, LFT, KFT, Blood Sugar, Urine, Lipid Profile pre-loaded hain. Pehle 3 minute me apna pehla test report generate karein!
             </p>
           </div>
         </div>
@@ -66,7 +93,70 @@ declare var Chart: any;
             <i class="fa-solid fa-plus mr-1.5"></i> Register New Patient
           </a>
           <a routerLink="/subscription" class="px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 font-bold text-xs transition-all">
-            View Plans
+            View Plans (From ₹499/mo)
+          </a>
+        </div>
+      </div>
+
+      <!-- 3-Minute First Report Quick-Start Guide (Step 1 Hook) -->
+      <div *ngIf="stats && stats.totalPatients === 0" class="p-4 sm:p-5 rounded-2xl bg-white border border-brand-200 shadow-md space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-brand-500 animate-ping"></span>
+            <h4 class="font-bold text-slate-900 text-sm sm:text-base">🚀 Pehla Test Report 3 Minute Ke Andar Generate Karein</h4>
+          </div>
+          <span class="text-[11px] font-bold text-brand-600 bg-brand-50 px-2.5 py-0.5 rounded-full border border-brand-200">Quick Start</span>
+        </div>
+        <p class="text-xs text-slate-600">
+          DigitalLab me standard test catalog pehle se pre-loaded hai. Khali screen nahi hai—in 3 steps me pehla print dekhiye:
+        </p>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 text-xs">
+          <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+            <div class="font-bold text-brand-700">1. Click "New Patient Case"</div>
+            <div class="text-[11px] text-slate-500">Patient name aur age enter karein.</div>
+          </div>
+          <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+            <div class="font-bold text-emerald-700">2. Select CBC or LFT</div>
+            <div class="text-[11px] text-slate-500">Pre-loaded tests me se select karein aur values type karein.</div>
+          </div>
+          <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+            <div class="font-bold text-purple-700">3. Print or WhatsApp PDF</div>
+            <div class="text-[11px] text-slate-500">Plain A4 paper par professional QR code report ready!</div>
+          </div>
+        </div>
+        <div class="pt-1">
+          <a routerLink="/cases/add" class="inline-flex items-center space-x-2 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs shadow transition-all">
+            <i class="fa-solid fa-play text-amber-300"></i>
+            <span>Start Your 1st Patient Test Now &rarr;</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Referral Scheme Banner (Step 4: Customer Acquisition) -->
+      <div class="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-blue-950 via-indigo-950 to-slate-900 border border-blue-500/40 text-white shadow-lg flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+        <div class="flex items-center space-x-3.5">
+          <div class="w-12 h-12 rounded-2xl bg-blue-500/20 text-cyan-400 border border-blue-500/40 flex items-center justify-center text-2xl shrink-0">
+            <i class="fa-solid fa-share-nodes"></i>
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <h4 class="font-extrabold text-sm sm:text-base text-cyan-200">Refer a Lab & Get 1 Month Free Subscription! 🎁</h4>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/30 text-emerald-300 border border-emerald-400/30">+30 DAYS FREE</span>
+            </div>
+            <p class="text-xs text-slate-300 mt-1">
+              Apne kisi pathologist ya lab technician dost ko refer karein. Jab wo aapke referral code se register karenge, unhe 14-day free trial aur aapko <strong>1 Mahina Free Subscription</strong> milega!
+            </p>
+          </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+          <div class="px-3 py-1.5 bg-slate-900 rounded-xl border border-slate-700 text-xs font-mono font-bold text-amber-300">
+            Code: {{ labCode || 'DIGITLAB' }}
+          </div>
+          <button (click)="copyReferralLink()" class="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 text-xs font-bold transition-all flex items-center cursor-pointer">
+            <i class="fa-solid fa-copy mr-1.5"></i> {{ linkCopied ? 'Link Copied!' : 'Copy Link' }}
+          </button>
+          <a [href]="getWhatsAppShareUrl()" target="_blank" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-md flex items-center cursor-pointer">
+            <i class="fa-brands fa-whatsapp mr-1.5"></i> Share on WhatsApp
           </a>
         </div>
       </div>
@@ -603,6 +693,28 @@ export class DashboardComponent implements OnInit {
   todayStr = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
   isTrialMode = false;
   trialDaysLeft = 14;
+  labCode = '';
+  linkCopied = false;
+
+  copyReferralLink(): void {
+    const code = this.labCode || 'DIGITLAB';
+    const link = `${window.location.origin}/register?ref=${code}`;
+    navigator.clipboard.writeText(link).then(() => {
+      this.linkCopied = true;
+      this.cdr.detectChanges();
+      setTimeout(() => {
+        this.linkCopied = false;
+        this.cdr.detectChanges();
+      }, 3000);
+    });
+  }
+
+  getWhatsAppShareUrl(): string {
+    const code = this.labCode || 'DIGITLAB';
+    const link = `${window.location.origin}/register?ref=${code}`;
+    const text = encodeURIComponent(`Namaste Doctor! Hum apne lab me DigitalLab Cloud Pathology Software use kar rahe hain. 100+ tests preloaded hain aur reports direct WhatsApp par QR verification ke sath deliver hoti hain. Aap bhi 14-din ka zero risk free trial shuru karein: ${link}`);
+    return `https://wa.me/?text=${text}`;
+  }
 
   ngOnInit(): void {
     this.loadStats();
@@ -612,6 +724,7 @@ export class DashboardComponent implements OnInit {
   checkTrialStatus(): void {
     this.api.getMySubscription().subscribe({
       next: (sub) => {
+        this.labCode = sub?.labCode || '';
         const isPastDate = sub?.subscriptionExpiryDate ? new Date(sub.subscriptionExpiryDate) < new Date() : false;
         const isExpired = sub?.isExpired || sub?.subscriptionStatus === 'Expired' || sub?.subscriptionStatus === 'Suspended' || isPastDate;
 

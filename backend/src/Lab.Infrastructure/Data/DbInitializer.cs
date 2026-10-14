@@ -167,61 +167,109 @@ public static class DbInitializer
             }
         }
 
-        // 3. Seed Subscription Plans
-        if (!await context.SubscriptionPlans.AnyAsync())
+        // 3. Seed & Sync Subscription Plans (Step 3: Starter 499, Pro 999, Advanced 1999 + 20% annual discount)
+        var definedPlans = new List<SubscriptionPlan>
         {
-            var plans = new List<SubscriptionPlan>
+            new()
             {
-                new()
-                {
-                    PlanCode = "TRIAL",
-                    PlanName = "Free Trial (14 Days)",
-                    Description = "Full access trial for testing all LIMS features.",
-                    MonthlyPrice = 0,
-                    AnnualPrice = 0,
-                    MaxCasesPerMonth = 100,
-                    MaxStaffAccounts = 2,
-                    HasCustomLetterhead = true,
-                    HasPublicQrDownload = true,
-                    HasDoctorReferralModule = true,
-                    HasThermalPrinting = true,
-                    DisplayOrder = 1
-                },
-                new()
-                {
-                    PlanCode = "STANDARD",
-                    PlanName = "Standard Lab Plan",
-                    Description = "Ideal for single branch standalone pathology labs.",
-                    MonthlyPrice = 999,
-                    AnnualPrice = 9990,
-                    MaxCasesPerMonth = 1500,
-                    MaxStaffAccounts = 5,
-                    HasCustomLetterhead = true,
-                    HasPublicQrDownload = true,
-                    HasDoctorReferralModule = true,
-                    HasThermalPrinting = true,
-                    DisplayOrder = 2
-                },
-                new()
-                {
-                    PlanCode = "PREMIUM",
-                    PlanName = "Enterprise / Multi-Branch",
-                    Description = "Unlimited cases, multi-centre collection tracking, WhatsApp alerts.",
-                    MonthlyPrice = 1999,
-                    AnnualPrice = 19990,
-                    MaxCasesPerMonth = 10000,
-                    MaxStaffAccounts = 25,
-                    HasCustomLetterhead = true,
-                    HasPublicQrDownload = true,
-                    HasDoctorReferralModule = true,
-                    HasThermalPrinting = true,
-                    HasWhatsAppAlerts = true,
-                    DisplayOrder = 3
-                }
-            };
-            await context.SubscriptionPlans.AddRangeAsync(plans);
-            await context.SaveChangesAsync();
+                PlanCode = "TRIAL",
+                PlanName = "Free Trial (14 Days)",
+                Description = "Zero-risk 14-day evaluation for testing all LIMS features.",
+                MonthlyPrice = 0,
+                AnnualPrice = 0,
+                MaxCasesPerMonth = 100,
+                MaxStaffAccounts = 2,
+                HasCustomLetterhead = true,
+                HasPublicQrDownload = true,
+                HasDoctorReferralModule = true,
+                HasThermalPrinting = true,
+                HasWhatsAppAlerts = true,
+                DisplayOrder = 1
+            },
+            new()
+            {
+                PlanCode = "STARTER",
+                PlanName = "Starter Lab",
+                Description = "Ideal for small clinic labs (1 technician) & phlebotomy collection points.",
+                MonthlyPrice = 499,
+                AnnualPrice = 4790, // 20% annual discount
+                MaxCasesPerMonth = 100,
+                MaxStaffAccounts = 1,
+                HasCustomLetterhead = false,
+                HasPublicQrDownload = true,
+                HasDoctorReferralModule = false,
+                HasThermalPrinting = true,
+                HasWhatsAppAlerts = false,
+                DisplayOrder = 2
+            },
+            new()
+            {
+                PlanCode = "PRO",
+                PlanName = "Pro Lab (Most Popular)",
+                Description = "For medium diagnostic labs: unlimited cases, WhatsApp alerts, custom letterhead & doctor commissions.",
+                MonthlyPrice = 999,
+                AnnualPrice = 9590, // 20% annual discount
+                MaxCasesPerMonth = 10000,
+                MaxStaffAccounts = 5,
+                HasCustomLetterhead = true,
+                HasPublicQrDownload = true,
+                HasDoctorReferralModule = true,
+                HasThermalPrinting = true,
+                HasWhatsAppAlerts = true,
+                DisplayOrder = 3
+            },
+            new()
+            {
+                PlanCode = "ADVANCED",
+                PlanName = "Advanced / Multi-Branch",
+                Description = "For large labs & hospitals: multi-counter, B2B collection agents, barcode tracking & priority support.",
+                MonthlyPrice = 1999,
+                AnnualPrice = 18990, // 20% annual discount
+                MaxCasesPerMonth = 50000,
+                MaxStaffAccounts = 25,
+                HasCustomLetterhead = true,
+                HasPublicQrDownload = true,
+                HasDoctorReferralModule = true,
+                HasThermalPrinting = true,
+                HasWhatsAppAlerts = true,
+                DisplayOrder = 4
+            }
+        };
+
+        foreach (var defPlan in definedPlans)
+        {
+            var existingPlan = await context.SubscriptionPlans.FirstOrDefaultAsync(p => p.PlanCode == defPlan.PlanCode);
+            if (existingPlan == null)
+            {
+                // Check if legacy code exists (STANDARD -> PRO, PREMIUM -> ADVANCED)
+                if (defPlan.PlanCode == "PRO")
+                    existingPlan = await context.SubscriptionPlans.FirstOrDefaultAsync(p => p.PlanCode == "STANDARD");
+                else if (defPlan.PlanCode == "ADVANCED")
+                    existingPlan = await context.SubscriptionPlans.FirstOrDefaultAsync(p => p.PlanCode == "PREMIUM");
+            }
+
+            if (existingPlan == null)
+            {
+                await context.SubscriptionPlans.AddAsync(defPlan);
+            }
+            else
+            {
+                existingPlan.PlanCode = defPlan.PlanCode;
+                existingPlan.PlanName = defPlan.PlanName;
+                existingPlan.Description = defPlan.Description;
+                existingPlan.MonthlyPrice = defPlan.MonthlyPrice;
+                existingPlan.AnnualPrice = defPlan.AnnualPrice;
+                existingPlan.MaxCasesPerMonth = defPlan.MaxCasesPerMonth;
+                existingPlan.MaxStaffAccounts = defPlan.MaxStaffAccounts;
+                existingPlan.HasCustomLetterhead = defPlan.HasCustomLetterhead;
+                existingPlan.HasPublicQrDownload = defPlan.HasPublicQrDownload;
+                existingPlan.HasDoctorReferralModule = defPlan.HasDoctorReferralModule;
+                existingPlan.HasThermalPrinting = defPlan.HasThermalPrinting;
+                existingPlan.HasWhatsAppAlerts = defPlan.HasWhatsAppAlerts;
+                existingPlan.DisplayOrder = defPlan.DisplayOrder;
+            }
         }
+        await context.SaveChangesAsync();
 
         // 3.1 Seed System Settings (UPI, WhatsApp, Admin details)
         try
@@ -494,7 +542,18 @@ public static class DbInitializer
                 new() { TenantId = tenantId, TestId = cbcTest.Id, ParameterCode = "EOS", ParameterName = "Eosinophils", Unit = "%", InputType = ParameterInputType.Numeric, DisplayOrder = 7,
                     NormalRanges = { new() { TenantId = tenantId, ApplicableGender = Gender.Both, MinNormalValue = 1, MaxNormalValue = 6, TextualRange = "1 - 6 %" } } },
                 new() { TenantId = tenantId, TestId = cbcTest.Id, ParameterCode = "PCV", ParameterName = "Packed Cell Volume (PCV / Hematocrit)", Unit = "%", InputType = ParameterInputType.Numeric, DisplayOrder = 8,
-                    NormalRanges = { new() { TenantId = tenantId, ApplicableGender = Gender.Both, MinNormalValue = 36, MaxNormalValue = 50, TextualRange = "36 - 50 %" } } }
+                    NormalRanges = { new() { TenantId = tenantId, ApplicableGender = Gender.Both, MinNormalValue = 36, MaxNormalValue = 50, TextualRange = "36 - 50 %" } } },
+                new() { TenantId = tenantId, TestId = cbcTest.Id, ParameterCode = "BASO", ParameterName = "Basophils", Unit = "%", InputType = ParameterInputType.Numeric, DisplayOrder = 9,
+                    NormalRanges = { new() { TenantId = tenantId, ApplicableGender = Gender.Both, MinNormalValue = 0, MaxNormalValue = 2, TextualRange = "0 - 2 %" } } },
+                new() { TenantId = tenantId, TestId = cbcTest.Id, ParameterCode = "RBC", ParameterName = "Total RBC Count", Unit = "mil/cumm", InputType = ParameterInputType.Numeric, DisplayOrder = 10,
+                    NormalRanges = { new() { TenantId = tenantId, ApplicableGender = Gender.Male, MinNormalValue = 4.5m, MaxNormalValue = 5.9m, TextualRange = "4.5 - 5.9 mil/cumm", AgeDisplayGroup = "Adult Male" },
+                                     new() { TenantId = tenantId, ApplicableGender = Gender.Female, MinNormalValue = 4.0m, MaxNormalValue = 5.2m, TextualRange = "4.0 - 5.2 mil/cumm", AgeDisplayGroup = "Adult Female" } } },
+                new() { TenantId = tenantId, TestId = cbcTest.Id, ParameterCode = "MCV", ParameterName = "Mean Corpuscular Volume (MCV)", Unit = "fL", InputType = ParameterInputType.Numeric, DisplayOrder = 11,
+                    NormalRanges = { new() { TenantId = tenantId, ApplicableGender = Gender.Both, MinNormalValue = 80, MaxNormalValue = 100, TextualRange = "80 - 100 fL" } } },
+                new() { TenantId = tenantId, TestId = cbcTest.Id, ParameterCode = "MCH", ParameterName = "Mean Corpuscular Hemoglobin (MCH)", Unit = "pg", InputType = ParameterInputType.Numeric, DisplayOrder = 12,
+                    NormalRanges = { new() { TenantId = tenantId, ApplicableGender = Gender.Both, MinNormalValue = 27, MaxNormalValue = 32, TextualRange = "27 - 32 pg" } } },
+                new() { TenantId = tenantId, TestId = cbcTest.Id, ParameterCode = "MCHC", ParameterName = "Mean Corpuscular Hb Conc (MCHC)", Unit = "g/dL", InputType = ParameterInputType.Numeric, DisplayOrder = 13,
+                    NormalRanges = { new() { TenantId = tenantId, ApplicableGender = Gender.Both, MinNormalValue = 32, MaxNormalValue = 36, TextualRange = "32 - 36 g/dL" } } }
             };
             await context.TestParameters.AddRangeAsync(cbcParams);
             await context.SaveChangesAsync();

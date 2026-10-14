@@ -211,9 +211,116 @@ import { RouterLink } from '@angular/router';
             </div>
 
           </div>
-
         </div>
       </header>
+
+      <!-- 4 HOOK FEATURES SECTION (Step 2: Why switch from old crash-prone desktop software) -->
+      <section class="py-16 sm:py-20 bg-gradient-to-b from-slate-900 via-brand-950 to-slate-950 text-white relative overflow-hidden border-t border-slate-800">
+        <!-- Background Glow -->
+        <div class="absolute -top-40 left-1/2 -translate-x-1/2 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12 relative z-10">
+          <div class="text-center space-y-4 max-w-3xl mx-auto">
+            <span class="px-3.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold uppercase tracking-wider inline-flex items-center">
+              <i class="fa-solid fa-fire text-amber-400 mr-2"></i> The 4 Hook Features
+            </span>
+            <h2 class="text-2xl sm:text-4xl md:text-5xl font-black font-heading leading-tight">
+              Purane Desktop Software Ko Chhod Kar DigitalLab Par Aane Ke <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400">4 Bade Reasons</span>
+            </h2>
+            <p class="text-xs sm:text-base text-slate-300">
+              Traditional offline desktop software jo purane computer par baar-baar crash hota hai usse aazaadi payein aur apni lab ko modern cloud par upgrade karein.
+            </p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+            
+            <!-- Hook 1: Paper Cost Savings -->
+            <div class="p-6 rounded-3xl bg-white/5 border border-white/10 hover:border-emerald-500/50 hover:bg-white/10 transition-all space-y-3 group">
+              <div class="flex items-center space-x-3.5">
+                <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">
+                  <i class="fa-solid fa-file-invoice"></i>
+                </div>
+                <div>
+                  <span class="text-[10px] font-black uppercase tracking-wider text-emerald-400">Reason 1 • Big Cost Saver</span>
+                  <h3 class="text-base sm:text-lg font-bold text-white">₹3,000 - ₹5,000 Mahine Ka Paper Kharcha Bachayein</h3>
+                </div>
+              </div>
+              <p class="text-xs text-slate-300 leading-relaxed">
+                Aapko mehnga pre-printed stationery letterhead khareedne ki zaroorat nahi hai. Humara software <strong>plain white A4 paper</strong> par aapka custom header, footer, logo aur NABL formatting ke sath direct crystal-clear print kar deta hai.
+              </p>
+              <div class="pt-2 flex items-center text-[11px] font-bold text-emerald-400">
+                <i class="fa-solid fa-circle-check mr-1.5"></i> Salana ₹36,000 - ₹60,000 sidhi bachat!
+              </div>
+            </div>
+
+            <!-- Hook 2: WhatsApp PDF & QR -->
+            <div class="p-6 rounded-3xl bg-white/5 border border-white/10 hover:border-cyan-500/50 hover:bg-white/10 transition-all space-y-3 group">
+              <div class="flex items-center space-x-3.5">
+                <div class="w-12 h-12 rounded-2xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">
+                  <i class="fa-brands fa-whatsapp"></i>
+                </div>
+                <div>
+                  <span class="text-[10px] font-black uppercase tracking-wider text-cyan-400">Reason 2 • Zero Wait Time</span>
+                  <h3 class="text-base sm:text-lg font-bold text-white">Direct WhatsApp PDF & Online QR Verification</h3>
+                </div>
+              </div>
+              <p class="text-xs text-slate-300 leading-relaxed">
+                Patient ko counter par khada nahi rehna padega aur na SMS gateway ka recharge chahiye. Report approve hote hi direct patient ke WhatsApp par original signed PDF aur <strong>tamper-proof QR code</strong> download link chala jata hai.
+              </p>
+              <div class="pt-2 flex items-center text-[11px] font-bold text-cyan-400">
+                <i class="fa-solid fa-circle-check mr-1.5"></i> 100% Automated • Zero Extra SMS Charges
+              </div>
+            </div>
+
+            <!-- Hook 3: Remote Mobile Monitoring -->
+            <div class="p-6 rounded-3xl bg-white/5 border border-white/10 hover:border-indigo-500/50 hover:bg-white/10 transition-all space-y-3 group">
+              <div class="flex items-center space-x-3.5">
+                <div class="w-12 h-12 rounded-2xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">
+                  <i class="fa-solid fa-mobile-screen-button"></i>
+                </div>
+                <div>
+                  <span class="text-[10px] font-black uppercase tracking-wider text-indigo-400">Reason 3 • Freedom for Owner</span>
+                  <h3 class="text-base sm:text-lg font-bold text-white">Mobile Se Lab Par Nazar (Kahi Bhi, Kabhi Bhi)</h3>
+                </div>
+              </div>
+              <p class="text-xs text-slate-300 leading-relaxed">
+                Purane software me owner ko lab ke computer ke samne baithna padta tha. DigitalLab 100% cloud-based hai—aap apne Android ya iPhone se ghar baithe dekh sakte hain ki aaj kitne patients aaye aur kitna cash & UPI collect hua.
+              </p>
+              <div class="pt-2 flex items-center text-[11px] font-bold text-indigo-400">
+                <i class="fa-solid fa-circle-check mr-1.5"></i> Real-time Live Cash Drawer & Patients Count
+              </div>
+            </div>
+
+            <!-- Hook 4: 1-Click Doctor Referral Commission -->
+            <div class="p-6 rounded-3xl bg-white/5 border border-white/10 hover:border-amber-500/50 hover:bg-white/10 transition-all space-y-3 group">
+              <div class="flex items-center space-x-3.5">
+                <div class="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">
+                  <i class="fa-solid fa-user-doctor"></i>
+                </div>
+                <div>
+                  <span class="text-[10px] font-black uppercase tracking-wider text-amber-400">Reason 4 • Zero Dispute</span>
+                  <h3 class="text-base sm:text-lg font-bold text-white">1-Click Doctor Referral Commission Tracking</h3>
+                </div>
+              </div>
+              <p class="text-xs text-slate-300 leading-relaxed">
+                Har lab doctors ko referral share deti hai jiska hisab kagaz ya diary par rakhna bohot jhamela aur vivad paida karta hai. DigitalLab sirf 1-click me doctor-wise hisab aur official signed settlement voucher generate kar deta hai.
+              </p>
+              <div class="pt-2 flex items-center text-[11px] font-bold text-amber-400">
+                <i class="fa-solid fa-circle-check mr-1.5"></i> Doctor Trust & Quick Settlement Vouchers
+              </div>
+            </div>
+
+          </div>
+
+          <div class="text-center pt-2">
+            <a routerLink="/register" class="inline-flex items-center space-x-2 px-8 py-4 rounded-2xl font-black text-sm bg-gradient-to-r from-cyan-500 via-brand-500 to-emerald-500 text-white shadow-xl hover:scale-105 transition-all cursor-pointer">
+              <i class="fa-solid fa-rocket text-amber-300"></i>
+              <span>Test All 4 Features Free for 14 Days &rarr;</span>
+            </a>
+          </div>
+
+        </div>
+      </section>
 
       <!-- VIDEO FEATURE TOUR SECTION -->
       <section id="video-tour" class="py-24 bg-gradient-to-b from-white via-slate-50/70 to-white border-t border-slate-200 relative">
@@ -971,23 +1078,23 @@ import { RouterLink } from '@angular/router';
               <div class="space-y-4">
                 <div>
                   <h3 class="text-xl font-bold text-slate-900 font-heading">Starter Lab</h3>
-                  <p class="text-xs text-slate-500 mt-1">For new collection centres & single-technician labs.</p>
+                  <p class="text-xs text-slate-500 mt-1">Chhoti clinic lab & single-technician collection points.</p>
                 </div>
 
                 <div>
                   <div class="text-4xl font-black text-slate-900 font-heading">
-                    ₹{{ billingCycle() === 'Annual' ? '499' : '599' }}
+                    ₹{{ billingCycle() === 'Annual' ? '399' : '499' }}
                     <span class="text-xs font-normal text-slate-500">/ month</span>
                   </div>
-                  <div class="text-[10px] text-slate-500 mt-1">{{ billingCycle() === 'Annual' ? '₹5,988 billed annually' : 'Billed monthly' }}</div>
+                  <div class="text-[10px] text-slate-500 mt-1">{{ billingCycle() === 'Annual' ? '₹4,790 billed annually (20% OFF)' : 'Billed monthly' }}</div>
                 </div>
 
                 <ul class="space-y-2.5 text-xs text-slate-600 border-t border-slate-100 pt-4">
-                  <li class="flex items-center"><i class="fa-solid fa-check text-emerald-600 mr-2 font-bold"></i> Up to <strong>150 cases / month</strong></li>
-                  <li class="flex items-center"><i class="fa-solid fa-check text-emerald-600 mr-2 font-bold"></i> <strong>2 Staff user logins</strong></li>
-                  <li class="flex items-center"><i class="fa-solid fa-check text-emerald-600 mr-2 font-bold"></i> Thermal POS Billing Receipts</li>
-                  <li class="flex items-center"><i class="fa-solid fa-check text-emerald-600 mr-2 font-bold"></i> WhatsApp PDF Reports</li>
-                  <li class="flex items-center"><i class="fa-solid fa-check text-emerald-600 mr-2 font-bold"></i> Standard Master Test Catalog</li>
+                  <li class="flex items-center"><i class="fa-solid fa-check text-emerald-600 mr-2 font-bold"></i> Up to <strong>100 cases / month</strong></li>
+                  <li class="flex items-center"><i class="fa-solid fa-check text-emerald-600 mr-2 font-bold"></i> <strong>1 Staff user login</strong></li>
+                  <li class="flex items-center"><i class="fa-solid fa-check text-emerald-600 mr-2 font-bold"></i> Plain A4 Paper Report Print</li>
+                  <li class="flex items-center"><i class="fa-solid fa-check text-emerald-600 mr-2 font-bold"></i> Preloaded 100+ Test Catalog</li>
+                  <li class="flex items-center"><i class="fa-solid fa-check text-emerald-600 mr-2 font-bold"></i> Online QR Token Reports</li>
                 </ul>
               </div>
 
@@ -996,33 +1103,33 @@ import { RouterLink } from '@angular/router';
               </a>
             </div>
 
-            <!-- Pro -->
+            <!-- Pro (Most Popular) -->
             <div class="bg-gradient-to-b from-brand-50/50 via-white to-white rounded-3xl p-6 sm:p-8 border-2 border-brand-600 flex flex-col justify-between space-y-6 shadow-xl shadow-brand-500/10 relative">
               <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-gradient-to-r from-brand-600 via-cyan-600 to-emerald-600 text-white text-[10px] font-black uppercase tracking-widest shadow-md">
-                ⭐ Recommended by Pathologists
+                🔥 Most Popular (Medium Labs)
               </div>
 
               <div class="space-y-4">
                 <div>
-                  <h3 class="text-xl font-bold text-slate-900 font-heading">Professional Lab</h3>
-                  <p class="text-xs text-slate-500 mt-1">For busy diagnostic centres & pathology clinics.</p>
+                  <h3 class="text-xl font-bold text-slate-900 font-heading">Pro Lab</h3>
+                  <p class="text-xs text-slate-500 mt-1">Medium diagnostic labs with high daily footfall.</p>
                 </div>
 
                 <div>
                   <div class="text-4xl font-black text-slate-900 font-heading">
-                    ₹{{ billingCycle() === 'Annual' ? '999' : '1,199' }}
+                    ₹{{ billingCycle() === 'Annual' ? '799' : '999' }}
                     <span class="text-xs font-normal text-slate-500">/ month</span>
                   </div>
-                  <div class="text-[10px] text-brand-600 font-semibold mt-1">{{ billingCycle() === 'Annual' ? '₹11,988 billed annually' : 'Billed monthly' }}</div>
+                  <div class="text-[10px] text-brand-600 font-semibold mt-1">{{ billingCycle() === 'Annual' ? '₹9,590 billed annually (20% OFF)' : 'Billed monthly' }}</div>
                 </div>
 
                 <ul class="space-y-2.5 text-xs text-slate-700 border-t border-slate-100 pt-4">
                   <li class="flex items-center"><i class="fa-solid fa-check text-emerald-600 mr-2 font-bold"></i> <strong>Unlimited patient cases</strong></li>
-                  <li class="flex items-center"><i class="fa-solid fa-check text-emerald-600 mr-2 font-bold"></i> <strong>10 Staff accounts</strong> (Tech + Billing)</li>
-                  <li class="flex items-center"><i class="fa-solid fa-check text-emerald-600 mr-2 font-bold"></i> 50x25mm Barcode Tube Label Engine</li>
-                  <li class="flex items-center"><i class="fa-solid fa-check text-emerald-600 mr-2 font-bold"></i> Doctor Commission Settlement Vouchers</li>
-                  <li class="flex items-center"><i class="fa-solid fa-check text-emerald-600 mr-2 font-bold"></i> Custom Letterhead Margin Calibrator</li>
-                  <li class="flex items-center"><i class="fa-solid fa-check text-emerald-600 mr-2 font-bold"></i> Live Day-End Cash Closeout Ledger</li>
+                  <li class="flex items-center"><i class="fa-solid fa-check text-emerald-600 mr-2 font-bold"></i> <strong>5 Staff user logins</strong></li>
+                  <li class="flex items-center"><i class="fa-solid fa-check text-emerald-600 mr-2 font-bold"></i> WhatsApp Alerts & QR Delivery</li>
+                  <li class="flex items-center"><i class="fa-solid fa-check text-emerald-600 mr-2 font-bold"></i> Custom Letterhead Designer</li>
+                  <li class="flex items-center"><i class="fa-solid fa-check text-emerald-600 mr-2 font-bold"></i> Doctor Referral Commission Ledger</li>
+                  <li class="flex items-center"><i class="fa-solid fa-check text-emerald-600 mr-2 font-bold"></i> 50x25mm Barcode Tube Stickers</li>
                 </ul>
               </div>
 
@@ -1031,33 +1138,33 @@ import { RouterLink } from '@angular/router';
               </a>
             </div>
 
-            <!-- Enterprise -->
+            <!-- Advanced / Multi-Branch -->
             <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 flex flex-col justify-between space-y-6 hover:shadow-xl transition-all">
               <div class="space-y-4">
                 <div>
-                  <h3 class="text-xl font-bold text-slate-900 font-heading">Hospital & Franchise</h3>
-                  <p class="text-xs text-slate-500 mt-1">Multi-branch hospital chains & collection hubs.</p>
+                  <h3 class="text-xl font-bold text-slate-900 font-heading">Advanced / Multi-Branch</h3>
+                  <p class="text-xs text-slate-500 mt-1">Badi Lab, Hospital diagnostic labs & franchise chains.</p>
                 </div>
 
                 <div>
                   <div class="text-4xl font-black text-slate-900 font-heading">
-                    ₹{{ billingCycle() === 'Annual' ? '2,499' : '2,999' }}
+                    ₹{{ billingCycle() === 'Annual' ? '1,599' : '1,999' }}
                     <span class="text-xs font-normal text-slate-500">/ month</span>
                   </div>
-                  <div class="text-[10px] text-slate-500 mt-1">Multi-centre hub & branch permissions</div>
+                  <div class="text-[10px] text-slate-500 mt-1">{{ billingCycle() === 'Annual' ? '₹18,990 billed annually (20% OFF)' : 'Billed monthly' }}</div>
                 </div>
 
                 <ul class="space-y-2.5 text-xs text-slate-600 border-t border-slate-100 pt-4">
-                  <li class="flex items-center"><i class="fa-solid fa-check text-emerald-600 mr-2 font-bold"></i> Unlimited cases & collection centres</li>
-                  <li class="flex items-center"><i class="fa-solid fa-check text-emerald-600 mr-2 font-bold"></i> <strong>Unlimited staff & pathologist logins</strong></li>
-                  <li class="flex items-center"><i class="fa-solid fa-check text-emerald-600 mr-2 font-bold"></i> Multi-Tenant Central Management</li>
-                  <li class="flex items-center"><i class="fa-solid fa-check text-emerald-600 mr-2 font-bold"></i> 24/7 Dedicated WhatsApp Helpline</li>
-                  <li class="flex items-center"><i class="fa-solid fa-check text-emerald-600 mr-2 font-bold"></i> Free Custom Test Data Migration</li>
+                  <li class="flex items-center"><i class="fa-solid fa-check text-emerald-600 mr-2 font-bold"></i> Multi-Counter & Collection Centres</li>
+                  <li class="flex items-center"><i class="fa-solid fa-check text-emerald-600 mr-2 font-bold"></i> B2B Collection Agents Tracking</li>
+                  <li class="flex items-center"><i class="fa-solid fa-check text-emerald-600 mr-2 font-bold"></i> <strong>25 Staff & Pathologist accounts</strong></li>
+                  <li class="flex items-center"><i class="fa-solid fa-check text-emerald-600 mr-2 font-bold"></i> 24/7 Priority Dedicated WhatsApp Support</li>
+                  <li class="flex items-center"><i class="fa-solid fa-check text-emerald-600 mr-2 font-bold"></i> Free Historical Data Migration</li>
                 </ul>
               </div>
 
               <a routerLink="/register" class="w-full py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold text-xs text-center border border-slate-200 transition-all">
-                Contact Sales / Start Trial
+                Start 14-Day Free Trial
               </a>
             </div>
 

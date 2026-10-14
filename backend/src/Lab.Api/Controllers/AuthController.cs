@@ -49,6 +49,7 @@ public class AuthController : ControllerBase
             user = await _userManager.Users.FirstOrDefaultAsync(u => 
                 u.PhoneNumber == cleanPhone || 
                 u.UserName == cleanPhone || 
+                u.Email == $"{cleanPhone}@digitlab.in" ||
                 u.Email == $"{cleanPhone}@digitlab.com" ||
                 (u.PhoneNumber != null && u.PhoneNumber.EndsWith(cleanPhone)));
         }
@@ -115,25 +116,32 @@ public class AuthController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.OwnerName))
             return BadRequest(new { message = "Owner / Doctor name is required." });
 
-        if (string.IsNullOrWhiteSpace(request.Email))
-            return BadRequest(new { message = "Email address is required for lab registration." });
-
-        if (!request.Email.Contains('@') || !request.Email.Contains('.'))
-            return BadRequest(new { message = "Please enter a valid email address (e.g. lab@example.com)." });
-
         if (string.IsNullOrWhiteSpace(request.Phone))
             return BadRequest(new { message = "Mobile / WhatsApp number is required." });
+
+        var cleanPhone = new string((request.Phone ?? "").Where(char.IsDigit).ToArray());
+        if (cleanPhone.Length < 10)
+            return BadRequest(new { message = "Please enter a valid 10-digit mobile number." });
 
         if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 6)
             return BadRequest(new { message = "Password must be at least 6 characters long." });
 
-        var cleanPhone = new string((request.Phone ?? "").Where(char.IsDigit).ToArray());
-        var userEmail = request.Email.Trim().ToLowerInvariant();
+        string userEmail;
+        if (string.IsNullOrWhiteSpace(request.Email))
+        {
+            userEmail = $"{cleanPhone}@digitlab.in";
+        }
+        else
+        {
+            if (!request.Email.Contains('@') || !request.Email.Contains('.'))
+                return BadRequest(new { message = "Please enter a valid email address (e.g. lab@example.com)." });
+            userEmail = request.Email.Trim().ToLowerInvariant();
+        }
 
         var existingUser = await _userManager.FindByEmailAsync(userEmail);
         if (existingUser == null && !string.IsNullOrWhiteSpace(cleanPhone))
         {
-            existingUser = await _userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == cleanPhone);
+            existingUser = await _userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == cleanPhone || u.UserName == cleanPhone || u.Email == $"{cleanPhone}@digitlab.in");
         }
 
         if (existingUser != null)
@@ -157,6 +165,22 @@ public class AuthController : ControllerBase
             SubscriptionExpiryDate = DateTime.UtcNow.AddDays(14),
             IsActive = true
         };
+
+        // Handle Referral Program: If valid referral code is provided, reward referrer with 30 days (1 month free)
+        if (!string.IsNullOrWhiteSpace(request.ReferralCode))
+        {
+            var refCode = request.ReferralCode.Trim().ToUpperInvariant();
+            var referrer = await _context.Tenants.FirstOrDefaultAsync(t => t.LabCode == refCode || t.Phone == request.ReferralCode.Trim());
+            if (referrer != null)
+            {
+                var refExpiry = referrer.SubscriptionExpiryDate ?? DateTime.UtcNow;
+                if (refExpiry < DateTime.UtcNow) refExpiry = DateTime.UtcNow;
+                referrer.SubscriptionExpiryDate = refExpiry.AddDays(30);
+                if (referrer.SubscriptionStatus == "Expired")
+                    referrer.SubscriptionStatus = "Active";
+                Console.WriteLine($"[Referral] Referral code {refCode} used! Extended Lab {referrer.LabCode} expiry by +30 days free!");
+            }
+        }
 
         await _context.Tenants.AddAsync(tenant);
         await _context.SaveChangesAsync();

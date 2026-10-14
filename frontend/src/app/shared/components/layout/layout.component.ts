@@ -294,6 +294,18 @@ import { ToastService } from '../../../core/services/toast.service';
           <router-outlet></router-outlet>
         </main>
       </div>
+
+      <!-- Floating 24/7 WhatsApp Help Support Button (Step 5) -->
+      <a href="https://wa.me/917706087066?text=Namaste%20DigitalLab%20Support%2C%20mujhe%20software%20me%20help%20chahiye."
+        target="_blank" rel="noopener noreferrer"
+        class="fixed bottom-5 right-5 z-50 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white rounded-full px-4 py-2.5 shadow-2xl flex items-center space-x-2.5 border-2 border-white cursor-pointer hover:scale-105 transition-all group"
+        title="Instant 24/7 WhatsApp Helpdesk">
+        <i class="fa-brands fa-whatsapp text-2xl text-white"></i>
+        <div class="text-left hidden sm:block">
+          <div class="text-[9px] font-medium leading-none text-emerald-100">Instant Help</div>
+          <div class="text-xs font-black tracking-wide leading-tight">WhatsApp Support</div>
+        </div>
+      </a>
     </div>
   `
 })

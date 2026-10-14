@@ -46,7 +46,7 @@ import { SubscriptionPlan } from '../../core/models/lims.models';
 
       <!-- Subscription Plans Grid -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div *ngFor="let plan of plans" [class]="plan.planCode === 'PREMIUM' ? 'ring-2 ring-brand-500 border-brand-500' : 'border-slate-200/80'"
+        <div *ngFor="let plan of plans" [class]="(plan.planCode === 'PRO' || plan.planCode === 'PREMIUM') ? 'ring-2 ring-brand-500 border-brand-500 shadow-lg' : 'border-slate-200/80'"
           class="bg-white p-6 rounded-2xl border shadow-sm flex flex-col justify-between space-y-6 hover:shadow-lg transition-all">
           <div class="space-y-4">
             <div class="flex justify-between items-start">
@@ -54,7 +54,7 @@ import { SubscriptionPlan } from '../../core/models/lims.models';
                 <h3 class="font-bold text-base text-slate-900 font-heading">{{ plan.planName }}</h3>
                 <p class="text-xs text-slate-500 mt-1">{{ plan.description }}</p>
               </div>
-              <span *ngIf="plan.planCode === 'PREMIUM'" class="px-2 py-0.5 bg-brand-500 text-white text-[10px] font-black rounded-full uppercase">Most Popular</span>
+              <span *ngIf="plan.planCode === 'PRO' || plan.planCode === 'PREMIUM'" class="px-2 py-0.5 bg-brand-500 text-white text-[10px] font-black rounded-full uppercase">Most Popular</span>
             </div>
 
             <div>
@@ -85,7 +85,34 @@ import { SubscriptionPlan } from '../../core/models/lims.models';
               class="w-full py-2 rounded-xl font-semibold text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all">
               Pay via Card / NetBanking
             </button>
+      </div>
+
+      <!-- Referral Program Card (Step 4) -->
+      <div class="bg-gradient-to-r from-blue-900 to-indigo-900 p-6 rounded-2xl text-white shadow-xl flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div class="space-y-1">
+          <div class="flex items-center space-x-2">
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+              🎁 1 Month Free Subscription
+            </span>
           </div>
+          <h3 class="text-xl font-bold font-heading">
+            Refer Another Lab & Get 30 Days Free!
+          </h3>
+          <p class="text-xs text-slate-300">
+            Share your unique referral link with fellow pathologists or diagnostic clinics. When they register with a 14-day trial, your subscription automatically extends by +1 month!
+          </p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <div class="px-3.5 py-2 bg-slate-950/80 rounded-xl border border-slate-700 text-xs font-mono font-bold text-amber-300">
+            Code: {{ mySub?.labCode || 'DIGITLAB' }}
+          </div>
+          <button (click)="copyReferralLink()" class="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 text-xs font-bold transition-all cursor-pointer">
+            <i class="fa-solid fa-copy mr-1.5"></i> {{ referralCopied ? 'Link Copied!' : 'Copy Link' }}
+          </button>
+          <a [href]="getReferralWhatsAppUrl()" target="_blank" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-md flex items-center cursor-pointer">
+            <i class="fa-brands fa-whatsapp mr-1.5"></i> WhatsApp Invite
+          </a>
         </div>
       </div>
 
@@ -215,6 +242,27 @@ export class SubscriptionComponent implements OnInit {
   transactionUtr = '';
   isSubmitting = false;
   copied = false;
+  referralCopied = false;
+
+  copyReferralLink(): void {
+    const code = this.mySub?.labCode || 'DIGITLAB';
+    const link = `${window.location.origin}/register?ref=${code}`;
+    navigator.clipboard.writeText(link).then(() => {
+      this.referralCopied = true;
+      this.cdr.detectChanges();
+      setTimeout(() => {
+        this.referralCopied = false;
+        this.cdr.detectChanges();
+      }, 3000);
+    });
+  }
+
+  getReferralWhatsAppUrl(): string {
+    const code = this.mySub?.labCode || 'DIGITLAB';
+    const link = `${window.location.origin}/register?ref=${code}`;
+    const text = encodeURIComponent(`Namaste Doctor! DigitalLab Cloud Pathology Software use karke dekhiye. 100+ tests preloaded hain aur instant WhatsApp QR reports ready ho jati hain. 14-din ka zero risk trial shuru kijiye: ${link}`);
+    return `https://wa.me/?text=${text}`;
+  }
 
   ngOnInit(): void {
     this.loadPlans();
@@ -224,7 +272,7 @@ export class SubscriptionComponent implements OnInit {
 
   loadPlans(): void {
     this.api.getPlans().subscribe(p => {
-      this.plans = p || [];
+      this.plans = (p || []).filter(x => x.planCode !== 'TRIAL');
       this.cdr.detectChanges();
     });
   }

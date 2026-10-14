@@ -116,24 +116,9 @@ import { AuthService } from '../../core/services/auth.service';
             <div class="grid grid-cols-2 gap-2.5">
               <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">
-                  Email Address *
+                  WhatsApp Number *
                 </label>
-                <input type="email" [(ngModel)]="regData.email" name="email" required placeholder="lab@example.com"
-                  class="block w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 text-xs font-semibold transition-all">
-              </div>
-              <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Mobile / WhatsApp *</label>
-                <input type="tel" [(ngModel)]="regData.phone" name="phone" required placeholder="10-digit mobile"
-                  class="block w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 text-xs font-semibold transition-all">
-              </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-2.5">
-              <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">
-                  City <span class="text-slate-400 font-normal text-[10px]">(Optional)</span>
-                </label>
-                <input type="text" [(ngModel)]="regData.city" name="city" placeholder="e.g. Mumbai, Delhi"
+                <input type="tel" [(ngModel)]="regData.phone" name="phone" required placeholder="10-digit WhatsApp"
                   class="block w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 text-xs font-semibold transition-all">
               </div>
               <div>
@@ -141,6 +126,29 @@ import { AuthService } from '../../core/services/auth.service';
                 <input type="password" [(ngModel)]="regData.password" name="password" required placeholder="Min 6 characters"
                   class="block w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 text-xs font-semibold transition-all">
               </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2.5">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">
+                  Email <span class="text-slate-400 font-normal text-[10px]">(Optional)</span>
+                </label>
+                <input type="email" [(ngModel)]="regData.email" name="email" placeholder="lab@example.com (Optional)"
+                  class="block w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 text-xs font-semibold transition-all">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">
+                  City <span class="text-slate-400 font-normal text-[10px]">(Optional)</span>
+                </label>
+                <input type="text" [(ngModel)]="regData.city" name="city" placeholder="e.g. Mumbai, Delhi"
+                  class="block w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 text-xs font-semibold transition-all">
+              </div>
+            </div>
+
+            <!-- Referral Bonus Badge -->
+            <div *ngIf="regData.referralCode" class="p-2.5 bg-emerald-50 rounded-xl border border-emerald-200 flex items-center justify-between text-xs text-emerald-800">
+              <span class="flex items-center"><i class="fa-solid fa-gift text-emerald-600 mr-2"></i> Referral Applied: <strong>{{ regData.referralCode }}</strong></span>
+              <span class="text-[10px] bg-emerald-200 text-emerald-900 font-bold px-2 py-0.5 rounded-full">+1 Month Free</span>
             </div>
 
             <button type="submit" [disabled]="loading"
@@ -197,11 +205,17 @@ export class LoginComponent implements OnInit {
     email: '',
     phone: '',
     city: '',
-    password: ''
+    password: '',
+    referralCode: ''
   };
 
   ngOnInit(): void {
     this.route.queryParams.subscribe(params => {
+      if (params['ref']) {
+        this.regData.referralCode = params['ref'].toString().trim().toUpperCase();
+        this.isRegister = true;
+        this.cdr.markForCheck();
+      }
       if (params['trial'] === 'true' || params['mode'] === 'register') {
         this.isRegister = true;
         this.cdr.markForCheck();
@@ -254,17 +268,19 @@ export class LoginComponent implements OnInit {
   }
 
   onRegister() {
-    if (!this.regData.labName?.trim() || !this.regData.ownerName?.trim() || !this.regData.email?.trim() || !this.regData.phone?.trim() || !this.regData.password?.trim()) {
-      this.errorMessage = 'Please fill in all required fields (Lab Name, Doctor Name, Email Address, Mobile/WhatsApp, Password).';
+    if (!this.regData.labName?.trim() || !this.regData.ownerName?.trim() || !this.regData.phone?.trim() || !this.regData.password?.trim()) {
+      this.errorMessage = 'Please fill in all required fields (Lab Name, Owner/Doctor Name, WhatsApp Number, Password).';
       this.cdr.markForCheck();
       return;
     }
 
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailPattern.test(this.regData.email.trim())) {
-      this.errorMessage = 'Please enter a valid email address (e.g. lab@example.com).';
-      this.cdr.markForCheck();
-      return;
+    if (this.regData.email?.trim()) {
+      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailPattern.test(this.regData.email.trim())) {
+        this.errorMessage = 'Please enter a valid email address (e.g. lab@example.com).';
+        this.cdr.markForCheck();
+        return;
+      }
     }
 
     if (this.regData.password.length < 6) {
@@ -279,8 +295,9 @@ export class LoginComponent implements OnInit {
 
     const payload = {
       ...this.regData,
-      email: this.regData.email.trim().toLowerCase(),
-      phone: this.regData.phone.trim()
+      email: this.regData.email?.trim() ? this.regData.email.trim().toLowerCase() : null,
+      phone: this.regData.phone.trim(),
+      referralCode: this.regData.referralCode?.trim() || null
     };
 
     this.authService.register(payload).subscribe({
