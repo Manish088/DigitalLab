@@ -19,6 +19,68 @@ public static class DbInitializer
 
         await context.Database.EnsureCreatedAsync();
 
+        // 0. Auto-migrate missing columns and tables safely (Self-Healing DB Schema)
+        try
+        {
+            if (context.Database.IsSqlServer())
+            {
+                await context.Database.ExecuteSqlRawAsync(@"
+                    IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE Name = 'IsAdFree' AND Object_ID = Object_ID('Tenants'))
+                    BEGIN
+                        ALTER TABLE Tenants ADD IsAdFree BIT NOT NULL DEFAULT 0;
+                    END
+
+                    IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'AdCampaigns')
+                    BEGIN
+                        CREATE TABLE AdCampaigns (
+                            Id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+                            CampaignTitle NVARCHAR(250) NOT NULL,
+                            SponsorName NVARCHAR(250) NOT NULL,
+                            SponsorContact NVARCHAR(100) NULL,
+                            BannerImageUrl NVARCHAR(MAX) NOT NULL,
+                            TargetType INT NOT NULL DEFAULT 1,
+                            TargetCity NVARCHAR(150) NULL,
+                            TargetState NVARCHAR(150) NULL,
+                            StartDate DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+                            EndDate DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+                            DurationDays INT NOT NULL DEFAULT 30,
+                            IsActive BIT NOT NULL DEFAULT 1,
+                            DealAmount DECIMAL(18, 2) NULL,
+                            PaymentStatus NVARCHAR(50) NOT NULL DEFAULT 'Pending',
+                            TargetUrl NVARCHAR(MAX) NULL,
+                            QrCodeUrl NVARCHAR(MAX) NULL,
+                            WhatsAppNote NVARCHAR(500) NULL,
+                            TotalImpressionsCount BIGINT NOT NULL DEFAULT 0,
+                            CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+                            UpdatedAt DATETIME2 NULL,
+                            CreatedBy NVARCHAR(100) NULL,
+                            UpdatedBy NVARCHAR(100) NULL,
+                            IsDeleted BIT NOT NULL DEFAULT 0
+                        );
+                    END
+
+                    IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'AdCampaignLabs')
+                    BEGIN
+                        CREATE TABLE AdCampaignLabs (
+                            Id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+                            AdCampaignId UNIQUEIDENTIFIER NOT NULL,
+                            TenantId UNIQUEIDENTIFIER NOT NULL,
+                            AssignedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+                            CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+                            UpdatedAt DATETIME2 NULL,
+                            CreatedBy NVARCHAR(100) NULL,
+                            UpdatedBy NVARCHAR(100) NULL,
+                            IsDeleted BIT NOT NULL DEFAULT 0
+                        );
+                    END
+                ");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[DbInitializer] Migration patch warning: {ex.Message}");
+        }
+
         // 1. Seed Roles
         string[] roles = { "SuperAdmin", "LabAdmin", "LabManager", "Pathologist", "Technician", "Receptionist" };
         foreach (var role in roles)

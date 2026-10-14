@@ -51,24 +51,31 @@ public class AuthController : ControllerBase
         if (!isPasswordValid)
             return Unauthorized(new { message = "Incorrect password. Please enter the correct password." });
 
-        if (user.Role == "SuperAdmin" && (!user.TenantId.HasValue || user.TenantId == Guid.Empty))
-        {
-            var masterTenant = await _context.Tenants.FirstOrDefaultAsync(t => t.LabCode == "MASTER")
-                               ?? await _context.Tenants.FirstOrDefaultAsync(t => t.IsActive);
-            if (masterTenant != null)
-            {
-                user.TenantId = masterTenant.Id;
-                await _userManager.UpdateAsync(user);
-            }
-        }
-
         string? labName = null;
         string? logoUrl = null;
-        if (user.TenantId.HasValue)
+        try
         {
-            var tenant = await _context.Tenants.FirstOrDefaultAsync(t => t.Id == user.TenantId.Value);
-            labName = tenant?.LabName;
-            logoUrl = tenant?.LogoUrl;
+            if (user.Role == "SuperAdmin" && (!user.TenantId.HasValue || user.TenantId == Guid.Empty))
+            {
+                var masterTenant = await _context.Tenants.FirstOrDefaultAsync(t => t.LabCode == "MASTER")
+                                   ?? await _context.Tenants.FirstOrDefaultAsync(t => t.IsActive);
+                if (masterTenant != null)
+                {
+                    user.TenantId = masterTenant.Id;
+                    await _userManager.UpdateAsync(user);
+                }
+            }
+
+            if (user.TenantId.HasValue)
+            {
+                var tenant = await _context.Tenants.FirstOrDefaultAsync(t => t.Id == user.TenantId.Value);
+                labName = tenant?.LabName;
+                logoUrl = tenant?.LogoUrl;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Login Tenant Warning] Could not resolve tenant details: {ex.Message}");
         }
 
         var token = _jwtTokenService.GenerateJwtToken(user, labName);

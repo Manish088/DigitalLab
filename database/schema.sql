@@ -48,6 +48,7 @@ BEGIN
         ReportFontFamily NVARCHAR(50) NOT NULL DEFAULT 'Helvetica',
         PrimaryColor NVARCHAR(50) NOT NULL DEFAULT '#0284c7',
         IsActive BIT NOT NULL DEFAULT 1,
+        IsAdFree BIT NOT NULL DEFAULT 0,
         SubscriptionPlanId UNIQUEIDENTIFIER NULL,
         SubscriptionExpiryDate DATETIME2 NULL,
         SubscriptionStatus NVARCHAR(50) NOT NULL DEFAULT 'Trial',
@@ -376,3 +377,60 @@ BEGIN
         (NEWID(), 'AdminWhatsApp', '7706087066', 'WhatsApp Number for Payment Screenshots & Proofs');
 END
 GO
+
+-- 13. AD CAMPAIGNS MASTER TABLE
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'AdCampaigns')
+BEGIN
+    CREATE TABLE AdCampaigns (
+        Id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+        CampaignTitle NVARCHAR(250) NOT NULL,
+        SponsorName NVARCHAR(250) NOT NULL,
+        SponsorContact NVARCHAR(100) NULL,
+        BannerImageUrl NVARCHAR(MAX) NOT NULL,
+        TargetType INT NOT NULL DEFAULT 1,
+        TargetCity NVARCHAR(150) NULL,
+        TargetState NVARCHAR(150) NULL,
+        StartDate DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        EndDate DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        DurationDays INT NOT NULL DEFAULT 30,
+        IsActive BIT NOT NULL DEFAULT 1,
+        DealAmount DECIMAL(18, 2) NULL,
+        PaymentStatus NVARCHAR(50) NOT NULL DEFAULT 'Pending',
+        TargetUrl NVARCHAR(MAX) NULL,
+        QrCodeUrl NVARCHAR(MAX) NULL,
+        WhatsAppNote NVARCHAR(500) NULL,
+        TotalImpressionsCount BIGINT NOT NULL DEFAULT 0,
+        CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        UpdatedAt DATETIME2 NULL,
+        CreatedBy NVARCHAR(100) NULL,
+        UpdatedBy NVARCHAR(100) NULL,
+        IsDeleted BIT NOT NULL DEFAULT 0
+    );
+
+    CREATE INDEX IX_AdCampaigns_Status_Dates ON AdCampaigns (IsActive, StartDate, EndDate);
+    CREATE INDEX IX_AdCampaigns_City ON AdCampaigns (TargetCity);
+END
+GO
+
+-- 14. AD CAMPAIGN LABS (Targeting Join Table)
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'AdCampaignLabs')
+BEGIN
+    CREATE TABLE AdCampaignLabs (
+        Id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+        AdCampaignId UNIQUEIDENTIFIER NOT NULL,
+        TenantId UNIQUEIDENTIFIER NOT NULL,
+        AssignedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        UpdatedAt DATETIME2 NULL,
+        CreatedBy NVARCHAR(100) NULL,
+        UpdatedBy NVARCHAR(100) NULL,
+        IsDeleted BIT NOT NULL DEFAULT 0,
+        CONSTRAINT FK_AdCampaignLabs_AdCampaigns FOREIGN KEY (AdCampaignId) REFERENCES AdCampaigns(Id) ON DELETE CASCADE,
+        CONSTRAINT FK_AdCampaignLabs_Tenants FOREIGN KEY (TenantId) REFERENCES Tenants(Id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IX_AdCampaignLabs_TenantId ON AdCampaignLabs (TenantId);
+    CREATE INDEX IX_AdCampaignLabs_CampaignId ON AdCampaignLabs (AdCampaignId);
+END
+GO
+

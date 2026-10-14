@@ -236,6 +236,12 @@ builder.Services.AddEndpointsApiExplorer();
 // 6. Configure Swagger with JWT Bearer Auth
 builder.Services.AddSwaggerGen(c =>
 {
+    c.MapType<IFormFile>(() => new OpenApiSchema
+    {
+        Type = "string",
+        Format = "binary"
+    });
+
     c.SwaggerDoc("v1", new OpenApiInfo
     {
         Title = "DigitLab LIMS & Pathology API",
