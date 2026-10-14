@@ -40,6 +40,10 @@ public class AuthController : ControllerBase
     {
         var identifier = (request.EmailOrUsername ?? "").Trim();
         var cleanPhone = new string(identifier.Where(char.IsDigit).ToArray());
+        if (cleanPhone.Length == 11 && cleanPhone.StartsWith("0"))
+            cleanPhone = cleanPhone.Substring(1);
+        else if (cleanPhone.Length == 12 && cleanPhone.StartsWith("91"))
+            cleanPhone = cleanPhone.Substring(2);
 
         var user = await _userManager.FindByEmailAsync(identifier)
                    ?? await _userManager.FindByNameAsync(identifier);
@@ -120,8 +124,13 @@ public class AuthController : ControllerBase
             return BadRequest(new { message = "Mobile / WhatsApp number is required." });
 
         var cleanPhone = new string((request.Phone ?? "").Where(char.IsDigit).ToArray());
-        if (cleanPhone.Length < 10)
-            return BadRequest(new { message = "Please enter a valid 10-digit mobile number." });
+        if (cleanPhone.Length == 11 && cleanPhone.StartsWith("0"))
+            cleanPhone = cleanPhone.Substring(1);
+        else if (cleanPhone.Length == 12 && cleanPhone.StartsWith("91"))
+            cleanPhone = cleanPhone.Substring(2);
+
+        if (cleanPhone.Length != 10)
+            return BadRequest(new { message = "Mobile number must be exactly 10 digits." });
 
         if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 6)
             return BadRequest(new { message = "Password must be at least 6 characters long." });
@@ -145,7 +154,7 @@ public class AuthController : ControllerBase
         }
 
         if (existingUser != null)
-            return BadRequest(new { message = "An account with this mobile number or email already exists. Please Sign In." });
+            return BadRequest(new { message = "An account with this mobile number already exists. Please Sign In." });
 
         var labCode = "LAB" + new Random().Next(1000, 9999);
         var trialPlan = await _context.SubscriptionPlans.FirstOrDefaultAsync(p => p.PlanCode == "TRIAL");
@@ -156,7 +165,7 @@ public class AuthController : ControllerBase
             LabName = request.LabName,
             OwnerName = request.OwnerName,
             Email = userEmail,
-            Phone = request.Phone,
+            Phone = cleanPhone,
             Address = request.Address ?? "",
             City = request.City ?? "",
             State = request.State ?? "",

@@ -115,12 +115,22 @@ import { AuthService } from '../../core/services/auth.service';
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1 flex items-center">
-                  <i class="fa-brands fa-whatsapp text-emerald-600 mr-1 text-sm"></i>
-                  <span>WhatsApp Number *</span>
+                <label class="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
+                  <span class="flex items-center">
+                    <i class="fa-brands fa-whatsapp text-emerald-600 mr-1 text-sm"></i>
+                    <span>WhatsApp Number *</span>
+                  </span>
+                  <span *ngIf="regData.phone" [class]="regData.phone.length === 10 ? 'text-emerald-600 font-bold' : 'text-slate-400 font-medium'" class="text-[10px]">
+                    {{ regData.phone.length }}/10 digits
+                  </span>
                 </label>
-                <input type="tel" [(ngModel)]="regData.phone" name="phone" required placeholder="10-digit WhatsApp" maxlength="10"
-                  class="block w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 text-xs sm:text-sm font-semibold transition-all">
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500 font-bold text-xs">
+                    +91
+                  </div>
+                  <input type="tel" [(ngModel)]="regData.phone" (input)="onPhoneInput($event)" name="phone" required placeholder="10-digit number" maxlength="10" inputmode="numeric"
+                    class="block w-full pl-11 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 text-xs sm:text-sm font-semibold transition-all">
+                </div>
               </div>
               <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1 flex items-center">
@@ -263,6 +273,22 @@ export class LoginComponent implements OnInit {
     });
   }
 
+  onPhoneInput(event: Event) {
+    const input = event.target as HTMLInputElement;
+    let digits = (input.value || '').replace(/\D/g, '');
+    if (digits.length === 11 && digits.startsWith('0')) {
+      digits = digits.substring(1);
+    } else if (digits.length === 12 && digits.startsWith('91')) {
+      digits = digits.substring(2);
+    }
+    if (digits.length > 10) {
+      digits = digits.slice(0, 10);
+    }
+    this.regData.phone = digits;
+    input.value = digits;
+    this.cdr.markForCheck();
+  }
+
   onRegister() {
     if (!this.regData.labName?.trim() || !this.regData.ownerName?.trim() || !this.regData.phone?.trim() || !this.regData.password?.trim()) {
       this.errorMessage = 'Please fill in all required fields (Lab Name, Owner/Doctor Name, WhatsApp Number, Password).';
@@ -270,9 +296,15 @@ export class LoginComponent implements OnInit {
       return;
     }
 
-    const cleanPhone = this.regData.phone.replace(/\D/g, '');
-    if (cleanPhone.length < 10) {
-      this.errorMessage = 'Please enter a valid 10-digit WhatsApp / mobile number.';
+    let cleanPhone = (this.regData.phone || '').replace(/\D/g, '');
+    if (cleanPhone.length === 11 && cleanPhone.startsWith('0')) {
+      cleanPhone = cleanPhone.substring(1);
+    } else if (cleanPhone.length === 12 && cleanPhone.startsWith('91')) {
+      cleanPhone = cleanPhone.substring(2);
+    }
+
+    if (cleanPhone.length !== 10) {
+      this.errorMessage = 'Mobile number must be exactly 10 digits.';
       this.cdr.markForCheck();
       return;
     }
