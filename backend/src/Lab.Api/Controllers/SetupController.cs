@@ -199,10 +199,10 @@ public class SetupController : ControllerBase
                 {
                     PlanCode = "ADVANCED",
                     PlanName = "Advanced / Multi-Branch",
-                    Description = "For large labs & hospitals: multi-counter, B2B collection agents, barcode tracking & priority support.",
-                    MonthlyPrice = 1999,
+                    Description = "Badi Lab, Hospital diagnostic labs & franchise chains.",
+                    MonthlyPrice = 1599,
                     AnnualPrice = 18990,
-                    MaxCasesPerMonth = 50000,
+                    MaxCasesPerMonth = 0,
                     MaxStaffAccounts = 25,
                     HasCustomLetterhead = true,
                     HasPublicQrDownload = true,
