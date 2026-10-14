@@ -109,13 +109,30 @@ builder.Services.AddScoped<IPdfReportService, PdfReportService>();
 builder.Services.AddMemoryCache();
 
 // 6. Comprehensive Anti-Abuse & Rate Limiting Protection across ALL endpoints
+var ipHitStats = new System.Collections.Concurrent.ConcurrentDictionary<string, int>();
+
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
     options.OnRejected = async (context, token) =>
     {
+        var clientIp = context.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
+        if (context.HttpContext.Request.Headers.TryGetValue("X-Forwarded-For", out var forwarded))
+        {
+            var ip = forwarded.ToString().Split(',').FirstOrDefault()?.Trim();
+            if (!string.IsNullOrWhiteSpace(ip)) clientIp = ip;
+        }
+
+        var path = context.HttpContext.Request.Path.Value ?? "";
+        var totalHits = ipHitStats.TryGetValue(clientIp, out var hits) ? hits : 1;
+
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.WriteLine($"[SECURITY SHIELD 🛑 BLOCKED] IP: {clientIp} | Requests Sent: {totalHits} | Path: {path} | Status: 429 Too Many Requests");
+        Console.ResetColor();
+
         context.HttpContext.Response.ContentType = "application/json";
-        await context.HttpContext.Response.WriteAsync("{\"message\": \"Rate limit exceeded. Automated request spamming is blocked by Security Shield. Please wait 1 minute.\", \"statusCode\": 429}", token);
+        context.HttpContext.Response.Headers.Append("Retry-After", "60");
+        await context.HttpContext.Response.WriteAsync("{\"message\": \"Rate limit exceeded. Automated request spamming is blocked by Security Shield. Please wait 1 minute.\", \"statusCode\": 429, \"blockedIp\": \"" + clientIp + "\", \"totalRequestsFromYourIp\": " + totalHits + ", \"retryAfterSeconds\": 60}", token);
     };
 
     // GLOBAL LIMITER: Automatically protects 100% of ALL endpoints across the entire site
@@ -127,6 +144,9 @@ builder.Services.AddRateLimiter(options =>
             var ip = forwarded.ToString().Split(',').FirstOrDefault()?.Trim();
             if (!string.IsNullOrWhiteSpace(ip)) clientIp = ip;
         }
+
+        // Track request count from this IP
+        ipHitStats.AddOrUpdate(clientIp, 1, (_, count) => count + 1);
 
         var path = httpContext.Request.Path.Value?.ToLowerInvariant() ?? "";
 
@@ -322,6 +342,30 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.MapGet("/api/security-status", (HttpContext ctx) =>
+{
+    var clientIp = ctx.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
+    if (ctx.Request.Headers.TryGetValue("X-Forwarded-For", out var fwd))
+    {
+        var ip = fwd.ToString().Split(',').FirstOrDefault()?.Trim();
+        if (!string.IsNullOrWhiteSpace(ip)) clientIp = ip;
+    }
+    var yourHits = ipHitStats.TryGetValue(clientIp, out var h) ? h : 0;
+    return Results.Ok(new
+    {
+        yourIp = clientIp,
+        totalRequestsFromYourIp = yourHits,
+        limits = new
+        {
+            pdfAndInvoices = "Max 15 requests / minute",
+            loginAndAuth = "Max 10 requests / minute",
+            generalSite = "Max 60 requests / minute"
+        },
+        status = "Security Shield Active & Monitoring"
+    });
+}).AllowAnonymous();
+
 app.MapFallbackToFile("index.html");
 
 app.Run();
