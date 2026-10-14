@@ -205,11 +205,11 @@ public static class DbInitializer
             new()
             {
                 PlanCode = "PRO",
-                PlanName = "Pro Lab (Most Popular)",
-                Description = "For medium diagnostic labs: unlimited cases, WhatsApp alerts, custom letterhead & doctor commissions.",
-                MonthlyPrice = 999,
+                PlanName = "Pro Lab",
+                Description = "Medium diagnostic labs with high daily footfall.",
+                MonthlyPrice = 799,
                 AnnualPrice = 9590, // 20% annual discount
-                MaxCasesPerMonth = 10000,
+                MaxCasesPerMonth = 0, // Unlimited patient cases
                 MaxStaffAccounts = 5,
                 HasCustomLetterhead = true,
                 HasPublicQrDownload = true,
