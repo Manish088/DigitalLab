@@ -132,6 +132,20 @@ public class AuthController : ControllerBase
         if (cleanPhone.Length != 10)
             return BadRequest(new { message = "Mobile number must be exactly 10 digits." });
 
+        if (cleanPhone[0] != '6' && cleanPhone[0] != '7' && cleanPhone[0] != '8' && cleanPhone[0] != '9')
+            return BadRequest(new { message = "Indian mobile numbers must start with 6, 7, 8, or 9." });
+
+        if (cleanPhone.Distinct().Count() < 3)
+            return BadRequest(new { message = "Please enter a genuine active mobile number (dummy repetitive numbers not allowed)." });
+
+        string[] dummySequences = {
+            "9876543210", "8765432109", "7654321098",
+            "6789012345", "7890123456", "8901234567", "9012345678",
+            "9123456789", "9898989898", "9988776655"
+        };
+        if (dummySequences.Contains(cleanPhone))
+            return BadRequest(new { message = "Please enter a genuine active mobile number (test sequence detected)." });
+
         if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 6)
             return BadRequest(new { message = "Password must be at least 6 characters long." });
 

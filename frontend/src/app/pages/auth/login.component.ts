@@ -120,8 +120,8 @@ import { AuthService } from '../../core/services/auth.service';
                     <i class="fa-brands fa-whatsapp text-emerald-600 mr-1 text-sm"></i>
                     <span>WhatsApp Number *</span>
                   </span>
-                  <span *ngIf="regData.phone" [class]="regData.phone.length === 10 ? 'text-emerald-600 font-bold' : 'text-slate-400 font-medium'" class="text-[10px]">
-                    {{ regData.phone.length }}/10 digits
+                  <span *ngIf="regData.phone" [class]="phoneStatus.color" class="text-[10px] font-bold">
+                    {{ phoneStatus.text }}
                   </span>
                 </label>
                 <div class="relative">
@@ -273,6 +273,23 @@ export class LoginComponent implements OnInit {
     });
   }
 
+  get phoneStatus(): { valid: boolean; text: string; color: string } {
+    const p = this.regData.phone;
+    if (!p) return { valid: false, text: '', color: '' };
+    if (p.length > 0 && !/^[6-9]/.test(p)) {
+      return { valid: false, text: 'Must start with 6-9', color: 'text-rose-500 font-bold' };
+    }
+    if (p.length < 10) {
+      return { valid: false, text: `${p.length}/10 digits`, color: 'text-slate-400 font-medium' };
+    }
+    const uniqueDigits = new Set(p.split('')).size;
+    const dummySequences = ['9876543210', '8765432109', '7654321098', '6789012345', '7890123456', '8901234567', '9012345678', '9123456789', '9898989898', '9988776655'];
+    if (uniqueDigits < 3 || dummySequences.includes(p)) {
+      return { valid: false, text: 'Dummy number', color: 'text-rose-500 font-bold' };
+    }
+    return { valid: true, text: '✓ Valid Number', color: 'text-emerald-600 font-bold' };
+  }
+
   onPhoneInput(event: Event) {
     const input = event.target as HTMLInputElement;
     let digits = (input.value || '').replace(/\D/g, '');
@@ -305,6 +322,25 @@ export class LoginComponent implements OnInit {
 
     if (cleanPhone.length !== 10) {
       this.errorMessage = 'Mobile number must be exactly 10 digits.';
+      this.cdr.markForCheck();
+      return;
+    }
+
+    if (!/^[6-9]/.test(cleanPhone)) {
+      this.errorMessage = 'Indian mobile number must start with 6, 7, 8, or 9.';
+      this.cdr.markForCheck();
+      return;
+    }
+
+    const uniqueDigits = new Set(cleanPhone.split('')).size;
+    const dummySequences = [
+      '9876543210', '8765432109', '7654321098',
+      '6789012345', '7890123456', '8901234567', '9012345678',
+      '9123456789', '9898989898', '9988776655'
+    ];
+
+    if (uniqueDigits < 3 || dummySequences.includes(cleanPhone)) {
+      this.errorMessage = 'Please enter a genuine active mobile number (fake or repetitive dummy numbers are not allowed).';
       this.cdr.markForCheck();
       return;
     }
