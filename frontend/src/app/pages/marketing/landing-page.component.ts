@@ -25,7 +25,7 @@ import { RouterLink } from '@angular/router';
         </span>
         <span class="hidden sm:inline">Join 1,200+ Pathology Labs across India. Get <strong>14 Days Free Access</strong> + Free Master Test Catalog Setup!</span>
         <span class="sm:hidden">Get <strong>14 Days Free Trial</strong> + WhatsApp Integration!</span>
-        <a routerLink="/login" class="underline hover:text-cyan-100 ml-1 font-bold">Start Free Trial &rarr;</a>
+        <a routerLink="/register" class="underline hover:text-cyan-100 ml-1 font-bold">Start Free Trial &rarr;</a>
       </div>
 
       <!-- Main Navigation -->
@@ -53,7 +53,7 @@ import { RouterLink } from '@angular/router';
             <a routerLink="/login" class="px-4 py-2.5 rounded-xl font-bold text-xs text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-200/90 shadow-sm transition-all flex items-center">
               <i class="fa-solid fa-user-lock mr-1.5 text-brand-600"></i> Lab Login
             </a>
-            <a routerLink="/login" class="px-5 py-2.5 rounded-xl font-black text-xs bg-gradient-to-r from-cyan-600 via-brand-600 to-emerald-600 text-white shadow-lg shadow-brand-500/25 hover:scale-105 hover:shadow-brand-500/35 transition-all flex items-center">
+            <a routerLink="/register" class="px-5 py-2.5 rounded-xl font-black text-xs bg-gradient-to-r from-cyan-600 via-brand-600 to-emerald-600 text-white shadow-lg shadow-brand-500/25 hover:scale-105 hover:shadow-brand-500/35 transition-all flex items-center">
               <i class="fa-solid fa-bolt mr-1.5 text-amber-300"></i> 14-Day Free Trial
             </a>
           </div>
@@ -76,7 +76,7 @@ import { RouterLink } from '@angular/router';
           </div>
           <div class="pt-3 border-t border-slate-200 flex flex-col space-y-2">
             <a routerLink="/login" class="w-full text-center py-2.5 rounded-xl font-bold text-xs bg-slate-100 text-slate-800 border border-slate-200">Lab Login</a>
-            <a routerLink="/login" class="w-full text-center py-2.5 rounded-xl font-bold text-xs bg-gradient-to-r from-cyan-600 to-emerald-600 text-white shadow-md">Start 14-Day Free Trial</a>
+            <a routerLink="/register" class="w-full text-center py-2.5 rounded-xl font-bold text-xs bg-gradient-to-r from-cyan-600 to-emerald-600 text-white shadow-md">Start 14-Day Free Trial</a>
           </div>
         </div>
       </nav>
@@ -105,15 +105,24 @@ import { RouterLink } from '@angular/router';
 
             <!-- Dual Action CTAs -->
             <div class="flex flex-col sm:flex-row items-center justify-center gap-3 pt-3 sm:pt-4">
-              <a routerLink="/login" class="w-full sm:w-auto px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl font-black text-xs sm:text-base bg-gradient-to-r from-cyan-600 via-brand-600 to-emerald-600 text-white shadow-xl shadow-brand-500/25 hover:scale-105 transition-all flex items-center justify-center space-x-2 cursor-pointer">
+              <a routerLink="/register" class="w-full sm:w-auto px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl font-black text-xs sm:text-base bg-gradient-to-r from-cyan-600 via-brand-600 to-emerald-600 text-white shadow-xl shadow-brand-500/25 hover:scale-105 transition-all flex items-center justify-center space-x-2 cursor-pointer">
                 <i class="fa-solid fa-rocket text-amber-300 text-base sm:text-lg"></i>
-                <span>Start 14-Day Free Trial (Instant Setup)</span>
+                <span>Start 14-Day Free Trial (No Credit Card Required)</span>
               </a>
               <a href="#video-tour"
                 class="w-full sm:w-auto px-5 sm:px-7 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl font-bold text-xs sm:text-base bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 shadow-md hover:border-brand-500 transition-all flex items-center justify-center space-x-2 cursor-pointer">
                 <i class="fa-solid fa-circle-play text-brand-600 text-lg sm:text-xl"></i>
                 <span>Watch Video Tour (3 Min)</span>
               </a>
+            </div>
+
+            <!-- Zero Risk Trust Indicators -->
+            <div class="flex flex-wrap items-center justify-center gap-3 text-[11px] sm:text-xs text-slate-500 font-bold pt-2">
+              <span class="flex items-center text-emerald-600"><i class="fa-solid fa-circle-check mr-1.5 text-xs"></i> Zero Risk Trial</span>
+              <span class="text-slate-300">•</span>
+              <span class="flex items-center text-brand-600"><i class="fa-solid fa-bolt mr-1.5 text-amber-500 text-xs"></i> Instant 1-Min Setup</span>
+              <span class="text-slate-300">•</span>
+              <span class="flex items-center text-teal-600"><i class="fa-solid fa-flask-vial mr-1.5 text-cyan-600 text-xs"></i> Preloaded 100+ Tests</span>
             </div>
 
             <!-- 4 Trust Numbers -->
@@ -982,7 +991,7 @@ import { RouterLink } from '@angular/router';
                 </ul>
               </div>
 
-              <a routerLink="/login" class="w-full py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold text-xs text-center border border-slate-200 transition-all">
+              <a routerLink="/register" class="w-full py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold text-xs text-center border border-slate-200 transition-all">
                 Start 14-Day Free Trial
               </a>
             </div>
@@ -1017,7 +1026,7 @@ import { RouterLink } from '@angular/router';
                 </ul>
               </div>
 
-              <a routerLink="/login" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-cyan-600 via-brand-600 to-emerald-600 text-white font-black text-xs text-center shadow-lg shadow-brand-500/25 hover:scale-105 transition-all">
+              <a routerLink="/register" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-cyan-600 via-brand-600 to-emerald-600 text-white font-black text-xs text-center shadow-lg shadow-brand-500/25 hover:scale-105 transition-all">
                 Start 14-Day Free Trial (All Features)
               </a>
             </div>
@@ -1047,7 +1056,7 @@ import { RouterLink } from '@angular/router';
                 </ul>
               </div>
 
-              <a routerLink="/login" class="w-full py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold text-xs text-center border border-slate-200 transition-all">
+              <a routerLink="/register" class="w-full py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold text-xs text-center border border-slate-200 transition-all">
                 Contact Sales / Start Trial
               </a>
             </div>
@@ -1067,7 +1076,7 @@ import { RouterLink } from '@angular/router';
             Join 1,200+ pathologists across India. Get set up in under 60 seconds with our pre-loaded 500+ test catalog!
           </p>
           <div class="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-2">
-            <a routerLink="/login" class="w-full sm:w-auto px-8 py-4 rounded-2xl font-black text-sm bg-white text-brand-700 shadow-2xl hover:scale-105 transition-all">
+            <a routerLink="/register" class="w-full sm:w-auto px-8 py-4 rounded-2xl font-black text-sm bg-white text-brand-700 shadow-2xl hover:scale-105 transition-all">
               🚀 Start 14-Day Free Trial (Instant Access)
             </a>
             <a href="https://wa.me/917706087066?text=Hello%20DigitalLab%20Team%2C%20I%20want%20a%20live%20demo%20of%20DigitalLab%20Pathology%20Software" target="_blank"

@@ -290,10 +290,16 @@ public class AdCampaignsController : ControllerBase
         return Ok(new { message = $"Lab '{lab.LabName}' is now {(lab.IsAdFree ? "Ad-Free (No Ads)" : "Standard (Ads Allowed)")}.", isAdFree = lab.IsAdFree });
     }
 
+    public class BannerUploadDto
+    {
+        public IFormFile File { get; set; } = null!;
+    }
+
     [HttpPost("upload-banner")]
     [Consumes("multipart/form-data")]
-    public async Task<IActionResult> UploadBanner([FromForm] IFormFile file)
+    public async Task<IActionResult> UploadBanner([FromForm] BannerUploadDto dto)
     {
+        var file = dto?.File;
         if (file == null || file.Length == 0)
             return BadRequest(new { message = "No file uploaded." });
 

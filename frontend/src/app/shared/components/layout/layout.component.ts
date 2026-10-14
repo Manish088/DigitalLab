@@ -88,6 +88,12 @@ import { ToastService } from '../../../core/services/toast.service';
 
           <!-- Quick Action Bar & User Profile -->
           <div class="flex items-center space-x-2 sm:space-x-3">
+            <a *ngIf="isTrial && !isSubExpired && !isSuperAdmin()" routerLink="/subscription" 
+              class="hidden sm:inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-bold hover:bg-emerald-100 transition-all cursor-pointer shadow-sm">
+              <i class="fa-solid fa-gift text-emerald-600"></i>
+              <span>14-Day Free Trial: {{ trialDaysRemaining }} Days Left</span>
+            </a>
+
             <button (click)="handleNewCaseClick()" 
               [class.opacity-50]="isSubExpired && !isSuperAdmin()"
               class="inline-flex items-center px-2.5 sm:px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold bg-brand-600 text-white hover:bg-brand-700 shadow-sm shadow-brand-500/20 transition-colors shrink-0 cursor-pointer">
@@ -305,6 +311,8 @@ export class LayoutComponent implements OnInit {
 
   mobileMenuOpen = false;
   isSubExpired = false;
+  isTrial = false;
+  trialDaysRemaining = 14;
   subExpiryDate: string | null = null;
   announcement: any = null;
   announcementDismissed = false;
@@ -338,6 +346,14 @@ export class LayoutComponent implements OnInit {
         const isPastDate = sub?.subscriptionExpiryDate ? new Date(sub.subscriptionExpiryDate) < new Date() : false;
         this.subExpiryDate = sub?.subscriptionExpiryDate || null;
         this.isSubExpired = sub?.isExpired || sub?.subscriptionStatus === 'Expired' || sub?.subscriptionStatus === 'Suspended' || isPastDate;
+
+        if (!this.isSubExpired && sub?.subscriptionExpiryDate && (sub?.subscriptionStatus === 'Trial' || sub?.currentPlan?.planCode === 'TRIAL')) {
+          this.isTrial = true;
+          const diffMs = new Date(sub.subscriptionExpiryDate).getTime() - Date.now();
+          this.trialDaysRemaining = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+        } else {
+          this.isTrial = false;
+        }
       },
       error: (err) => console.error('Error checking layout subscription status:', err)
     });

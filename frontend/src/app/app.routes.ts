@@ -23,6 +23,8 @@ export const routes: Routes = [
   { path: '', component: LandingPageComponent },
   { path: 'home', component: LandingPageComponent },
   { path: 'login', component: LoginComponent },
+  { path: 'register', component: LoginComponent },
+  { path: 'free-trial', component: LoginComponent },
   { path: 'launch', component: SetupComponent },
   { path: 'setup', component: SetupComponent },
   { path: 'init', component: SetupComponent },

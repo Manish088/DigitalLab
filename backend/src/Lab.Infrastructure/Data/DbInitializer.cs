@@ -19,6 +19,83 @@ public static class DbInitializer
 
         await context.Database.EnsureCreatedAsync();
 
+        // 0. Auto-migrate missing columns and tables safely (Self-Healing DB Schema)
+        try
+        {
+            if (context.Database.IsSqlServer())
+            {
+                await context.Database.ExecuteSqlRawAsync(@"
+                    IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE Name = 'IsAdFree' AND Object_ID = Object_ID('Tenants'))
+                    BEGIN
+                        ALTER TABLE Tenants ADD IsAdFree BIT NOT NULL DEFAULT 0;
+                    END
+
+                    IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'AdCampaigns')
+                    BEGIN
+                        CREATE TABLE AdCampaigns (
+                            Id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+                            CampaignTitle NVARCHAR(250) NOT NULL,
+                            SponsorName NVARCHAR(250) NOT NULL,
+                            SponsorContact NVARCHAR(100) NULL,
+                            BannerImageUrl NVARCHAR(MAX) NOT NULL,
+                            TargetType INT NOT NULL DEFAULT 1,
+                            TargetCity NVARCHAR(150) NULL,
+                            TargetState NVARCHAR(150) NULL,
+                            StartDate DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+                            EndDate DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+                            DurationDays INT NOT NULL DEFAULT 30,
+                            IsActive BIT NOT NULL DEFAULT 1,
+                            DealAmount DECIMAL(18, 2) NULL,
+                            PaymentStatus NVARCHAR(50) NOT NULL DEFAULT 'Pending',
+                            TargetUrl NVARCHAR(MAX) NULL,
+                            QrCodeUrl NVARCHAR(MAX) NULL,
+                            WhatsAppNote NVARCHAR(500) NULL,
+                            TotalImpressionsCount BIGINT NOT NULL DEFAULT 0,
+                            CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+                            UpdatedAt DATETIME2 NULL,
+                            CreatedBy NVARCHAR(100) NULL,
+                            UpdatedBy NVARCHAR(100) NULL,
+                            IsDeleted BIT NOT NULL DEFAULT 0
+                        );
+                    END
+
+                    IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'AdCampaignLabs')
+                    BEGIN
+                        CREATE TABLE AdCampaignLabs (
+                            Id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+                            AdCampaignId UNIQUEIDENTIFIER NOT NULL,
+                            TenantId UNIQUEIDENTIFIER NOT NULL,
+                            AssignedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+                            CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+                            UpdatedAt DATETIME2 NULL,
+                            CreatedBy NVARCHAR(100) NULL,
+                            UpdatedBy NVARCHAR(100) NULL,
+                            IsDeleted BIT NOT NULL DEFAULT 0
+                        );
+                    END
+
+                    IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'SystemSettings')
+                    BEGIN
+                        CREATE TABLE SystemSettings (
+                            Id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+                            SettingKey NVARCHAR(100) NOT NULL UNIQUE,
+                            SettingValue NVARCHAR(MAX) NOT NULL,
+                            Description NVARCHAR(500) NULL,
+                            CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+                            UpdatedAt DATETIME2 NULL,
+                            CreatedBy NVARCHAR(100) NULL,
+                            UpdatedBy NVARCHAR(100) NULL,
+                            IsDeleted BIT NOT NULL DEFAULT 0
+                        );
+                    END
+                ");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[DbInitializer] Migration patch warning: {ex.Message}");
+        }
+
         // 1. Seed Roles
         string[] roles = { "SuperAdmin", "LabAdmin", "LabManager", "Pathologist", "Technician", "Receptionist" };
         foreach (var role in roles)
@@ -787,5 +864,189 @@ public static class DbInitializer
             await context.TestParameters.AddRangeAsync(dengueParams);
             await context.SaveChangesAsync();
         }
+
+        // 13. Blood Group & Rh Factor (ABO & Rh D)
+        if (!await context.Tests.IgnoreQueryFilters().AnyAsync(t => t.TenantId == tenantId && t.TestCode == "BG"))
+        {
+            var bgTest = new TestMaster
+            {
+                TenantId = tenantId,
+                CategoryId = catHema.Id,
+                TestCode = "BG",
+                TestName = "ABO Blood Grouping & Rh Factor (D Typing)",
+                ShortName = "Blood Group",
+                ItemType = TestItemType.SingleTest,
+                SampleType = "Whole Blood EDTA",
+                ContainerVialType = "Lavender / EDTA Tube",
+                Price = 120,
+                CostPrice = 20,
+                TatHours = 1,
+                Methodology = "Slide & Tube Agglutination Method",
+                ClinicalSignificance = "Mandatory for blood transfusion, surgery clearance, pre-pregnancy, and donor screening."
+            };
+            await context.Tests.AddAsync(bgTest);
+            await context.SaveChangesAsync();
+
+            var bgParams = new List<TestParameter>
+            {
+                new() { TenantId = tenantId, TestId = bgTest.Id, ParameterCode = "ABO", ParameterName = "ABO Blood Group", Unit = "", InputType = ParameterInputType.Text, DefaultValue = "B", DisplayOrder = 1,
+                    NormalRanges = { new() { TenantId = tenantId, ApplicableGender = Gender.Both, TextualRange = "A / B / AB / O" } } },
+                new() { TenantId = tenantId, TestId = bgTest.Id, ParameterCode = "RH", ParameterName = "Rh Factor (Rh-D)", Unit = "", InputType = ParameterInputType.Text, DefaultValue = "Positive (+ve)", DisplayOrder = 2,
+                    NormalRanges = { new() { TenantId = tenantId, ApplicableGender = Gender.Both, TextualRange = "Positive (+ve) / Negative (-ve)" } } }
+            };
+            await context.TestParameters.AddRangeAsync(bgParams);
+            await context.SaveChangesAsync();
+        }
+
+        // 14. Erythrocyte Sedimentation Rate (ESR)
+        if (!await context.Tests.IgnoreQueryFilters().AnyAsync(t => t.TenantId == tenantId && t.TestCode == "ESR"))
+        {
+            var esrTest = new TestMaster
+            {
+                TenantId = tenantId,
+                CategoryId = catHema.Id,
+                TestCode = "ESR",
+                TestName = "Erythrocyte Sedimentation Rate (ESR - Westergren Method)",
+                ShortName = "ESR",
+                ItemType = TestItemType.SingleTest,
+                SampleType = "Sodium Citrate / EDTA Blood",
+                ContainerVialType = "Black / Citrate or EDTA Tube",
+                Price = 100,
+                CostPrice = 15,
+                TatHours = 2,
+                Methodology = "Automated Westergren Method (1st Hour)",
+                ClinicalSignificance = "Non-specific inflammatory marker for chronic infections, autoimmune diseases, and tuberculosis."
+            };
+            await context.Tests.AddAsync(esrTest);
+            await context.SaveChangesAsync();
+
+            var esrParam = new TestParameter
+            {
+                TenantId = tenantId,
+                TestId = esrTest.Id,
+                ParameterCode = "ESR_VAL",
+                ParameterName = "ESR (1st Hour)",
+                Unit = "mm/hr",
+                InputType = ParameterInputType.Numeric,
+                DisplayOrder = 1,
+                NormalRanges = {
+                    new() { TenantId = tenantId, ApplicableGender = Gender.Male, MinNormalValue = 0, MaxNormalValue = 15, TextualRange = "0 - 15 mm/hr (Adult Male)" },
+                    new() { TenantId = tenantId, ApplicableGender = Gender.Female, MinNormalValue = 0, MaxNormalValue = 20, TextualRange = "0 - 20 mm/hr (Adult Female)" }
+                }
+            };
+            await context.TestParameters.AddAsync(esrParam);
+            await context.SaveChangesAsync();
+        }
+
+        // 15. Malarial Parasite (MP - Antigen & Smear)
+        if (!await context.Tests.IgnoreQueryFilters().AnyAsync(t => t.TenantId == tenantId && t.TestCode == "MP"))
+        {
+            var mpTest = new TestMaster
+            {
+                TenantId = tenantId,
+                CategoryId = catHema.Id,
+                TestCode = "MP",
+                TestName = "Malarial Parasite Detection (Rapid Antigen & Blood Smear)",
+                ShortName = "MP Test",
+                ItemType = TestItemType.SingleTest,
+                SampleType = "Whole Blood EDTA",
+                ContainerVialType = "Lavender / EDTA Tube",
+                Price = 200,
+                CostPrice = 35,
+                TatHours = 1,
+                Methodology = "Immunochromatographic Antigen Card & Leishman Thick/Thin Smear",
+                ClinicalSignificance = "Detection of Plasmodium vivax and Plasmodium falciparum in acute febrile illness."
+            };
+            await context.Tests.AddAsync(mpTest);
+            await context.SaveChangesAsync();
+
+            var mpParams = new List<TestParameter>
+            {
+                new() { TenantId = tenantId, TestId = mpTest.Id, ParameterCode = "MP_PV", ParameterName = "Plasmodium vivax (Pv Antigen)", Unit = "", InputType = ParameterInputType.Text, DefaultValue = "Negative", DisplayOrder = 1,
+                    NormalRanges = { new() { TenantId = tenantId, ApplicableGender = Gender.Both, TextualRange = "Negative / Non-Reactive" } } },
+                new() { TenantId = tenantId, TestId = mpTest.Id, ParameterCode = "MP_PF", ParameterName = "Plasmodium falciparum (Pf Antigen)", Unit = "", InputType = ParameterInputType.Text, DefaultValue = "Negative", DisplayOrder = 2,
+                    NormalRanges = { new() { TenantId = tenantId, ApplicableGender = Gender.Both, TextualRange = "Negative / Non-Reactive" } } },
+                new() { TenantId = tenantId, TestId = mpTest.Id, ParameterCode = "MP_SMEAR", ParameterName = "Peripheral Blood Smear (Thick/Thin)", Unit = "", InputType = ParameterInputType.Text, DefaultValue = "No Malarial Parasites Seen", DisplayOrder = 3,
+                    NormalRanges = { new() { TenantId = tenantId, ApplicableGender = Gender.Both, TextualRange = "No Malarial Parasites Seen" } } }
+            };
+            await context.TestParameters.AddRangeAsync(mpParams);
+            await context.SaveChangesAsync();
+        }
+
+        // 16. C-Reactive Protein (CRP - Quantitative)
+        if (!await context.Tests.IgnoreQueryFilters().AnyAsync(t => t.TenantId == tenantId && t.TestCode == "CRP"))
+        {
+            var crpTest = new TestMaster
+            {
+                TenantId = tenantId,
+                CategoryId = catSer.Id,
+                TestCode = "CRP",
+                TestName = "C-Reactive Protein (CRP - Quantitative)",
+                ShortName = "CRP Quantitative",
+                ItemType = TestItemType.SingleTest,
+                SampleType = "Serum Clotted",
+                ContainerVialType = "Yellow / Gel SST",
+                Price = 350,
+                CostPrice = 70,
+                TatHours = 2,
+                Methodology = "Immunoturbidimetry Method",
+                ClinicalSignificance = "Acute phase reactant in bacterial infections, tissue injury, and systemic inflammation."
+            };
+            await context.Tests.AddAsync(crpTest);
+            await context.SaveChangesAsync();
+
+            var crpParam = new TestParameter
+            {
+                TenantId = tenantId,
+                TestId = crpTest.Id,
+                ParameterCode = "CRP_VAL",
+                ParameterName = "C-Reactive Protein (CRP)",
+                Unit = "mg/L",
+                InputType = ParameterInputType.Numeric,
+                DisplayOrder = 1,
+                NormalRanges = { new() { TenantId = tenantId, ApplicableGender = Gender.Both, MinNormalValue = 0, MaxNormalValue = 6.0m, PanicHighValue = 50.0m, TextualRange = "< 6.0 mg/L Normal" } }
+            };
+            await context.TestParameters.AddAsync(crpParam);
+            await context.SaveChangesAsync();
+        }
+
+        // 17. Urine Pregnancy Test (UPT)
+        if (!await context.Tests.IgnoreQueryFilters().AnyAsync(t => t.TenantId == tenantId && t.TestCode == "UPT"))
+        {
+            var uptTest = new TestMaster
+            {
+                TenantId = tenantId,
+                CategoryId = catClin.Id,
+                TestCode = "UPT",
+                TestName = "Urine Pregnancy Test (hCG Card Test)",
+                ShortName = "UPT (Pregnancy)",
+                ItemType = TestItemType.SingleTest,
+                SampleType = "First Morning Urine",
+                ContainerVialType = "Sterile Urine Container",
+                Price = 120,
+                CostPrice = 20,
+                TatHours = 1,
+                Methodology = "Rapid Immunochromatographic hCG Detection",
+                ClinicalSignificance = "Qualitative detection of human Chorionic Gonadotropin for early pregnancy confirmation."
+            };
+            await context.Tests.AddAsync(uptTest);
+            await context.SaveChangesAsync();
+
+            var uptParam = new TestParameter
+            {
+                TenantId = tenantId,
+                TestId = uptTest.Id,
+                ParameterCode = "HCG_QUAL",
+                ParameterName = "Urine hCG Status",
+                Unit = "",
+                InputType = ParameterInputType.Text,
+                DefaultValue = "Negative",
+                DisplayOrder = 1,
+                NormalRanges = { new() { TenantId = tenantId, ApplicableGender = Gender.Female, TextualRange = "Negative / Positive" } }
+            };
+            await context.TestParameters.AddAsync(uptParam);
+            await context.SaveChangesAsync();
+        }
     }
 }
+

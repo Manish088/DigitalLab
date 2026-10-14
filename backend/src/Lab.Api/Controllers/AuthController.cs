@@ -38,11 +38,23 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
-        var user = await _userManager.FindByEmailAsync(request.EmailOrUsername)
-                   ?? await _userManager.FindByNameAsync(request.EmailOrUsername);
+        var identifier = (request.EmailOrUsername ?? "").Trim();
+        var cleanPhone = new string(identifier.Where(char.IsDigit).ToArray());
+
+        var user = await _userManager.FindByEmailAsync(identifier)
+                   ?? await _userManager.FindByNameAsync(identifier);
+
+        if (user == null && !string.IsNullOrWhiteSpace(cleanPhone))
+        {
+            user = await _userManager.Users.FirstOrDefaultAsync(u => 
+                u.PhoneNumber == cleanPhone || 
+                u.UserName == cleanPhone || 
+                u.Email == $"{cleanPhone}@digitlab.com" ||
+                (u.PhoneNumber != null && u.PhoneNumber.EndsWith(cleanPhone)));
+        }
 
         if (user == null)
-            return Unauthorized(new { message = "This email or username is not registered. Please register first." });
+            return Unauthorized(new { message = "This mobile number or email is not registered. Please start your 14-Day Free Trial." });
 
         if (!user.IsActive)
             return Unauthorized(new { message = "This account has been deactivated. Please contact administrator." });
@@ -51,24 +63,31 @@ public class AuthController : ControllerBase
         if (!isPasswordValid)
             return Unauthorized(new { message = "Incorrect password. Please enter the correct password." });
 
-        if (user.Role == "SuperAdmin" && (!user.TenantId.HasValue || user.TenantId == Guid.Empty))
-        {
-            var masterTenant = await _context.Tenants.FirstOrDefaultAsync(t => t.LabCode == "MASTER")
-                               ?? await _context.Tenants.FirstOrDefaultAsync(t => t.IsActive);
-            if (masterTenant != null)
-            {
-                user.TenantId = masterTenant.Id;
-                await _userManager.UpdateAsync(user);
-            }
-        }
-
         string? labName = null;
         string? logoUrl = null;
-        if (user.TenantId.HasValue)
+        try
         {
-            var tenant = await _context.Tenants.FirstOrDefaultAsync(t => t.Id == user.TenantId.Value);
-            labName = tenant?.LabName;
-            logoUrl = tenant?.LogoUrl;
+            if (user.Role == "SuperAdmin" && (!user.TenantId.HasValue || user.TenantId == Guid.Empty))
+            {
+                var masterTenant = await _context.Tenants.FirstOrDefaultAsync(t => t.LabCode == "MASTER")
+                                   ?? await _context.Tenants.FirstOrDefaultAsync(t => t.IsActive);
+                if (masterTenant != null)
+                {
+                    user.TenantId = masterTenant.Id;
+                    await _userManager.UpdateAsync(user);
+                }
+            }
+
+            if (user.TenantId.HasValue)
+            {
+                var tenant = await _context.Tenants.FirstOrDefaultAsync(t => t.Id == user.TenantId.Value);
+                labName = tenant?.LabName;
+                logoUrl = tenant?.LogoUrl;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Login Tenant Warning] Could not resolve tenant details: {ex.Message}");
         }
 
         var token = _jwtTokenService.GenerateJwtToken(user, labName);
@@ -90,23 +109,53 @@ public class AuthController : ControllerBase
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterLabRequest request)
     {
-        var existingUser = await _userManager.FindByEmailAsync(request.Email);
+        if (string.IsNullOrWhiteSpace(request.LabName))
+            return BadRequest(new { message = "Laboratory name is required." });
+
+        if (string.IsNullOrWhiteSpace(request.OwnerName))
+            return BadRequest(new { message = "Owner / Doctor name is required." });
+
+        if (string.IsNullOrWhiteSpace(request.Email))
+            return BadRequest(new { message = "Email address is required for lab registration." });
+
+        if (!request.Email.Contains('@') || !request.Email.Contains('.'))
+            return BadRequest(new { message = "Please enter a valid email address (e.g. lab@example.com)." });
+
+        if (string.IsNullOrWhiteSpace(request.Phone))
+            return BadRequest(new { message = "Mobile / WhatsApp number is required." });
+
+        if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 6)
+            return BadRequest(new { message = "Password must be at least 6 characters long." });
+
+        var cleanPhone = new string((request.Phone ?? "").Where(char.IsDigit).ToArray());
+        var userEmail = request.Email.Trim().ToLowerInvariant();
+
+        var existingUser = await _userManager.FindByEmailAsync(userEmail);
+        if (existingUser == null && !string.IsNullOrWhiteSpace(cleanPhone))
+        {
+            existingUser = await _userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == cleanPhone);
+        }
+
         if (existingUser != null)
-            return BadRequest(new { message = "An account with this email already exists." });
+            return BadRequest(new { message = "An account with this mobile number or email already exists. Please Sign In." });
 
         var labCode = "LAB" + new Random().Next(1000, 9999);
+        var trialPlan = await _context.SubscriptionPlans.FirstOrDefaultAsync(p => p.PlanCode == "TRIAL");
+
         var tenant = new TenantLab
         {
             LabCode = labCode,
             LabName = request.LabName,
             OwnerName = request.OwnerName,
-            Email = request.Email,
+            Email = userEmail,
             Phone = request.Phone,
-            Address = request.Address,
-            City = request.City,
-            State = request.State,
+            Address = request.Address ?? "",
+            City = request.City ?? "",
+            State = request.State ?? "",
+            SubscriptionPlanId = trialPlan?.Id,
             SubscriptionStatus = "Trial",
-            SubscriptionExpiryDate = DateTime.UtcNow.AddDays(14)
+            SubscriptionExpiryDate = DateTime.UtcNow.AddDays(14),
+            IsActive = true
         };
 
         await _context.Tenants.AddAsync(tenant);
@@ -114,8 +163,9 @@ public class AuthController : ControllerBase
 
         var user = new ApplicationUser
         {
-            UserName = request.Email,
-            Email = request.Email,
+            UserName = userEmail,
+            Email = userEmail,
+            PhoneNumber = cleanPhone,
             FullName = request.OwnerName,
             TenantId = tenant.Id,
             Role = "LabAdmin",
@@ -132,10 +182,43 @@ public class AuthController : ControllerBase
 
         await _userManager.AddToRoleAsync(user, "LabAdmin");
 
+        // Record initial 14-day free trial subscription in history
+        if (trialPlan != null)
+        {
+            var trialSub = new TenantSubscription
+            {
+                TenantId = tenant.Id,
+                TenantLabId = tenant.Id,
+                PlanId = trialPlan.Id,
+                BillingCycle = "Trial",
+                StartDate = DateTime.UtcNow,
+                EndDate = tenant.SubscriptionExpiryDate ?? DateTime.UtcNow.AddDays(14),
+                AmountPaid = 0,
+                PromoCodeUsed = "TRIAL14",
+                Status = "Trial"
+            };
+            try
+            {
+                await _context.TenantSubscriptions.AddAsync(trialSub);
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Auth] Trial sub record notice: {ex.Message}");
+            }
+        }
+
         // Seed complete standard pathology catalog (CBC, Lipid, LFT, KFT, Glucose, Urine, Thyroid, etc.)
         if (_context is ApplicationDbContext appDb)
         {
-            await DbInitializer.SeedStandardCatalogForTenantAsync(appDb, tenant.Id);
+            try
+            {
+                await DbInitializer.SeedStandardCatalogForTenantAsync(appDb, tenant.Id);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Auth] Tenant seeding notice: {ex.Message}");
+            }
         }
 
         var token = _jwtTokenService.GenerateJwtToken(user, tenant.LabName);
