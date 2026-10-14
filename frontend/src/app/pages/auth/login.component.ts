@@ -49,12 +49,12 @@ import { AuthService } from '../../core/services/auth.service';
           <!-- Sign In Form -->
           <form *ngIf="!isRegister" (ngSubmit)="onLogin()" class="space-y-4">
             <div>
-              <label class="block text-xs font-bold text-slate-700 mb-1">Mobile Number or Email</label>
+              <label class="block text-xs font-bold text-slate-700 mb-1">WhatsApp / Mobile Number</label>
               <div class="relative">
                 <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                  <i class="fa-solid fa-user-lock text-xs"></i>
+                  <i class="fa-solid fa-mobile-screen text-xs"></i>
                 </div>
-                <input type="text" [(ngModel)]="loginData.emailOrUsername" name="email" required placeholder="Enter 10-digit mobile or email"
+                <input type="text" [(ngModel)]="loginData.emailOrUsername" name="email" required placeholder="Enter 10-digit mobile number"
                   class="block w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-xs sm:text-sm font-semibold transition-all">
               </div>
             </div>
@@ -113,36 +113,33 @@ import { AuthService } from '../../core/services/auth.service';
                 class="block w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 text-xs sm:text-sm font-semibold transition-all">
             </div>
 
-            <div class="grid grid-cols-2 gap-2.5">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">
-                  WhatsApp Number *
+                <label class="block text-xs font-bold text-slate-700 mb-1 flex items-center">
+                  <i class="fa-brands fa-whatsapp text-emerald-600 mr-1 text-sm"></i>
+                  <span>WhatsApp Number *</span>
                 </label>
-                <input type="tel" [(ngModel)]="regData.phone" name="phone" required placeholder="10-digit WhatsApp"
-                  class="block w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 text-xs font-semibold transition-all">
+                <input type="tel" [(ngModel)]="regData.phone" name="phone" required placeholder="10-digit WhatsApp" maxlength="10"
+                  class="block w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 text-xs sm:text-sm font-semibold transition-all">
               </div>
               <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Password *</label>
+                <label class="block text-xs font-bold text-slate-700 mb-1 flex items-center">
+                  <i class="fa-solid fa-lock text-slate-400 mr-1 text-xs"></i>
+                  <span>Password *</span>
+                </label>
                 <input type="password" [(ngModel)]="regData.password" name="password" required placeholder="Min 6 characters"
-                  class="block w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 text-xs font-semibold transition-all">
+                  class="block w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 text-xs sm:text-sm font-semibold transition-all">
               </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-2.5">
-              <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">
-                  Email <span class="text-slate-400 font-normal text-[10px]">(Optional)</span>
-                </label>
-                <input type="email" [(ngModel)]="regData.email" name="email" placeholder="lab@example.com (Optional)"
-                  class="block w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 text-xs font-semibold transition-all">
-              </div>
-              <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">
-                  City <span class="text-slate-400 font-normal text-[10px]">(Optional)</span>
-                </label>
-                <input type="text" [(ngModel)]="regData.city" name="city" placeholder="e.g. Mumbai, Delhi"
-                  class="block w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 text-xs font-semibold transition-all">
-              </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1 flex items-center">
+                <i class="fa-solid fa-location-dot text-slate-400 mr-1 text-xs"></i>
+                <span>City / Location</span>
+                <span class="text-slate-400 font-normal text-[10px] ml-1.5">(Optional)</span>
+              </label>
+              <input type="text" [(ngModel)]="regData.city" name="city" placeholder="e.g. Mumbai, Delhi, Lucknow"
+                class="block w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 text-xs sm:text-sm font-semibold transition-all">
             </div>
 
             <!-- Referral Bonus Badge -->
@@ -202,7 +199,6 @@ export class LoginComponent implements OnInit {
   regData = {
     labName: '',
     ownerName: '',
-    email: '',
     phone: '',
     city: '',
     password: '',
@@ -230,7 +226,7 @@ export class LoginComponent implements OnInit {
 
   onLogin() {
     if (!this.loginData.emailOrUsername || !this.loginData.password) {
-      this.errorMessage = 'Please enter both mobile/email and password.';
+      this.errorMessage = 'Please enter both mobile number and password.';
       this.cdr.markForCheck();
       return;
     }
@@ -274,13 +270,11 @@ export class LoginComponent implements OnInit {
       return;
     }
 
-    if (this.regData.email?.trim()) {
-      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailPattern.test(this.regData.email.trim())) {
-        this.errorMessage = 'Please enter a valid email address (e.g. lab@example.com).';
-        this.cdr.markForCheck();
-        return;
-      }
+    const cleanPhone = this.regData.phone.replace(/\D/g, '');
+    if (cleanPhone.length < 10) {
+      this.errorMessage = 'Please enter a valid 10-digit WhatsApp / mobile number.';
+      this.cdr.markForCheck();
+      return;
     }
 
     if (this.regData.password.length < 6) {
@@ -294,9 +288,12 @@ export class LoginComponent implements OnInit {
     this.cdr.markForCheck();
 
     const payload = {
-      ...this.regData,
-      email: this.regData.email?.trim() ? this.regData.email.trim().toLowerCase() : null,
-      phone: this.regData.phone.trim(),
+      labName: this.regData.labName.trim(),
+      ownerName: this.regData.ownerName.trim(),
+      email: null,
+      phone: cleanPhone,
+      city: this.regData.city?.trim() || null,
+      password: this.regData.password,
       referralCode: this.regData.referralCode?.trim() || null
     };
 
