@@ -190,8 +190,8 @@ public static class DbInitializer
             {
                 PlanCode = "STARTER",
                 PlanName = "Starter Lab",
-                Description = "Ideal for small clinic labs (1 technician) & phlebotomy collection points.",
-                MonthlyPrice = 499,
+                Description = "Chhoti clinic lab & single-technician collection points.",
+                MonthlyPrice = 399,
                 AnnualPrice = 4790, // 20% annual discount
                 MaxCasesPerMonth = 100,
                 MaxStaffAccounts = 1,

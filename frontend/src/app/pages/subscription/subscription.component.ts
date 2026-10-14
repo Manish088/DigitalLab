@@ -59,18 +59,22 @@ import { SubscriptionPlan } from '../../core/models/lims.models';
 
             <div>
               <div class="text-3xl font-black text-slate-900 font-heading">
-                ₹{{ (billingCycle === 'Annual' ? plan.annualPrice : plan.monthlyPrice) | number:'1.0-0' }}
-                <span class="text-xs font-normal text-slate-400">/ {{ billingCycle === 'Annual' ? 'year' : 'month' }}</span>
+                ₹{{ (billingCycle === 'Annual' ? (plan.annualPrice / 12) : plan.monthlyPrice) | number:'1.0-0' }}
+                <span class="text-xs font-normal text-slate-400">/ month</span>
+              </div>
+              <div *ngIf="billingCycle === 'Annual' && plan.annualPrice > 0" class="text-[10px] text-slate-500 mt-1">
+                ₹{{ plan.annualPrice | number:'1.0-0' }} billed annually (20% OFF)
               </div>
             </div>
 
             <!-- Features -->
             <ul class="space-y-2 text-xs text-slate-600 border-t border-slate-100 pt-4">
-              <li class="flex items-center"><i class="fa-solid fa-check text-emerald-600 mr-2 text-xs"></i> Up to <strong>{{ plan.maxCasesPerMonth }}</strong> cases / month</li>
-              <li class="flex items-center"><i class="fa-solid fa-check text-emerald-600 mr-2 text-xs"></i> <strong>{{ plan.maxStaffAccounts }}</strong> staff user logins</li>
-              <li class="flex items-center"><i class="fa-solid fa-check text-emerald-600 mr-2 text-xs"></i> Custom Letterhead Designer</li>
-              <li class="flex items-center"><i class="fa-solid fa-check text-emerald-600 mr-2 text-xs"></i> Online QR Token Report Sharing</li>
-              <li class="flex items-center"><i class="fa-solid fa-check text-emerald-600 mr-2 text-xs"></i> Doctor Referral Commission Ledger</li>
+              <li class="flex items-center"><i class="fa-solid fa-check text-emerald-600 mr-2 text-xs"></i> Up to <strong>{{ plan.maxCasesPerMonth }} cases / month</strong></li>
+              <li class="flex items-center"><i class="fa-solid fa-check text-emerald-600 mr-2 text-xs"></i> <strong>{{ plan.maxStaffAccounts }} Staff user login{{ plan.maxStaffAccounts > 1 ? 's' : '' }}</strong></li>
+              <li class="flex items-center"><i class="fa-solid fa-check text-emerald-600 mr-2 text-xs"></i> {{ plan.hasCustomLetterhead ? 'Custom Letterhead Designer' : 'Plain A4 Paper Report Print' }}</li>
+              <li class="flex items-center"><i class="fa-solid fa-check text-emerald-600 mr-2 text-xs"></i> Preloaded 100+ Test Catalog</li>
+              <li class="flex items-center"><i class="fa-solid fa-check text-emerald-600 mr-2 text-xs"></i> Online QR Token Reports</li>
+              <li *ngIf="plan.hasDoctorReferralModule" class="flex items-center"><i class="fa-solid fa-check text-emerald-600 mr-2 text-xs"></i> Doctor Referral Commission Ledger</li>
               <li *ngIf="plan.hasWhatsAppAlerts" class="flex items-center text-brand-700 font-bold"><i class="fa-solid fa-check text-brand-600 mr-2 text-xs"></i> WhatsApp & SMS Alerts</li>
             </ul>
           </div>

@@ -229,17 +229,25 @@ public class CasesController : ControllerBase
                     return StatusCode(402, new { message = $"Your laboratory subscription expired on {expFormatted}. Please renew your plan to register new patients and create bills." });
                 }
 
-                // Monthly Case Quota Check
+                // Monthly Case Quota Check (Strictly Enforced: Up to 100 cases/month for Starter Lab)
                 if (lab.SubscriptionPlanId.HasValue)
                 {
                     var plan = await _context.SubscriptionPlans.FirstOrDefaultAsync(p => p.Id == lab.SubscriptionPlanId.Value);
                     if (plan != null && plan.MaxCasesPerMonth > 0)
                     {
                         var startOfMonth = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
-                        var casesThisMonth = await _context.CaseOrders.CountAsync(c => c.CreatedAt >= startOfMonth);
+                        var casesThisMonth = await _context.CaseOrders
+                            .IgnoreQueryFilters()
+                            .CountAsync(c => c.TenantId == lab.Id && !c.IsDeleted && c.CreatedAt >= startOfMonth);
+
                         if (casesThisMonth >= plan.MaxCasesPerMonth)
                         {
-                            return StatusCode(402, new { message = $"You have reached your monthly quota limit of {plan.MaxCasesPerMonth} cases. Please upgrade your subscription plan to continue billing." });
+                            return StatusCode(402, new { 
+                                message = $"Monthly limit reached! Your '{plan.PlanName}' plan allows a maximum of {plan.MaxCasesPerMonth} cases/month (Used: {casesThisMonth}/{plan.MaxCasesPerMonth}). Isse zyada cases is mahine create nahi ho sakte. Please upgrade your subscription plan to continue.",
+                                casesThisMonth,
+                                maxCasesPerMonth = plan.MaxCasesPerMonth,
+                                planName = plan.PlanName
+                            });
                         }
                     }
                 }
