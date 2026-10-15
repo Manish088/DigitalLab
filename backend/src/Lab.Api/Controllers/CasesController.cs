@@ -272,6 +272,34 @@ public class CasesController : ControllerBase
                 }
             }
 
+            // 1. Strict 10-Digit Mobile Number Validation for Patient
+            string? cleanPhone = null;
+            if (dto.NewPatient != null && !string.IsNullOrWhiteSpace(dto.NewPatient.Phone))
+            {
+                cleanPhone = new string(dto.NewPatient.Phone.Where(char.IsDigit).ToArray());
+                if (cleanPhone.Length == 11 && cleanPhone.StartsWith("0"))
+                    cleanPhone = cleanPhone.Substring(1);
+                else if (cleanPhone.Length == 12 && cleanPhone.StartsWith("91"))
+                    cleanPhone = cleanPhone.Substring(2);
+
+                if (cleanPhone.Length != 10)
+                {
+                    return BadRequest(new { message = "Patient mobile number must be exactly 10 digits." });
+                }
+
+                if (!"6789".Contains(cleanPhone[0]))
+                {
+                    return BadRequest(new { message = "Invalid mobile number. Indian mobile numbers must start with 6, 7, 8, or 9." });
+                }
+
+                var uniqueCount = cleanPhone.Distinct().Count();
+                var dummyNumbers = new[] { "9876543210", "8765432109", "7654321098", "6789012345", "7890123456", "8901234567", "9012345678", "9123456789", "9898989898", "8989898989", "9988776655" };
+                if (uniqueCount < 3 || dummyNumbers.Contains(cleanPhone))
+                {
+                    return BadRequest(new { message = "Please enter a valid mobile number. Fake or repeated dummy numbers are not allowed." });
+                }
+            }
+
             Guid patientId;
 
             // 1. Resolve Patient
@@ -289,8 +317,8 @@ public class CasesController : ControllerBase
                         existingPatient.AgeYears = dto.NewPatient.AgeYears;
                         existingPatient.AgeMonths = dto.NewPatient.AgeMonths;
                         existingPatient.AgeDays = dto.NewPatient.AgeDays;
-                        if (!string.IsNullOrWhiteSpace(dto.NewPatient.Phone))
-                            existingPatient.Phone = dto.NewPatient.Phone.Trim();
+                        if (!string.IsNullOrWhiteSpace(cleanPhone))
+                            existingPatient.Phone = cleanPhone;
                         if (!string.IsNullOrWhiteSpace(dto.NewPatient.Address))
                             existingPatient.Address = dto.NewPatient.Address.Trim();
                         if (!string.IsNullOrWhiteSpace(dto.NewPatient.BloodGroup))
@@ -319,7 +347,7 @@ public class CasesController : ControllerBase
                     AgeYears = dto.NewPatient.AgeYears,
                     AgeMonths = dto.NewPatient.AgeMonths,
                     AgeDays = dto.NewPatient.AgeDays,
-                    Phone = dto.NewPatient.Phone?.Trim(),
+                    Phone = cleanPhone,
                     Email = dto.NewPatient.Email?.Trim(),
                     Address = dto.NewPatient.Address?.Trim(),
                     BloodGroup = dto.NewPatient.BloodGroup

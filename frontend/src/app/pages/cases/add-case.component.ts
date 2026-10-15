@@ -211,14 +211,22 @@ import { DoctorReferral, CollectionAgent, TestMaster, TestCategory, Gender, Prio
               <div class="relative">
                 <label class="block text-xs font-semibold text-slate-700 mb-1 flex justify-between items-center">
                   <span>Mobile Number *</span>
-                  <span *ngIf="showPatientDropdown && activeSearchContext === 'phone' && existingPatients.length > 0" class="text-[11px] text-emerald-600 font-semibold">
-                    {{ existingPatients.length }} match(es) 👇
+                  <span *ngIf="phoneStatus.text" [class]="phoneStatus.color" class="text-[11px] font-bold">
+                    {{ phoneStatus.text }}
                   </span>
                 </label>
                 <div class="relative">
-                  <input type="tel" [(ngModel)]="patient.phone" (input)="onPhoneChange(patient.phone)" (blur)="onPhoneBlur()" placeholder="7706087066"
-                    class="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 text-xs font-bold">
+                    +91
+                  </div>
+                  <input type="tel" [(ngModel)]="patient.phone" (input)="onPhoneInput($event)" (blur)="onPhoneBlur()"
+                    placeholder="10-digit number" maxlength="10" inputmode="numeric" required
+                    [class.border-rose-400]="patient.phone && !phoneStatus.valid"
+                    [class.border-emerald-400]="phoneStatus.valid"
+                    class="w-full pl-10 pr-8 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none">
                   <i *ngIf="searchingPatients && activeSearchContext === 'phone'" class="fa-solid fa-circle-notch fa-spin absolute right-3 top-3 text-emerald-600 text-xs"></i>
+                  <i *ngIf="!searchingPatients && phoneStatus.valid" class="fa-solid fa-circle-check absolute right-3 top-3 text-emerald-600 text-xs"></i>
+                  <i *ngIf="!searchingPatients && patient.phone && !phoneStatus.valid" class="fa-solid fa-circle-exclamation absolute right-3 top-3 text-rose-500 text-xs"></i>
                 </div>
 
                 <!-- Attached Mobile Number Dropdown Suggestions Popup -->
@@ -740,20 +748,50 @@ export class AddCaseComponent implements OnInit {
     });
   }
 
-  onPhoneChange(phone: string): void {
+  get phoneStatus(): { valid: boolean; text: string; color: string } {
+    const p = this.patient.phone;
+    if (!p) return { valid: false, text: '', color: '' };
+    if (p.length > 0 && !/^[6-9]/.test(p)) {
+      return { valid: false, text: 'Must start with 6, 7, 8 or 9', color: 'text-rose-500 font-bold' };
+    }
+    if (p.length < 10) {
+      return { valid: false, text: `${p.length}/10 digits`, color: 'text-amber-500 font-semibold' };
+    }
+    const uniqueDigits = new Set(p.split('')).size;
+    const dummySequences = ['9876543210', '8765432109', '7654321098', '6789012345', '7890123456', '8901234567', '9012345678', '9123456789', '9898989898', '8989898989', '9988776655'];
+    if (uniqueDigits < 3 || dummySequences.includes(p)) {
+      return { valid: false, text: 'Invalid / dummy number', color: 'text-rose-500 font-bold' };
+    }
+    return { valid: true, text: '✓ Valid 10-Digit Mobile', color: 'text-emerald-600 font-bold' };
+  }
+
+  onPhoneInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    let digits = (input.value || '').replace(/\D/g, '');
+    if (digits.length === 11 && digits.startsWith('0')) {
+      digits = digits.substring(1);
+    } else if (digits.length === 12 && digits.startsWith('91')) {
+      digits = digits.substring(2);
+    }
+    if (digits.length > 10) {
+      digits = digits.slice(0, 10);
+    }
+    this.patient.phone = digits;
+    input.value = digits;
+
     if (this.selectedPatientId) return;
-    if (phone && phone.trim().length >= 3) {
-      this.onPatientSearchInput(phone, 'phone');
+    if (digits.length >= 3) {
+      this.onPatientSearchInput(digits, 'phone');
     } else {
       this.existingPatients = [];
       this.showPatientDropdown = false;
-      this.cdr.detectChanges();
     }
+    this.cdr.detectChanges();
   }
 
   onPhoneBlur(): void {
     const phone = this.patient.phone;
-    if (!this.selectedPatientId && phone && phone.trim().length >= 10) {
+    if (!this.selectedPatientId && phone && phone.trim().length === 10) {
       this.onPatientSearchInput(phone, 'phone');
     }
   }
@@ -869,6 +907,14 @@ export class AddCaseComponent implements OnInit {
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
+
+    if (!this.patient.phone || this.patient.phone.trim().length !== 10 || !this.phoneStatus.valid) {
+      this.validationError = 'Please enter a valid 10-digit Indian mobile number (must start with 6, 7, 8 or 9).';
+      this.toast.warning('Please enter a valid 10-digit mobile number.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
     if (this.selectedTests.length === 0) {
       this.validationError = 'Please select at least one Test / Investigation package from the catalog.';
       this.toast.warning('Please select at least one Test from catalog.');
