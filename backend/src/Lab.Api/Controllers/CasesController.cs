@@ -126,6 +126,12 @@ public class CasesController : ControllerBase
 
         if (c == null) return NotFound();
 
+        if (c.PublicAccessToken == Guid.Empty)
+        {
+            c.PublicAccessToken = Guid.NewGuid();
+            await _context.SaveChangesAsync();
+        }
+
         var dto = new CaseOrderDto(
             c.Id,
             c.TenantId,

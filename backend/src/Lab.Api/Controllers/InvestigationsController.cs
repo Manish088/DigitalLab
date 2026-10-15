@@ -39,6 +39,12 @@ public class InvestigationsController : ControllerBase
 
         if (caseOrder == null) return NotFound();
 
+        if (caseOrder.PublicAccessToken == Guid.Empty)
+        {
+            caseOrder.PublicAccessToken = Guid.NewGuid();
+            await _context.SaveChangesAsync();
+        }
+
         var itemsList = await _context.CaseOrderItems
             .Include(i => i.Test).ThenInclude(t => t.Category)
             .Include(i => i.Results).ThenInclude(r => r.Parameter)
@@ -120,6 +126,7 @@ public class InvestigationsController : ControllerBase
             caseOrder.Id,
             caseOrder.CaseNumber,
             caseOrder.Barcode,
+            caseOrder.PublicAccessToken,
             Patient = new
             {
                 caseOrder.Patient.Id,
@@ -129,8 +136,11 @@ public class InvestigationsController : ControllerBase
                 caseOrder.Patient.AgeYears,
                 caseOrder.Patient.AgeMonths,
                 caseOrder.Patient.AgeDays,
-                caseOrder.Patient.BloodGroup
+                caseOrder.Patient.BloodGroup,
+                caseOrder.Patient.Phone
             },
+            PatientName = caseOrder.Patient.FullName,
+            PatientPhone = caseOrder.Patient.Phone,
             DoctorName = caseOrder.ReferringDoctor?.DoctorName ?? "Direct",
             caseOrder.OrderDate,
             Status = caseOrder.Status.ToString(),
@@ -359,10 +369,21 @@ public class InvestigationsController : ControllerBase
             item.VerifiedAt = DateTime.UtcNow;
         }
 
+        if (caseOrder.PublicAccessToken == Guid.Empty)
+        {
+            caseOrder.PublicAccessToken = Guid.NewGuid();
+        }
+
         await _context.SaveChangesAsync();
         EvictReportCache(caseOrderId, caseOrder.PublicAccessToken);
 
-        return Ok(new { message = "Report verified and approved successfully.", ApprovedByName = caseOrder.ApprovedByName, ApprovedAt = caseOrder.ApprovedAt });
+        return Ok(new 
+        { 
+            message = "Report verified and approved successfully.", 
+            ApprovedByName = caseOrder.ApprovedByName, 
+            ApprovedAt = caseOrder.ApprovedAt,
+            PublicAccessToken = caseOrder.PublicAccessToken 
+        });
     }
 
     [HttpPost("{caseOrderId}/unlock")]

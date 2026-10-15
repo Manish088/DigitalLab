@@ -747,7 +747,8 @@ export class CaseListComponent implements OnInit {
       this.showSubscriptionExpiredAlert('access public QR token report links');
       return;
     }
-    window.open(`/report/download/${c.publicAccessToken}`, '_blank');
+    const token = c.publicAccessToken || c.PublicAccessToken || c.id || c.caseNumber;
+    window.open(`/report/download/${token}`, '_blank');
   }
 
   resetFilters(): void {
@@ -862,24 +863,41 @@ export class CaseListComponent implements OnInit {
       return;
     }
 
+    const token = c.publicAccessToken || c.PublicAccessToken || c.id || c.caseNumber;
+    if (!token || token === 'undefined' || token === 'null') {
+      this.toast.error('Report verification token is missing. Please reload cases.');
+      return;
+    }
+
     const rawPhone = (c.patientPhone || '').replace(/\D/g, '');
     const patientName = c.patientName || 'Patient';
     const caseNo = c.caseNumber || '';
     const origin = window.location.origin;
-    const downloadUrl = `${origin}/report/download/${c.publicAccessToken}`;
+    const downloadUrl = `${origin}/report/download/${token}`;
 
     const message = `*Namaste ${patientName} Ji*,\n\nAapki Diagnostic Test Report ready aur verify ho chuki hai (Case No: *${caseNo}*).\n\n📄 *Apni Verified Report Download karein:*\n${downloadUrl}\n\n_Thank you for choosing our Laboratory!_`;
 
+    const isMobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
     if (!rawPhone || rawPhone.length < 10) {
       this.toast.warning(`Patient phone number is missing or invalid: ${c.patientPhone || 'N/A'}`);
-      // Open WhatsApp web with text without phone so staff can select chat
-      window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+      const waUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+      if (isMobile) {
+        window.location.href = waUrl;
+      } else {
+        window.open(waUrl, '_blank');
+      }
       return;
     }
 
-    const targetPhone = rawPhone.length === 10 ? `91${rawPhone}` : rawPhone;
+    const targetPhone = (rawPhone.length === 10) ? `91${rawPhone}` : (rawPhone.startsWith('91') && rawPhone.length === 12 ? rawPhone : (rawPhone.length > 10 ? rawPhone : `91${rawPhone}`));
     const waUrl = `https://wa.me/${targetPhone}?text=${encodeURIComponent(message)}`;
-    window.open(waUrl, '_blank');
+
+    if (isMobile) {
+      window.location.href = waUrl;
+    } else {
+      window.open(waUrl, '_blank');
+    }
     this.toast.success(`Opening WhatsApp for ${patientName}...`);
   }
 

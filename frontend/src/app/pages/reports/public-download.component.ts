@@ -78,11 +78,15 @@ import { ApiService } from '../../core/services/api.service';
             </div>
           </div>
 
-          <!-- Download Action Button (Only if approved) -->
-          <div *ngIf="reportData.status === 'Approved'">
-            <a [href]="api.getPublicReportDownloadUrl(token)" target="_blank"
-              class="block w-full py-3.5 px-4 text-center rounded-2xl font-black text-sm bg-gradient-to-r from-brand-600 to-cyan-600 text-white shadow-xl shadow-brand-500/25 hover:from-brand-500 hover:to-cyan-500 transition-all">
+          <!-- Download Action Buttons (Only if approved) -->
+          <div *ngIf="reportData.status === 'Approved'" class="space-y-2 pt-1">
+            <a [href]="getDownloadUrl(true)" download
+              class="block w-full py-3.5 px-4 text-center rounded-2xl font-black text-sm bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-xl shadow-emerald-500/25 hover:from-emerald-500 hover:to-teal-500 transition-all cursor-pointer">
               <i class="fa-solid fa-file-arrow-down mr-2 text-base"></i> Download Verified PDF Report
+            </a>
+            <a [href]="getDownloadUrl(false)" target="_blank"
+              class="block w-full py-2.5 px-4 text-center rounded-xl font-bold text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all cursor-pointer">
+              <i class="fa-regular fa-file-pdf mr-1.5 text-rose-600"></i> Open / View Report in Browser
             </a>
           </div>
 
@@ -92,7 +96,7 @@ import { ApiService } from '../../core/services/api.service';
             <div>Aapke samples lab me process ho rahe hain. Report verify aur approve hone ke baad PDF report yahan download ke liye uplabdh ho jayegi.</div>
           </div>
 
-          <div class="text-center text-[10px] text-slate-400">
+          <div class="text-center text-[10px] text-slate-400 pt-2">
             Powered by DigitalLab Cloud Pathology Information System
           </div>
         </div>
@@ -112,6 +116,13 @@ export class PublicDownloadComponent implements OnInit {
 
   ngOnInit(): void {
     this.token = this.route.snapshot.params['token'];
+    if (!this.token || this.token === 'undefined' || this.token === 'null') {
+      this.loading = false;
+      this.errorMessage = 'Report link is invalid or incomplete. Please request the laboratory to resend the official report link.';
+      this.cdr.detectChanges();
+      return;
+    }
+
     this.api.getPublicReportByToken(this.token).subscribe({
       next: (res) => {
         this.reportData = res;
@@ -120,9 +131,14 @@ export class PublicDownloadComponent implements OnInit {
       },
       error: (err) => {
         this.loading = false;
-        this.errorMessage = err.error?.message || 'Report not found.';
+        this.errorMessage = err.error?.message || 'Report not found or verification link has expired.';
         this.cdr.detectChanges();
       }
     });
+  }
+
+  getDownloadUrl(download: boolean = false): string {
+    const resolvedToken = this.reportData?.publicAccessToken || this.token;
+    return this.api.getPublicReportDownloadUrl(resolvedToken, download);
   }
 }

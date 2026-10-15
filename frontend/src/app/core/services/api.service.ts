@@ -133,8 +133,9 @@ export class ApiService {
     return this.http.get<any>(`${this.baseUrl}/reports/public/${token}`);
   }
 
-  getPublicReportDownloadUrl(token: string): string {
-    return `${this.baseUrl}/reports/public/${token}/download`;
+  getPublicReportDownloadUrl(token: string, download: boolean = false): string {
+    const dl = download ? '?download=true' : '';
+    return `${this.baseUrl}/reports/public/${token}/download${dl}`;
   }
 
   // Test Catalog
