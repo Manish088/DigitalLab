@@ -209,11 +209,8 @@ import { DoctorReferral, CollectionAgent, TestMaster, TestCategory, Gender, Prio
 
               <!-- Mobile Number with Live Dropdown Popup -->
               <div class="relative">
-                <label class="block text-xs font-semibold text-slate-700 mb-1 flex justify-between items-center">
-                  <span>Mobile Number *</span>
-                  <span *ngIf="phoneStatus.text" [class]="phoneStatus.color" class="text-[11px] font-bold">
-                    {{ phoneStatus.text }}
-                  </span>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">
+                  Mobile Number *
                 </label>
                 <div class="relative">
                   <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 text-xs font-bold">
@@ -221,12 +218,14 @@ import { DoctorReferral, CollectionAgent, TestMaster, TestCategory, Gender, Prio
                   </div>
                   <input type="tel" [(ngModel)]="patient.phone" (input)="onPhoneInput($event)" (blur)="onPhoneBlur()"
                     placeholder="10-digit number" maxlength="10" inputmode="numeric" required
-                    [class.border-rose-400]="patient.phone && !phoneStatus.valid"
-                    [class.border-emerald-400]="phoneStatus.valid"
-                    class="w-full pl-10 pr-8 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                    [class.border-rose-500]="patient.phone && !phoneStatus.valid"
+                    [class.focus:ring-rose-400]="patient.phone && !phoneStatus.valid"
+                    [class.border-emerald-500]="phoneStatus.valid"
+                    [class.focus:ring-emerald-400]="phoneStatus.valid"
+                    class="w-full pl-10 pr-8 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none transition-colors">
                   <i *ngIf="searchingPatients && activeSearchContext === 'phone'" class="fa-solid fa-circle-notch fa-spin absolute right-3 top-3 text-emerald-600 text-xs"></i>
-                  <i *ngIf="!searchingPatients && phoneStatus.valid" class="fa-solid fa-circle-check absolute right-3 top-3 text-emerald-600 text-xs"></i>
-                  <i *ngIf="!searchingPatients && patient.phone && !phoneStatus.valid" class="fa-solid fa-circle-exclamation absolute right-3 top-3 text-rose-500 text-xs"></i>
+                  <i *ngIf="!searchingPatients && phoneStatus.valid" class="fa-solid fa-circle-check absolute right-3 top-3 text-emerald-500 text-sm"></i>
+                  <i *ngIf="!searchingPatients && patient.phone && !phoneStatus.valid" class="fa-solid fa-circle-xmark absolute right-3 top-3 text-rose-500 text-sm"></i>
                 </div>
 
                 <!-- Attached Mobile Number Dropdown Suggestions Popup -->
@@ -748,21 +747,16 @@ export class AddCaseComponent implements OnInit {
     });
   }
 
-  get phoneStatus(): { valid: boolean; text: string; color: string } {
+  get phoneStatus(): { valid: boolean; text?: string; color?: string } {
     const p = this.patient.phone;
-    if (!p) return { valid: false, text: '', color: '' };
-    if (p.length > 0 && !/^[6-9]/.test(p)) {
-      return { valid: false, text: 'Must start with 6, 7, 8 or 9', color: 'text-rose-500 font-bold' };
-    }
-    if (p.length < 10) {
-      return { valid: false, text: `${p.length}/10 digits`, color: 'text-amber-500 font-semibold' };
-    }
+    if (!p || p.length !== 10) return { valid: false };
+    if (!/^[6-9]/.test(p)) return { valid: false };
     const uniqueDigits = new Set(p.split('')).size;
     const dummySequences = ['9876543210', '8765432109', '7654321098', '6789012345', '7890123456', '8901234567', '9012345678', '9123456789', '9898989898', '8989898989', '9988776655'];
     if (uniqueDigits < 3 || dummySequences.includes(p)) {
-      return { valid: false, text: 'Invalid / dummy number', color: 'text-rose-500 font-bold' };
+      return { valid: false };
     }
-    return { valid: true, text: '✓ Valid 10-Digit Mobile', color: 'text-emerald-600 font-bold' };
+    return { valid: true };
   }
 
   onPhoneInput(event: Event): void {
