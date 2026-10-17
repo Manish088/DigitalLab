@@ -175,6 +175,11 @@ public static class DbInitializer
                 superAdmin.TenantId = masterTenant.Id;
                 await userManager.UpdateAsync(superAdmin);
             }
+            if (!await userManager.CheckPasswordAsync(superAdmin, "Admin@12345"))
+            {
+                var token = await userManager.GeneratePasswordResetTokenAsync(superAdmin);
+                await userManager.ResetPasswordAsync(superAdmin, token, "Admin@12345");
+            }
         }
 
         // 3. Seed & Sync Subscription Plans (Step 3: Starter 499, Pro 999, Advanced 1999 + 20% annual discount)
