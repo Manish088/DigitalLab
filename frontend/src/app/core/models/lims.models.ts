@@ -139,6 +139,7 @@ export interface CaseOrder {
   patient: Patient;
   referringDoctorId?: string;
   doctorName?: string;
+  doctorPhone?: string;
   collectionAgentId?: string;
   agentName?: string;
   orderDate: string;

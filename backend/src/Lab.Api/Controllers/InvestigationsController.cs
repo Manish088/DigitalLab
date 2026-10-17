@@ -142,6 +142,8 @@ public class InvestigationsController : ControllerBase
             PatientName = caseOrder.Patient.FullName,
             PatientPhone = caseOrder.Patient.Phone,
             DoctorName = caseOrder.ReferringDoctor?.DoctorName ?? "Direct",
+            DoctorPhone = caseOrder.ReferringDoctor?.Phone,
+            ReferringDoctorId = caseOrder.ReferringDoctorId,
             caseOrder.OrderDate,
             Status = caseOrder.Status.ToString(),
             caseOrder.ApprovedByName,

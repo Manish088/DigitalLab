@@ -74,6 +74,7 @@ public record CaseOrderDto(
     PatientDto Patient,
     Guid? ReferringDoctorId,
     string? DoctorName,
+    string? DoctorPhone,
     Guid? CollectionAgentId,
     string? AgentName,
     DateTime OrderDate,
