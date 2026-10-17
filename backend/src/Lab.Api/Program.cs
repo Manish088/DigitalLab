@@ -1,3 +1,4 @@
+using Lab.Api.Hubs;
 using System.Text;
 using System.Threading.RateLimiting;
 using Lab.Application.Common.Interfaces;
@@ -95,6 +96,19 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidAudience = jwtAudience,
         ClockSkew = TimeSpan.Zero
+    };
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+            var path = context.HttpContext.Request.Path;
+            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+            {
+                context.Token = accessToken;
+            }
+            return Task.CompletedTask;
+        }
     };
 });
 
@@ -215,15 +229,22 @@ builder.Services.AddRateLimiter(options =>
     });
 });
 
-// 7. Configure CORS for Angular Frontend
+// 7. Configure CORS for Angular Frontend & Mobile App with SignalR
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.AllowAnyOrigin()
+        policy.SetIsOriginAllowed(_ => true)
               .AllowAnyHeader()
-              .AllowAnyMethod();
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
+});
+
+// 8. Add SignalR for Real-Time Sync across Web and Mobile App
+builder.Services.AddSignalR(options =>
+{
+    options.EnableDetailedErrors = true;
 });
 
 builder.Services.AddControllers()
@@ -348,6 +369,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<LabRealtimeHub>("/hubs/lab");
 
 app.MapGet("/api/security-status", (HttpContext ctx) =>
 {

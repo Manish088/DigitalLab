@@ -1,9 +1,11 @@
+using Lab.Api.Hubs;
 using Lab.Application.Common.Interfaces;
 using Lab.Application.DTOs;
 using Lab.Domain.Entities;
 using Lab.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 namespace Lab.Api.Controllers;
@@ -16,15 +18,18 @@ public class CasesController : ControllerBase
     private readonly IApplicationDbContext _context;
     private readonly IBarcodeService _barcodeService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IHubContext<LabRealtimeHub> _hubContext;
 
     public CasesController(
         IApplicationDbContext context,
         IBarcodeService barcodeService,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IHubContext<LabRealtimeHub> hubContext)
     {
         _context = context;
         _barcodeService = barcodeService;
         _currentUserService = currentUserService;
+        _hubContext = hubContext;
     }
 
     [HttpGet]
@@ -535,7 +540,31 @@ public class CasesController : ControllerBase
 
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetCase), new { id = caseOrder.Id }, await GetCaseDtoById(caseOrder.Id));
+            var caseDto = await GetCaseDtoById(caseOrder.Id);
+
+            // Real-Time SignalR Broadcast to all connected Web & Mobile devices in this tenant
+            try
+            {
+                await _hubContext.Clients.Group($"Tenant_{caseOrder.TenantId}").SendAsync("CaseCreated", new
+                {
+                    caseId = caseOrder.Id,
+                    caseNumber = caseOrder.CaseNumber,
+                    patientName = patientObj.FullName,
+                    uhid = patientObj.Uhid,
+                    barcode = caseOrder.Barcode,
+                    status = caseOrder.Status.ToString(),
+                    netAmount = caseOrder.NetAmount,
+                    dueAmount = caseOrder.DueAmount,
+                    orderDate = caseOrder.OrderDate,
+                    testNames = tests.Select(t => t.TestName).ToList()
+                });
+            }
+            catch (Exception hubEx)
+            {
+                Console.WriteLine($"[SignalR Broadcast Error] {hubEx.Message}");
+            }
+
+            return CreatedAtAction(nameof(GetCase), new { id = caseOrder.Id }, caseDto);
         }
         catch (Exception ex)
         {
@@ -577,6 +606,19 @@ public class CasesController : ControllerBase
         await _context.PaymentTransactions.AddAsync(tx);
 
         await _context.SaveChangesAsync();
+
+        try
+        {
+            await _hubContext.Clients.Group($"Tenant_{caseOrder.TenantId}").SendAsync("PaymentUpdated", new
+            {
+                caseId = caseOrder.Id,
+                caseNumber = caseOrder.CaseNumber,
+                paidAmount = caseOrder.PaidAmount,
+                dueAmount = caseOrder.DueAmount,
+                paymentStatus = caseOrder.PaymentStatus.ToString()
+            });
+        }
+        catch {}
 
         return Ok(new { message = "Due payment recorded successfully.", caseOrder.PaidAmount, caseOrder.DueAmount, PaymentStatus = caseOrder.PaymentStatus.ToString() });
     }

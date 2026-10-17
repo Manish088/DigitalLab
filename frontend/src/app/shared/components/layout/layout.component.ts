@@ -4,6 +4,7 @@ import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/rou
 import { AuthService } from '../../../core/services/auth.service';
 import { ApiService } from '../../../core/services/api.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { RealtimeService } from '../../../core/services/realtime.service';
 
 @Component({
   selector: 'app-layout',
@@ -80,6 +81,10 @@ import { ToastService } from '../../../core/services/toast.service';
                 </h1>
                 <span *ngIf="currentUser()?.role" class="hidden sm:inline-block px-2 py-0.5 text-[10px] sm:text-xs font-semibold rounded-full bg-brand-50 text-brand-700 border border-brand-200">
                   {{ currentUser()?.role }}
+                </span>
+                <span *ngIf="realtime.isConnected()" class="hidden md:inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200" title="Real-Time WebSockets Sync Active">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span>LIVE</span>
                 </span>
               </div>
               <p class="text-[10px] sm:text-xs text-slate-500 truncate">Cloud Pathology System</p>
@@ -314,6 +319,7 @@ export class LayoutComponent implements OnInit {
   private apiService = inject(ApiService);
   private router = inject(Router);
   private toast = inject(ToastService);
+  public realtime = inject(RealtimeService);
 
   currentUser = this.authService.currentUserSignal;
   isSuperAdmin = this.authService.isSuperAdmin;

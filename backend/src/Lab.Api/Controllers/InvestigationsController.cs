@@ -1,10 +1,12 @@
 using System.Globalization;
+using Lab.Api.Hubs;
 using Lab.Application.Common.Interfaces;
 using Lab.Application.DTOs;
 using Lab.Domain.Entities;
 using Lab.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 
@@ -18,15 +20,18 @@ public class InvestigationsController : ControllerBase
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
     private readonly IMemoryCache _cache;
+    private readonly IHubContext<LabRealtimeHub> _hubContext;
 
     public InvestigationsController(
         IApplicationDbContext context,
         ICurrentUserService currentUserService,
-        IMemoryCache cache)
+        IMemoryCache cache,
+        IHubContext<LabRealtimeHub> hubContext)
     {
         _context = context;
         _currentUserService = currentUserService;
         _cache = cache;
+        _hubContext = hubContext;
     }
 
     [HttpGet("{caseOrderId}")]
@@ -306,6 +311,42 @@ public class InvestigationsController : ControllerBase
         await _context.SaveChangesAsync();
         EvictReportCache(caseOrder.Id, caseOrder.PublicAccessToken);
 
+        // SignalR Real-Time Broadcast
+        try
+        {
+            var criticalResults = caseOrder.Items
+                .SelectMany(i => i.Results)
+                .Where(r => r.IsCriticalPanic)
+                .Select(r => new { r.ParameterName, r.ResultValue, r.Unit, r.NormalRangeText })
+                .ToList();
+
+            if (criticalResults.Any())
+            {
+                await _hubContext.Clients.Group($"Tenant_{caseOrder.TenantId}").SendAsync("CriticalPanicAlert", new
+                {
+                    caseId = caseOrder.Id,
+                    caseNumber = caseOrder.CaseNumber,
+                    patientName = caseOrder.Patient?.FullName ?? "Patient",
+                    criticalCount = criticalResults.Count,
+                    parameters = criticalResults,
+                    alertTime = DateTime.UtcNow
+                });
+            }
+
+            await _hubContext.Clients.Group($"Tenant_{caseOrder.TenantId}").SendAsync("CaseStatusChanged", new
+            {
+                caseId = caseOrder.Id,
+                caseNumber = caseOrder.CaseNumber,
+                status = caseOrder.Status.ToString(),
+                patientName = caseOrder.Patient?.FullName ?? "Patient",
+                hasCriticalPanic = criticalResults.Any()
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[SignalR Broadcast Error] {ex.Message}");
+        }
+
         return Ok(new { 
             message = "All investigation results saved successfully. Ready for verification." 
         });
@@ -378,6 +419,20 @@ public class InvestigationsController : ControllerBase
 
         await _context.SaveChangesAsync();
         EvictReportCache(caseOrderId, caseOrder.PublicAccessToken);
+
+        try
+        {
+            await _hubContext.Clients.Group($"Tenant_{caseOrder.TenantId}").SendAsync("ReportApproved", new
+            {
+                caseId = caseOrder.Id,
+                caseNumber = caseOrder.CaseNumber,
+                status = caseOrder.Status.ToString(),
+                approvedByName = caseOrder.ApprovedByName,
+                approvedAt = caseOrder.ApprovedAt,
+                publicAccessToken = caseOrder.PublicAccessToken
+            });
+        }
+        catch {}
 
         return Ok(new 
         { 
