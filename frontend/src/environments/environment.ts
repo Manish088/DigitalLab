@@ -1,10 +1,16 @@
-const isLocalDev = typeof window !== 'undefined' && (
-  window.location.hostname === 'localhost' || 
-  window.location.hostname === '127.0.0.1'
-) && window.location.port !== '5000' && window.location.port !== '80';
+const host = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+const isDev = typeof window !== 'undefined' && (
+  window.location.port === '4200' ||
+  host === 'localhost' ||
+  host === '127.0.0.1' ||
+  host.startsWith('192.168.') ||
+  host.startsWith('10.') ||
+  host.startsWith('172.')
+);
 
 export const environment = {
   production: false,
-  apiUrl: isLocalDev ? 'http://localhost:5000/api' : '/api'
+  apiUrl: isDev ? `http://${host}:5000/api` : '/api'
 };
+
 
