@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
+import { RealtimeService } from '../../core/services/realtime.service';
 import { DoctorReferral, TestMaster, TestCategory } from '../../core/models/lims.models';
 
 @Component({
@@ -708,6 +709,7 @@ import { DoctorReferral, TestMaster, TestCategory } from '../../core/models/lims
 export class CaseListComponent implements OnInit {
   api = inject(ApiService);
   private toast = inject(ToastService);
+  private realtime = inject(RealtimeService);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
 
@@ -765,6 +767,21 @@ export class CaseListComponent implements OnInit {
   ngOnInit(): void {
     this.loadSubscriptionStatus();
     this.loadCases();
+
+    // Real-Time SignalR Auto-Refresh (Web + Mobile App Instant Sync)
+    this.realtime.caseCreated$.subscribe(() => {
+      this.loadCases();
+    });
+    this.realtime.caseStatusChanged$.subscribe(() => {
+      this.loadCases();
+    });
+    this.realtime.reportApproved$.subscribe(() => {
+      this.loadCases();
+    });
+    this.realtime.paymentUpdated$.subscribe(() => {
+      this.loadCases();
+    });
+
     this.api.getDoctors().subscribe(docs => {
       this.doctors = docs || [];
       this.cdr.detectChanges();
