@@ -629,7 +629,7 @@ import { DoctorReferral, TestMaster, TestCategory } from '../../core/models/lims
             <button (click)="sendReportToDoctor()" type="button"
               class="w-full py-2 px-3 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs rounded-lg transition-colors flex items-center justify-center space-x-1.5 cursor-pointer shadow-sm">
               <i class="fa-brands fa-whatsapp text-sm"></i>
-              <span>👉 Open Doctor WhatsApp (Dr. {{ waModalCase.doctorName }})</span>
+              <span>👉 Open Doctor WhatsApp ({{ waModalCase.doctorName.startsWith('Dr') ? waModalCase.doctorName : 'Dr. ' + waModalCase.doctorName }})</span>
             </button>
             <p class="text-[10px] text-amber-700 italic">
               💡 <strong>Tip:</strong> Agli baar 1-click me dono auto-open karne ke liye browser URL bar me <strong>"Always allow pop-ups"</strong> allow kar dein.
@@ -1111,7 +1111,8 @@ export class CaseListComponent implements OnInit {
     const origin = window.location.origin;
     const downloadUrl = `${origin}/report/download/${token}`;
 
-    const message = `*Respected Dr. ${doctorName}*,\n\nDiagnostic Test Report for your referred patient *${patientName}* (Case No: *${caseNo}*) has been verified and approved.\n\n\uD83D\uDCC4 *View Verified Report:*\n${downloadUrl}\n\n_Thank you for your valuable referral!_`;
+    const docTitle = doctorName.trim().toLowerCase().startsWith('dr') ? doctorName.trim() : `Dr. ${doctorName.trim()}`;
+    const message = `*Respected ${docTitle}*,\n\nDiagnostic Test Report for your referred patient *${patientName}* (Case No: *${caseNo}*) has been verified and approved.\n\n\uD83D\uDCC4 *View Verified Report:*\n${downloadUrl}\n\n_Thank you for your valuable referral!_`;
 
     const isMobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
