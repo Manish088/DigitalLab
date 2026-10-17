@@ -1,4 +1,5 @@
 using Lab.Api.Hubs;
+using Microsoft.AspNetCore.SignalR;
 using System.Text;
 using System.Threading.RateLimiting;
 using Lab.Application.Common.Interfaces;
@@ -370,6 +371,20 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapHub<LabRealtimeHub>("/hubs/lab");
+
+app.MapPost("/api/test-broadcast", async (Microsoft.AspNetCore.SignalR.IHubContext<LabRealtimeHub> hub) =>
+{
+    await hub.Clients.All.SendAsync("CaseCreated", new
+    {
+        caseId = Guid.NewGuid(),
+        caseNumber = "LIVE-TEST-999",
+        patientName = "Shri R. K. Sharma (Live Real-Time Test)",
+        status = "Registered",
+        netAmount = 750,
+        dueAmount = 0
+    });
+    return Results.Ok(new { message = "Live broadcast sent to all connected screens!" });
+}).AllowAnonymous();
 
 app.MapGet("/api/security-status", (HttpContext ctx) =>
 {
