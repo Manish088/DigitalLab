@@ -661,6 +661,25 @@ import { TestMaster, TestCategory } from '../../core/models/lims.models';
               </button>
             </div>
 
+            <!-- Popup Blocked Alert Helper -->
+            <div *ngIf="doctorTabBlocked" class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-xs space-y-2 animate-in fade-in duration-200">
+              <div class="flex items-center space-x-1.5 font-bold">
+                <i class="fa-solid fa-triangle-exclamation text-amber-600"></i>
+                <span>Patient WhatsApp khul gaya ✓ (Doctor tab blocked)</span>
+              </div>
+              <p class="text-[11px] text-amber-800">
+                Browser ne doosra tab block kiya hai. Doctor ka WhatsApp kholne ke liye ye button dabayein:
+              </p>
+              <button (click)="sendReportToDoctor()" type="button"
+                class="w-full py-2 px-3 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs rounded-lg transition-colors flex items-center justify-center space-x-1.5 cursor-pointer shadow-sm">
+                <i class="fa-brands fa-whatsapp text-sm"></i>
+                <span>👉 Open Doctor WhatsApp (Dr. {{ waModalCase.doctorName }})</span>
+              </button>
+              <p class="text-[10px] text-amber-700 italic">
+                💡 <strong>Tip:</strong> Agli baar 1-click me dono auto-open karne ke liye browser URL bar me <strong>"Always allow pop-ups"</strong> allow kar dein.
+              </p>
+            </div>
+
             <!-- Recipients Cards -->
             <div class="space-y-3">
               <!-- Patient Card -->
@@ -749,6 +768,7 @@ export class ResultEntryComponent implements OnInit {
   showUnlockModal = false;
   unlocking = false;
   waModalCase: any = null;
+  doctorTabBlocked = false;
   highlightEmptyFields = false;
   errorMessage = '';
 
@@ -992,6 +1012,7 @@ export class ResultEntryComponent implements OnInit {
 
     const docName = (this.caseDetails.doctorName || '').trim();
     const hasDoctor = !!(docName && docName.toLowerCase() !== 'direct' && docName.toLowerCase() !== 'self');
+    this.doctorTabBlocked = false;
 
     this.waModalCase = {
       ...this.caseDetails,
@@ -1006,18 +1027,25 @@ export class ResultEntryComponent implements OnInit {
   sendReportToBoth(): void {
     if (!this.waModalCase) return;
     const c = this.waModalCase;
+    this.doctorTabBlocked = false;
 
-    // 1. Open Patient WhatsApp
-    this.executePatientWhatsApp(c, true);
+    // 1. Open Patient WhatsApp synchronously in user click
+    const patWin = this.executePatientWhatsApp(c, true);
 
-    // 2. Open Doctor WhatsApp
-    setTimeout(() => {
-      this.executeDoctorWhatsApp(c, true);
-    }, 400);
+    // 2. Open Doctor WhatsApp synchronously in user click
+    const docWin = this.executeDoctorWhatsApp(c, true);
 
     const docName = c.doctorName || 'Doctor';
     const patName = c.patientName || c.patient?.fullName || 'Patient';
-    this.toast.success(`1-Click Sent: Opening WhatsApp for ${patName} & ${docName}!`);
+
+    if (patWin && docWin) {
+      this.toast.success(`1-Click Sent: Opening WhatsApp for both ${patName} & ${docName}!`);
+      this.doctorTabBlocked = false;
+    } else {
+      this.doctorTabBlocked = true;
+      this.toast.info(`Patient WhatsApp opened! Browser blocked 2nd tab. Click 'Open Doctor WhatsApp' below or allow popups.`, 'Notice', 6000);
+    }
+    this.cdr.detectChanges();
   }
 
   sendReportToPatient(): void {
@@ -1028,6 +1056,8 @@ export class ResultEntryComponent implements OnInit {
   sendReportToDoctor(): void {
     if (!this.waModalCase) return;
     this.executeDoctorWhatsApp(this.waModalCase);
+    this.doctorTabBlocked = false;
+    this.cdr.detectChanges();
   }
 
   private resolveReportToken(c: any): string | null {
@@ -1044,11 +1074,11 @@ export class ResultEntryComponent implements OnInit {
           : (isValid(c.id) ? c.id : c.caseNumber));
   }
 
-  private executePatientWhatsApp(c: any, silentToast = false): void {
+  private executePatientWhatsApp(c: any, silentToast = false): boolean {
     const token = this.resolveReportToken(c);
     if (!token) {
       this.toast.error('Report verification token is missing. Please reload the case.');
-      return;
+      return false;
     }
 
     const rawPhone = (c.patientPhone || c.patient?.phone || '').replace(/\D/g, '');
@@ -1057,7 +1087,7 @@ export class ResultEntryComponent implements OnInit {
     const origin = window.location.origin;
     const downloadUrl = `${origin}/report/download/${token}`;
 
-    const message = `*Namaste ${patientName} Ji*,\n\nAapki Diagnostic Test Report ready aur verify ho chuki hai (Case No: *${caseNo}*).\n\n📄 *Apni Verified Report Download karein:*\n${downloadUrl}\n\n_Thank you for choosing our Laboratory!_`;
+    const message = `*Namaste ${patientName} Ji*,\n\nAapki Diagnostic Test Report ready aur verify ho chuki hai (Case No: *${caseNo}*).\n\n\uD83D\uDCC4 *Apni Verified Report Download karein:*\n${downloadUrl}\n\n_Thank you for choosing our Laboratory!_`;
 
     const isMobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
@@ -1066,10 +1096,11 @@ export class ResultEntryComponent implements OnInit {
       const waUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
       if (isMobile) {
         window.location.href = waUrl;
+        return true;
       } else {
-        window.open(waUrl, '_blank');
+        const win = window.open(waUrl, '_blank');
+        return !!(win && !win.closed && typeof win.closed !== 'undefined');
       }
-      return;
     }
 
     const targetPhone = (rawPhone.length === 10) ? `91${rawPhone}` : (rawPhone.startsWith('91') && rawPhone.length === 12 ? rawPhone : (rawPhone.length > 10 ? rawPhone : `91${rawPhone}`));
@@ -1077,19 +1108,21 @@ export class ResultEntryComponent implements OnInit {
 
     if (isMobile) {
       window.location.href = waUrl;
+      return true;
     } else {
-      window.open(waUrl, '_blank');
-    }
-    if (!silentToast) {
-      this.toast.success(`Opening WhatsApp for ${patientName}...`);
+      const win = window.open(waUrl, '_blank');
+      if (!silentToast) {
+        this.toast.success(`Opening WhatsApp for ${patientName}...`);
+      }
+      return !!(win && !win.closed && typeof win.closed !== 'undefined');
     }
   }
 
-  private executeDoctorWhatsApp(c: any, silentToast = false): void {
+  private executeDoctorWhatsApp(c: any, silentToast = false): boolean {
     const token = this.resolveReportToken(c);
     if (!token) {
       this.toast.error('Report verification token is missing. Please reload the case.');
-      return;
+      return false;
     }
 
     const rawPhone = (c.doctorPhone || '').replace(/\D/g, '');
@@ -1099,7 +1132,7 @@ export class ResultEntryComponent implements OnInit {
     const origin = window.location.origin;
     const downloadUrl = `${origin}/report/download/${token}`;
 
-    const message = `*Respected Dr. ${doctorName}*,\n\nDiagnostic Test Report for your referred patient *${patientName}* (Case No: *${caseNo}*) has been verified and approved.\n\n📄 *View Verified Report:*\n${downloadUrl}\n\n_Thank you for your valuable referral!_`;
+    const message = `*Respected Dr. ${doctorName}*,\n\nDiagnostic Test Report for your referred patient *${patientName}* (Case No: *${caseNo}*) has been verified and approved.\n\n\uD83D\uDCC4 *View Verified Report:*\n${downloadUrl}\n\n_Thank you for your valuable referral!_`;
 
     const isMobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
@@ -1108,10 +1141,11 @@ export class ResultEntryComponent implements OnInit {
       const waUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
       if (isMobile) {
         window.location.href = waUrl;
+        return true;
       } else {
-        window.open(waUrl, '_blank');
+        const win = window.open(waUrl, '_blank');
+        return !!(win && !win.closed && typeof win.closed !== 'undefined');
       }
-      return;
     }
 
     const targetPhone = (rawPhone.length === 10) ? `91${rawPhone}` : (rawPhone.startsWith('91') && rawPhone.length === 12 ? rawPhone : (rawPhone.length > 10 ? rawPhone : `91${rawPhone}`));
@@ -1119,11 +1153,13 @@ export class ResultEntryComponent implements OnInit {
 
     if (isMobile) {
       window.location.href = waUrl;
+      return true;
     } else {
-      window.open(waUrl, '_blank');
-    }
-    if (!silentToast) {
-      this.toast.success(`Opening WhatsApp for Dr. ${doctorName}...`);
+      const win = window.open(waUrl, '_blank');
+      if (!silentToast) {
+        this.toast.success(`Opening WhatsApp for Dr. ${doctorName}...`);
+      }
+      return !!(win && !win.closed && typeof win.closed !== 'undefined');
     }
   }
 
