@@ -115,7 +115,8 @@ export class PublicDownloadComponent implements OnInit {
   errorMessage = '';
 
   ngOnInit(): void {
-    this.token = this.route.snapshot.params['token'];
+    const raw = this.route.snapshot.params['token'] || '';
+    this.token = raw.trim().replace(/[.,;/\\]+$/, '');
     if (!this.token || this.token === 'undefined' || this.token === 'null') {
       this.loading = false;
       this.errorMessage = 'Report link is invalid or incomplete. Please request the laboratory to resend the official report link.';

@@ -30,6 +30,16 @@ public static class DbInitializer
                         ALTER TABLE Tenants ADD IsAdFree BIT NOT NULL DEFAULT 0;
                     END
 
+                    IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE Name = 'PublicAccessToken' AND Object_ID = Object_ID('CaseOrders'))
+                    BEGIN
+                        ALTER TABLE CaseOrders ADD PublicAccessToken UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID();
+                    END
+
+                    IF EXISTS (SELECT 1 FROM sys.columns WHERE Name = 'PublicAccessToken' AND Object_ID = Object_ID('CaseOrders'))
+                    BEGIN
+                        UPDATE CaseOrders SET PublicAccessToken = NEWID() WHERE PublicAccessToken IS NULL OR PublicAccessToken = '00000000-0000-0000-0000-000000000000';
+                    END
+
                     IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'AdCampaigns')
                     BEGIN
                         CREATE TABLE AdCampaigns (

@@ -431,6 +431,7 @@ public class CasesController : ControllerBase
                 TenantId = effectiveTenantId ?? Guid.Empty,
                 CaseNumber = caseNumber,
                 Barcode = barcode,
+                PublicAccessToken = Guid.NewGuid(),
                 PatientId = patientId,
                 ReferringDoctorId = validDoctorId,
                 CollectionAgentId = validAgentId,

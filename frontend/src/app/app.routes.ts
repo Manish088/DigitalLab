@@ -29,6 +29,10 @@ export const routes: Routes = [
   { path: 'setup', component: SetupComponent },
   { path: 'init', component: SetupComponent },
   { path: 'report/download/:token', component: PublicDownloadComponent },
+  { path: 'reports/download/:token', component: PublicDownloadComponent },
+  { path: 'report/verify/:token', component: PublicDownloadComponent },
+  { path: 'reports/verify/:token', component: PublicDownloadComponent },
+  { path: 'report/:token', component: PublicDownloadComponent },
 
   {
     path: '',

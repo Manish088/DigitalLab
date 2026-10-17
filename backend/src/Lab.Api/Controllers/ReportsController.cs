@@ -130,7 +130,7 @@ public class ReportsController : ControllerBase
                 .IgnoreQueryFilters()
                 .Include(c => c.Patient)
                 .Include(c => c.Items).ThenInclude(i => i.Test)
-                .FirstOrDefaultAsync(c => c.CaseNumber == trimmedToken || c.Barcode == trimmedToken);
+                .FirstOrDefaultAsync(c => c.CaseNumber.ToLower() == trimmedToken.ToLower() || c.Barcode.ToLower() == trimmedToken.ToLower());
         }
 
         if (caseOrder == null)
@@ -196,11 +196,17 @@ public class ReportsController : ControllerBase
         {
             caseOrder = await _context.CaseOrders
                 .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(c => c.CaseNumber == trimmedToken || c.Barcode == trimmedToken);
+                .FirstOrDefaultAsync(c => c.CaseNumber.ToLower() == trimmedToken.ToLower() || c.Barcode.ToLower() == trimmedToken.ToLower());
         }
 
         if (caseOrder == null)
             return NotFound(new { message = "Report link is invalid or expired." });
+
+        if (caseOrder.PublicAccessToken == Guid.Empty)
+        {
+            caseOrder.PublicAccessToken = Guid.NewGuid();
+            await _context.SaveChangesAsync();
+        }
 
         if (!await IsLabSubscriptionActiveAsync(caseOrder.Id))
             return StatusCode(403, new { message = "Laboratory access is currently inactive / expired. Please contact laboratory administration." });

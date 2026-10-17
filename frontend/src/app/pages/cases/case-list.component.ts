@@ -863,8 +863,19 @@ export class CaseListComponent implements OnInit {
       return;
     }
 
-    const token = c.publicAccessToken || c.PublicAccessToken || c.id || c.caseNumber;
-    if (!token || token === 'undefined' || token === 'null') {
+    const isValid = (val: any) =>
+      val &&
+      val !== 'undefined' &&
+      val !== 'null' &&
+      val !== '00000000-0000-0000-0000-000000000000';
+
+    const token = isValid(c.publicAccessToken)
+      ? c.publicAccessToken
+      : (isValid(c.PublicAccessToken)
+          ? c.PublicAccessToken
+          : (isValid(c.id) ? c.id : c.caseNumber));
+
+    if (!isValid(token)) {
       this.toast.error('Report verification token is missing. Please reload cases.');
       return;
     }

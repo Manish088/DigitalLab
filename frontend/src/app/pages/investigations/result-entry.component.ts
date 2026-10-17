@@ -884,8 +884,19 @@ export class ResultEntryComponent implements OnInit {
       return;
     }
 
-    const token = this.caseDetails.publicAccessToken || this.caseDetails.PublicAccessToken || this.caseDetails.id || this.caseDetails.caseNumber;
-    if (!token || token === 'undefined' || token === 'null') {
+    const isValid = (val: any) =>
+      val &&
+      val !== 'undefined' &&
+      val !== 'null' &&
+      val !== '00000000-0000-0000-0000-000000000000';
+
+    let token = isValid(this.caseDetails.publicAccessToken)
+      ? this.caseDetails.publicAccessToken
+      : (isValid(this.caseDetails.PublicAccessToken)
+          ? this.caseDetails.PublicAccessToken
+          : (isValid(this.caseDetails.id) ? this.caseDetails.id : this.caseDetails.caseNumber));
+
+    if (!isValid(token)) {
       this.toast.error('Report verification token could not be loaded. Please reload the case.');
       return;
     }
@@ -1081,9 +1092,15 @@ export class ResultEntryComponent implements OnInit {
     this.api.saveInvestigationResults(payload).subscribe({
       next: () => {
         this.api.approveReport(this.caseId).subscribe({
-          next: () => {
+          next: (res: any) => {
             this.approving = false;
             this.showApproveModal = false;
+            if (this.caseDetails) {
+              this.caseDetails.status = 'Approved';
+              if (res?.publicAccessToken || res?.PublicAccessToken) {
+                this.caseDetails.publicAccessToken = res.publicAccessToken || res.PublicAccessToken;
+              }
+            }
             this.toast.success('Report verified & digitally approved with Doctor Signature!');
             this.cdr.detectChanges();
             this.loadInvestigationDetails();
