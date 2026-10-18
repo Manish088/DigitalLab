@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-login',
@@ -181,6 +182,53 @@ import { AuthService } from '../../core/services/auth.service';
             </div>
           </form>
 
+          <!-- Mobile / Server Config Bar -->
+          <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+            <span class="flex items-center space-x-1.5 truncate max-w-[220px]" [title]="currentApiUrl">
+              <i class="fa-solid fa-server text-slate-400"></i>
+              <span>Server: <strong class="text-slate-700 font-mono font-bold">{{ displayServerUrl }}</strong></span>
+            </span>
+            <button type="button" (click)="openServerModal()" class="text-brand-600 hover:text-brand-700 font-bold hover:underline cursor-pointer shrink-0">
+              Change
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Server Configuration Modal -->
+        <div *ngIf="showServerModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div class="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-sm w-full p-6 space-y-4">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-2.5">
+                <div class="w-8 h-8 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center text-sm">
+                  <i class="fa-solid fa-server"></i>
+                </div>
+                <h3 class="text-sm font-bold text-slate-900 font-heading">Backend Server URL</h3>
+              </div>
+              <button (click)="showServerModal = false" class="text-slate-400 hover:text-slate-600 text-sm cursor-pointer">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+            
+            <p class="text-xs text-slate-500">
+              Mobile phone par backend se connect karne ke liye apne laptop ka Wi-Fi IP address ya live server URL enter karein:
+            </p>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Server URL</label>
+              <input type="text" [(ngModel)]="customServerInput" placeholder="http://10.17.135.22:5000"
+                class="w-full px-3 py-2 text-xs font-mono border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none">
+            </div>
+
+            <div class="flex items-center space-x-2 pt-2">
+              <button type="button" (click)="saveServerUrl()" class="flex-1 py-2 bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs rounded-xl shadow-sm transition-all cursor-pointer">
+                Save & Apply
+              </button>
+              <button type="button" (click)="resetServerUrl()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold text-xs rounded-xl transition-all cursor-pointer">
+                Reset Default
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- OTP Verification Modal -->
@@ -275,6 +323,45 @@ export class LoginComponent implements OnInit, OnDestroy {
   otpError = '';
   otpCountdown = 0;
   private otpTimerInterval: any = null;
+
+  showServerModal = false;
+  customServerInput = '';
+
+  get currentApiUrl(): string {
+    return environment.apiUrl;
+  }
+
+  get displayServerUrl(): string {
+    try {
+      const urlStr = this.currentApiUrl.startsWith('http') ? this.currentApiUrl : `http://${window.location.host}${this.currentApiUrl}`;
+      const u = new URL(urlStr);
+      return u.host;
+    } catch {
+      return this.currentApiUrl;
+    }
+  }
+
+  openServerModal(): void {
+    const raw = localStorage.getItem('DIGITLAB_API_URL') || this.currentApiUrl.replace(/\/api\/?$/, '');
+    this.customServerInput = raw;
+    this.showServerModal = true;
+  }
+
+  saveServerUrl(): void {
+    if (this.customServerInput && this.customServerInput.trim()) {
+      localStorage.setItem('DIGITLAB_API_URL', this.customServerInput.trim());
+    } else {
+      localStorage.removeItem('DIGITLAB_API_URL');
+    }
+    this.showServerModal = false;
+    window.location.reload();
+  }
+
+  resetServerUrl(): void {
+    localStorage.removeItem('DIGITLAB_API_URL');
+    this.showServerModal = false;
+    window.location.reload();
+  }
 
   loginData = {
     emailOrUsername: '',
