@@ -1,8 +1,10 @@
-import { Component, OnInit, inject, ElementRef, ViewChild, ChangeDetectorRef, computed } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, ElementRef, ViewChild, ChangeDetectorRef, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
+import { RealtimeService } from '../../core/services/realtime.service';
 import { DashboardStats } from '../../core/models/lims.models';
 
 declare var Chart: any;
@@ -661,10 +663,12 @@ declare var Chart: any;
     </div>
   `
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, OnDestroy {
   private api = inject(ApiService);
   private authService = inject(AuthService);
+  private realtime = inject(RealtimeService);
   private cdr = inject(ChangeDetectorRef);
+  private subs = new Subscription();
 
   @ViewChild('revenueChartCanvas') chartCanvas!: ElementRef<HTMLCanvasElement>;
 
@@ -719,6 +723,16 @@ export class DashboardComponent implements OnInit {
   ngOnInit(): void {
     this.loadStats();
     this.checkTrialStatus();
+
+    // Auto-refresh Dashboard KPI counts & recent cases whenever any real-time event happens
+    this.subs.add(this.realtime.caseCreated$.subscribe(() => this.loadStats()));
+    this.subs.add(this.realtime.caseStatusChanged$.subscribe(() => this.loadStats()));
+    this.subs.add(this.realtime.reportApproved$.subscribe(() => this.loadStats()));
+    this.subs.add(this.realtime.paymentUpdated$.subscribe(() => this.loadStats()));
+  }
+
+  ngOnDestroy(): void {
+    this.subs.unsubscribe();
   }
 
   checkTrialStatus(): void {

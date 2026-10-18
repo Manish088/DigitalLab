@@ -1,9 +1,11 @@
-import { Component, OnInit, inject, ChangeDetectorRef, Input } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
+import { RealtimeService } from '../../core/services/realtime.service';
 import { TestMaster, TestCategory } from '../../core/models/lims.models';
 
 @Component({
@@ -750,12 +752,14 @@ import { TestMaster, TestCategory } from '../../core/models/lims.models';
     </div>
   `
 })
-export class ResultEntryComponent implements OnInit {
+export class ResultEntryComponent implements OnInit, OnDestroy {
   public api = inject(ApiService);
   private toast = inject(ToastService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
+  private realtime = inject(RealtimeService);
+  private realtimeSubs = new Subscription();
 
   @Input() id?: string;
 
@@ -822,6 +826,33 @@ export class ResultEntryComponent implements OnInit {
         this.cdr.detectChanges();
       }
     });
+
+    // Auto-refresh when case status updates or pathogist approves elsewhere
+    this.realtimeSubs.add(
+      this.realtime.caseStatusChanged$.subscribe(ev => {
+        if (ev.caseId === this.caseId) {
+          this.loadInvestigationDetails();
+        }
+      })
+    );
+    this.realtimeSubs.add(
+      this.realtime.reportApproved$.subscribe(ev => {
+        if (ev.caseId === this.caseId) {
+          this.loadInvestigationDetails();
+        }
+      })
+    );
+    this.realtimeSubs.add(
+      this.realtime.paymentUpdated$.subscribe(ev => {
+        if (ev.caseId === this.caseId) {
+          this.loadInvestigationDetails();
+        }
+      })
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.realtimeSubs.unsubscribe();
   }
 
   loadSubscriptionStatus(): void {

@@ -779,6 +779,27 @@ public class CasesController : ControllerBase
 
             await _context.SaveChangesAsync();
 
+            try
+            {
+                await _hubContext.Clients.Group($"Tenant_{caseOrder.TenantId}").SendAsync("PaymentUpdated", new
+                {
+                    caseId = caseOrder.Id,
+                    caseNumber = caseOrder.CaseNumber,
+                    paidAmount = caseOrder.PaidAmount,
+                    dueAmount = caseOrder.DueAmount,
+                    paymentStatus = caseOrder.PaymentStatus.ToString()
+                });
+
+                await _hubContext.Clients.Group($"Tenant_{caseOrder.TenantId}").SendAsync("CaseStatusChanged", new
+                {
+                    caseId = caseOrder.Id,
+                    caseNumber = caseOrder.CaseNumber,
+                    status = caseOrder.Status.ToString(),
+                    patientName = (await _context.Patients.Where(p => p.Id == caseOrder.PatientId).Select(p => p.FullName).FirstOrDefaultAsync()) ?? "Patient"
+                });
+            }
+            catch {}
+
             return Ok(new
             {
                 message = $"{testsToAdd.Count} test(s) added successfully to case {caseOrder.CaseNumber}.",
@@ -836,6 +857,19 @@ public class CasesController : ControllerBase
 
             await _context.SaveChangesAsync();
 
+            try
+            {
+                await _hubContext.Clients.Group($"Tenant_{caseOrder.TenantId}").SendAsync("PaymentUpdated", new
+                {
+                    caseId = caseOrder.Id,
+                    caseNumber = caseOrder.CaseNumber,
+                    paidAmount = caseOrder.PaidAmount,
+                    dueAmount = caseOrder.DueAmount,
+                    paymentStatus = caseOrder.PaymentStatus.ToString()
+                });
+            }
+            catch {}
+
             return Ok(new
             {
                 message = $"Test {itemToRemove.Test?.TestName ?? "Investigation"} removed from case.",
@@ -875,6 +909,24 @@ public class CasesController : ControllerBase
             caseOrder.SampleCollectedDate = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
+
+        try
+        {
+            var patientName = await _context.Patients
+                .Where(p => p.Id == caseOrder.PatientId)
+                .Select(p => p.FullName)
+                .FirstOrDefaultAsync() ?? "Patient";
+
+            await _hubContext.Clients.Group($"Tenant_{caseOrder.TenantId}").SendAsync("CaseStatusChanged", new
+            {
+                caseId = caseOrder.Id,
+                caseNumber = caseOrder.CaseNumber,
+                status = status.ToString(),
+                patientName = patientName
+            });
+        }
+        catch {}
+
         return Ok(new { message = "Case status updated.", status = status.ToString() });
     }
 
