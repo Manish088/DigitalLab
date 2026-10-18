@@ -31,6 +31,10 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Accept Android SDK Licenses
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+
       - name: Install Frontend Dependencies & Build Angular
         working-directory: ./frontend
         run: |
@@ -51,6 +55,7 @@ jobs:
       - name: Build Android Debug APK with Gradle
         working-directory: ./mobile-app/android
         run: |
+          sed -i 's/\r$//' gradlew
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon --stacktrace
 
