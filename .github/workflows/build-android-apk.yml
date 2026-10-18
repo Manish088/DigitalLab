@@ -60,17 +60,9 @@ jobs:
         run: |
           sed -i 's/\r$//' gradlew
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tee gradle-build.log || {
-            echo "### ❌ Gradle Build Error Summary" >> $GITHUB_STEP_SUMMARY
-            echo '```text' >> $GITHUB_STEP_SUMMARY
-            tail -n 60 gradle-build.log >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            exit 1
-          }
-
-      - name: Prepare Named APK
-        run: |
-          cp mobile-app/android/app/build/outputs/apk/debug/app-debug.apk mobile-app/android/app/build/outputs/apk/debug/DigitLab.apk
+          ./gradlew assembleDebug --no-daemon --stacktrace
+          cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/DigitLab.apk
+          ls -la app/build/outputs/apk/debug/
 
       - name: Upload Debug APK Artifact
         uses: actions/upload-artifact@v4
@@ -80,15 +72,7 @@ jobs:
           retention-days: 14
 
       - name: Publish Direct APK to GitHub Release
-        uses: softprops/action-gh-release@v2
-        if: github.ref == 'refs/heads/feature/mobile-app-signalr' || github.ref == 'refs/heads/main'
-        with:
-          tag_name: v1.0-mobile
-          name: DigitLab Mobile App Latest (Direct APK)
-          body: |
-            ### 📱 DigitLab Mobile App (Direct APK Download)
-            Direct 1-tap download for Android mobile phone. No login or extraction required.
-          files: mobile-app/android/app/build/outputs/apk/debug/DigitLab.apk
-          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create v1.0-mobile mobile-app/android/app/build/outputs/apk/debug/DigitLab.apk --title "DigitLab Mobile App (Direct APK)" --notes "Direct 1-tap download for Android mobile phone. No login or extraction required." --clobber
