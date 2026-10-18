@@ -768,17 +768,24 @@ export class CaseListComponent implements OnInit {
     this.loadSubscriptionStatus();
     this.loadCases();
 
+    // Ensure SignalR connection is active
+    this.realtime.startConnection();
+
     // Real-Time SignalR Auto-Refresh (Web + Mobile App Instant Sync)
-    this.realtime.caseCreated$.subscribe(() => {
+    this.realtime.caseCreated$.subscribe((ev) => {
+      console.log('⚡ [CaseList] Real-time CaseCreated detected, refreshing cases table:', ev);
       this.loadCases();
     });
-    this.realtime.caseStatusChanged$.subscribe(() => {
+    this.realtime.caseStatusChanged$.subscribe((ev) => {
+      console.log('⚡ [CaseList] Real-time CaseStatusChanged detected, refreshing cases table:', ev);
       this.loadCases();
     });
-    this.realtime.reportApproved$.subscribe(() => {
+    this.realtime.reportApproved$.subscribe((ev) => {
+      console.log('⚡ [CaseList] Real-time ReportApproved detected, refreshing cases table:', ev);
       this.loadCases();
     });
-    this.realtime.paymentUpdated$.subscribe(() => {
+    this.realtime.paymentUpdated$.subscribe((ev) => {
+      console.log('⚡ [CaseList] Real-time PaymentUpdated detected, refreshing cases table:', ev);
       this.loadCases();
     });
 
@@ -842,11 +849,13 @@ export class CaseListComponent implements OnInit {
         this.totalCount = res.totalCount;
         this.loading = false;
         this.cdr.detectChanges();
+        this.cdr.markForCheck();
       },
       error: (err) => {
         console.error(err);
         this.loading = false;
         this.cdr.detectChanges();
+        this.cdr.markForCheck();
       }
     });
   }

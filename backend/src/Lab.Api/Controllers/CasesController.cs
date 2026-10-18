@@ -32,6 +32,11 @@ public class CasesController : ControllerBase
         _hubContext = hubContext;
     }
 
+    private IClientProxy GetTenantGroup(Guid tenantId)
+    {
+        return _hubContext.Clients.Group($"Tenant_{tenantId.ToString().ToLowerInvariant()}");
+    }
+
     [HttpGet]
     public async Task<ActionResult<object>> GetCases(
         [FromQuery] string? search,
@@ -545,7 +550,7 @@ public class CasesController : ControllerBase
             // Real-Time SignalR Broadcast to all connected Web & Mobile devices in this tenant
             try
             {
-                await _hubContext.Clients.Group($"Tenant_{caseOrder.TenantId}").SendAsync("CaseCreated", new
+                await GetTenantGroup(caseOrder.TenantId).SendAsync("CaseCreated", new
                 {
                     caseId = caseOrder.Id,
                     caseNumber = caseOrder.CaseNumber,
@@ -609,7 +614,7 @@ public class CasesController : ControllerBase
 
         try
         {
-            await _hubContext.Clients.Group($"Tenant_{caseOrder.TenantId}").SendAsync("PaymentUpdated", new
+            await GetTenantGroup(caseOrder.TenantId).SendAsync("PaymentUpdated", new
             {
                 caseId = caseOrder.Id,
                 caseNumber = caseOrder.CaseNumber,
@@ -781,7 +786,7 @@ public class CasesController : ControllerBase
 
             try
             {
-                await _hubContext.Clients.Group($"Tenant_{caseOrder.TenantId}").SendAsync("PaymentUpdated", new
+                await GetTenantGroup(caseOrder.TenantId).SendAsync("PaymentUpdated", new
                 {
                     caseId = caseOrder.Id,
                     caseNumber = caseOrder.CaseNumber,
@@ -790,7 +795,7 @@ public class CasesController : ControllerBase
                     paymentStatus = caseOrder.PaymentStatus.ToString()
                 });
 
-                await _hubContext.Clients.Group($"Tenant_{caseOrder.TenantId}").SendAsync("CaseStatusChanged", new
+                await GetTenantGroup(caseOrder.TenantId).SendAsync("CaseStatusChanged", new
                 {
                     caseId = caseOrder.Id,
                     caseNumber = caseOrder.CaseNumber,
@@ -859,7 +864,7 @@ public class CasesController : ControllerBase
 
             try
             {
-                await _hubContext.Clients.Group($"Tenant_{caseOrder.TenantId}").SendAsync("PaymentUpdated", new
+                await GetTenantGroup(caseOrder.TenantId).SendAsync("PaymentUpdated", new
                 {
                     caseId = caseOrder.Id,
                     caseNumber = caseOrder.CaseNumber,
@@ -917,7 +922,7 @@ public class CasesController : ControllerBase
                 .Select(p => p.FullName)
                 .FirstOrDefaultAsync() ?? "Patient";
 
-            await _hubContext.Clients.Group($"Tenant_{caseOrder.TenantId}").SendAsync("CaseStatusChanged", new
+            await GetTenantGroup(caseOrder.TenantId).SendAsync("CaseStatusChanged", new
             {
                 caseId = caseOrder.Id,
                 caseNumber = caseOrder.CaseNumber,

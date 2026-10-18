@@ -34,6 +34,11 @@ public class InvestigationsController : ControllerBase
         _hubContext = hubContext;
     }
 
+    private IClientProxy GetTenantGroup(Guid tenantId)
+    {
+        return _hubContext.Clients.Group($"Tenant_{tenantId.ToString().ToLowerInvariant()}");
+    }
+
     [HttpGet("{caseOrderId}")]
     public async Task<ActionResult<object>> GetCaseInvestigationDetails(Guid caseOrderId)
     {
@@ -322,7 +327,7 @@ public class InvestigationsController : ControllerBase
 
             if (criticalResults.Any())
             {
-                await _hubContext.Clients.Group($"Tenant_{caseOrder.TenantId}").SendAsync("CriticalPanicAlert", new
+                await GetTenantGroup(caseOrder.TenantId).SendAsync("CriticalPanicAlert", new
                 {
                     caseId = caseOrder.Id,
                     caseNumber = caseOrder.CaseNumber,
@@ -333,7 +338,7 @@ public class InvestigationsController : ControllerBase
                 });
             }
 
-            await _hubContext.Clients.Group($"Tenant_{caseOrder.TenantId}").SendAsync("CaseStatusChanged", new
+            await GetTenantGroup(caseOrder.TenantId).SendAsync("CaseStatusChanged", new
             {
                 caseId = caseOrder.Id,
                 caseNumber = caseOrder.CaseNumber,
@@ -422,7 +427,7 @@ public class InvestigationsController : ControllerBase
 
         try
         {
-            await _hubContext.Clients.Group($"Tenant_{caseOrder.TenantId}").SendAsync("ReportApproved", new
+            await GetTenantGroup(caseOrder.TenantId).SendAsync("ReportApproved", new
             {
                 caseId = caseOrder.Id,
                 caseNumber = caseOrder.CaseNumber,

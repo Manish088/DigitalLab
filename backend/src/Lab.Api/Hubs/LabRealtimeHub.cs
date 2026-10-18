@@ -24,8 +24,9 @@ public class LabRealtimeHub : Hub
 
         if (!string.IsNullOrWhiteSpace(tenantId))
         {
-            await Groups.AddToGroupAsync(Context.ConnectionId, $"Tenant_{tenantId}");
-            _logger.LogInformation("[SignalR] Client connected: {ConnectionId} joined tenant group Tenant_{TenantId}", Context.ConnectionId, tenantId);
+            var clean = tenantId.Trim().ToLowerInvariant();
+            await Groups.AddToGroupAsync(Context.ConnectionId, $"Tenant_{clean}");
+            _logger.LogInformation("[SignalR] Client connected: {ConnectionId} joined tenant group Tenant_{clean}", Context.ConnectionId, clean);
         }
         else
         {
@@ -48,8 +49,10 @@ public class LabRealtimeHub : Hub
     {
         if (!string.IsNullOrWhiteSpace(tenantId))
         {
-            await Groups.AddToGroupAsync(Context.ConnectionId, $"Tenant_{tenantId}");
-            await Clients.Caller.SendAsync("JoinedRoom", $"Tenant_{tenantId}");
+            var clean = tenantId.Trim().ToLowerInvariant();
+            await Groups.AddToGroupAsync(Context.ConnectionId, $"Tenant_{clean}");
+            await Clients.Caller.SendAsync("JoinedRoom", $"Tenant_{clean}");
+            _logger.LogInformation("[SignalR] Client {ConnectionId} joined tenant room: Tenant_{clean}", Context.ConnectionId, clean);
         }
     }
 
