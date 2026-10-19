@@ -199,6 +199,10 @@ import { RealtimeService } from '../../../core/services/realtime.service';
             <a routerLink="/support" (click)="closeMobileMenu()" routerLinkActive="bg-brand-600 text-white shadow-lg" class="flex items-center px-3 py-2 text-xs font-medium rounded-xl hover:bg-slate-800 transition-all">
               <i class="fa-solid fa-headset w-5 text-center mr-2.5"></i> Helpdesk & Support
             </a>
+
+            <a href="https://github.com/Manish088/DigitalLab/releases/download/v1.0-mobile/DigitLab.apk" target="_blank" class="flex items-center px-3 py-2 text-xs font-bold rounded-xl text-emerald-400 hover:bg-slate-800 transition-all">
+              <i class="fa-brands fa-android w-5 text-center mr-2.5 text-base"></i> Download Mobile App
+            </a>
           </ng-container>
 
           <ng-container *ngIf="isSuperAdmin()">
@@ -274,6 +278,10 @@ import { RealtimeService } from '../../../core/services/realtime.service';
 
               <a routerLink="/support" routerLinkActive="bg-brand-600 text-white shadow-lg shadow-brand-600/30" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg hover:bg-slate-800 transition-all">
                 <i class="fa-solid fa-headset w-5 text-center mr-3"></i> Helpdesk & Support
+              </a>
+
+              <a href="https://github.com/Manish088/DigitalLab/releases/download/v1.0-mobile/DigitLab.apk" target="_blank" class="flex items-center px-3 py-2 text-sm font-bold rounded-lg text-emerald-400 hover:bg-slate-800 transition-all">
+                <i class="fa-brands fa-android w-5 text-center mr-3 text-base"></i> Download Mobile App
               </a>
             </ng-container>
 

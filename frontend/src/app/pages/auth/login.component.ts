@@ -195,6 +195,28 @@ import { environment } from '../../../environments/environment';
 
         </div>
 
+        <!-- Mobile App 1-Click Install Card -->
+        <div class="mt-4 p-4 rounded-2xl bg-white/95 backdrop-blur-sm border border-slate-200 shadow-lg shadow-slate-200/50 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div class="flex items-center space-x-3 text-left">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-600 text-white flex items-center justify-center text-lg shadow-sm shrink-0">
+              <i class="fa-brands fa-android"></i>
+            </div>
+            <div>
+              <div class="text-xs font-bold text-slate-800 flex items-center space-x-1.5">
+                <span>DigitLab Android App</span>
+                <span class="px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black">Official</span>
+              </div>
+              <div class="text-[11px] text-slate-500">Fast 1-tap direct download for mobile phones (No login needed)</div>
+            </div>
+          </div>
+          <a href="https://github.com/Manish088/DigitalLab/releases/download/v1.0-mobile/DigitLab.apk"
+             target="_blank"
+             class="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs rounded-xl shadow-md shadow-emerald-600/20 flex items-center justify-center space-x-1.5 transition-all cursor-pointer shrink-0">
+            <i class="fa-solid fa-download text-xs"></i>
+            <span>Download .APK</span>
+          </a>
+        </div>
+
         <!-- Server Configuration Modal -->
         <div *ngIf="showServerModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div class="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-sm w-full p-6 space-y-4">
