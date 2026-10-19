@@ -9,6 +9,7 @@ public record SendOtpRequest(string Phone);
 public record VerifyOtpRequest(string Phone, string Otp);
 public record RegisterLabRequest(string LabName, string OwnerName, string? Email, string Phone, string Password, string? Address = null, string? City = null, string? State = null, string? ReferralCode = null, string? Otp = null);
 public record ChangePasswordRequest(string OldPassword, string NewPassword);
+public record UpdateProfileRequest(string FullName, string Email, string? PhoneNumber);
 public record StaffUserDto(string Id, string FullName, string Email, string PhoneNumber, string Role, string Designation, bool IsActive, string? PermissionsJson);
 public record CreateStaffUserRequest(string FullName, string Email, string PhoneNumber, string Password, string Role, string Designation, string? PermissionsJson);
 

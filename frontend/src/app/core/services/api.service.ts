@@ -402,4 +402,13 @@ export class ApiService {
     formData.append('file', file);
     return this.http.post<{ url: string; message: string }>(`${this.baseUrl}/adcampaigns/upload-banner`, formData);
   }
+
+  // User Profile
+  getMyProfile(): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/auth/profile`);
+  }
+
+  updateMyProfile(data: { fullName: string; email: string; phoneNumber?: string }): Observable<any> {
+    return this.http.put<any>(`${this.baseUrl}/auth/profile`, data);
+  }
 }

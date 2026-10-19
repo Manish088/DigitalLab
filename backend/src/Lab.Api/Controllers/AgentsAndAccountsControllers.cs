@@ -176,11 +176,13 @@ public class LetterheadController : ControllerBase
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly UserManager<ApplicationUser> _userManager;
 
-    public LetterheadController(IApplicationDbContext context, ICurrentUserService currentUserService)
+    public LetterheadController(IApplicationDbContext context, ICurrentUserService currentUserService, UserManager<ApplicationUser> userManager)
     {
         _context = context;
         _currentUserService = currentUserService;
+        _userManager = userManager;
     }
 
     [HttpGet]
@@ -275,7 +277,22 @@ public class LetterheadController : ControllerBase
         lab.Tagline = dto.Tagline;
         lab.OwnerName = dto.OwnerName;
         lab.Phone = dto.Phone;
-        lab.Email = dto.Email;
+        if (!string.IsNullOrWhiteSpace(dto.Email) && dto.Email.Contains('@') && dto.Email.Contains('.'))
+        {
+            var cleanLabEmail = dto.Email.Trim().ToLowerInvariant();
+            lab.Email = cleanLabEmail;
+            var adminUser = await _userManager.Users.FirstOrDefaultAsync(u => u.TenantId == tenantId && u.Role == "LabAdmin");
+            if (adminUser != null)
+            {
+                adminUser.Email = cleanLabEmail;
+                adminUser.UserName = cleanLabEmail;
+                await _userManager.UpdateAsync(adminUser);
+            }
+        }
+        else
+        {
+            lab.Email = dto.Email;
+        }
         lab.Address = dto.Address;
         lab.City = dto.City;
         lab.State = dto.State;

@@ -114,6 +114,15 @@ import { environment } from '../../../environments/environment';
                 class="block w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 text-xs sm:text-sm font-semibold transition-all">
             </div>
 
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1 flex items-center">
+                <i class="fa-solid fa-envelope text-slate-400 mr-1 text-xs"></i>
+                <span>Email Address *</span>
+              </label>
+              <input type="email" [(ngModel)]="regData.email" name="email" required placeholder="e.g. yourname@gmail.com"
+                class="block w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 text-xs sm:text-sm font-semibold transition-all">
+            </div>
+
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
@@ -393,6 +402,7 @@ export class LoginComponent implements OnInit, OnDestroy {
   regData = {
     labName: '',
     ownerName: '',
+    email: '',
     phone: '',
     city: '',
     password: '',
@@ -502,8 +512,15 @@ export class LoginComponent implements OnInit, OnDestroy {
   }
 
   onInitiateRegister() {
-    if (!this.regData.labName?.trim() || !this.regData.ownerName?.trim() || !this.regData.phone?.trim() || !this.regData.password?.trim()) {
-      this.errorMessage = 'Please fill in all required fields (Lab Name, Owner/Doctor Name, WhatsApp Number, Password).';
+    if (!this.regData.labName?.trim() || !this.regData.ownerName?.trim() || !this.regData.email?.trim() || !this.regData.phone?.trim() || !this.regData.password?.trim()) {
+      this.errorMessage = 'Please fill in all required fields (Lab Name, Owner/Doctor Name, Email Address, WhatsApp Number, Password).';
+      this.cdr.markForCheck();
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(this.regData.email.trim())) {
+      this.errorMessage = 'Please enter a valid email address (e.g. lab@example.com).';
       this.cdr.markForCheck();
       return;
     }
@@ -584,7 +601,7 @@ export class LoginComponent implements OnInit, OnDestroy {
     const payload = {
       labName: this.regData.labName.trim(),
       ownerName: this.regData.ownerName.trim(),
-      email: null,
+      email: this.regData.email.trim().toLowerCase(),
       phone: cleanPhone,
       city: this.regData.city?.trim() || null,
       password: this.regData.password,

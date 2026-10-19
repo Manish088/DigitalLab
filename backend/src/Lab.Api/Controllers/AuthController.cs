@@ -285,26 +285,21 @@ public class AuthController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 6)
             return BadRequest(new { message = "Password must be at least 6 characters long." });
 
-        string userEmail;
-        if (string.IsNullOrWhiteSpace(request.Email))
-        {
-            userEmail = $"{cleanPhone}@digitlab.in";
-        }
-        else
-        {
-            if (!request.Email.Contains('@') || !request.Email.Contains('.'))
-                return BadRequest(new { message = "Please enter a valid email address (e.g. lab@example.com)." });
-            userEmail = request.Email.Trim().ToLowerInvariant();
-        }
+        if (string.IsNullOrWhiteSpace(request.Email) || !request.Email.Contains('@') || !request.Email.Contains('.'))
+            return BadRequest(new { message = "Please enter a valid email address (e.g. lab@example.com)." });
+
+        var userEmail = request.Email.Trim().ToLowerInvariant();
 
         var existingUser = await _userManager.FindByEmailAsync(userEmail);
-        if (existingUser == null && !string.IsNullOrWhiteSpace(cleanPhone))
-        {
-            existingUser = await _userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == cleanPhone || u.UserName == cleanPhone || u.Email == $"{cleanPhone}@digitlab.in");
-        }
-
         if (existingUser != null)
-            return BadRequest(new { message = "An account with this mobile number already exists. Please Sign In." });
+            return BadRequest(new { message = "An account with this email address already exists. Please Sign In." });
+
+        if (!string.IsNullOrWhiteSpace(cleanPhone))
+        {
+            var existingByPhone = await _userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == cleanPhone || u.UserName == cleanPhone);
+            if (existingByPhone != null)
+                return BadRequest(new { message = "An account with this mobile number already exists. Please Sign In." });
+        }
 
         var labCode = "LAB" + new Random().Next(1000, 9999);
         var trialPlan = await _context.SubscriptionPlans.FirstOrDefaultAsync(p => p.PlanCode == "TRIAL");
@@ -437,6 +432,77 @@ public class AuthController : ControllerBase
         {
             var tenant = await _context.Tenants.FirstOrDefaultAsync(t => t.Id == user.TenantId.Value);
             labName = tenant?.LabName;
+        }
+
+        return Ok(new
+        {
+            user.Id,
+            user.FullName,
+            user.Email,
+            user.PhoneNumber,
+            user.Role,
+            user.Designation,
+            user.TenantId,
+            LabName = labName,
+            user.PermissionsJson
+        });
+    }
+
+    [Authorize]
+    [HttpPut("profile")]
+    public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
+    {
+        var userId = _currentUserService.UserId;
+        if (string.IsNullOrEmpty(userId))
+            return Unauthorized();
+
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null)
+            return NotFound();
+
+        if (string.IsNullOrWhiteSpace(request.FullName))
+            return BadRequest(new { message = "Full name is required." });
+
+        if (string.IsNullOrWhiteSpace(request.Email) || !request.Email.Contains('@') || !request.Email.Contains('.'))
+            return BadRequest(new { message = "Please enter a valid email address (e.g. lab@example.com)." });
+
+        var cleanEmail = request.Email.Trim().ToLowerInvariant();
+
+        // Check if another user has this email
+        var existingWithEmail = await _userManager.FindByEmailAsync(cleanEmail);
+        if (existingWithEmail != null && existingWithEmail.Id != user.Id)
+            return BadRequest(new { message = "Another account already uses this email address." });
+
+        user.FullName = request.FullName.Trim();
+        user.Email = cleanEmail;
+        user.UserName = cleanEmail;
+
+        if (!string.IsNullOrWhiteSpace(request.PhoneNumber))
+        {
+            var cleanPhone = new string(request.PhoneNumber.Where(char.IsDigit).ToArray());
+            if (cleanPhone.Length == 11 && cleanPhone.StartsWith("0")) cleanPhone = cleanPhone.Substring(1);
+            else if (cleanPhone.Length == 12 && cleanPhone.StartsWith("91")) cleanPhone = cleanPhone.Substring(2);
+            user.PhoneNumber = cleanPhone;
+        }
+
+        var updateRes = await _userManager.UpdateAsync(user);
+        if (!updateRes.Succeeded)
+            return BadRequest(new { message = string.Join("; ", updateRes.Errors.Select(e => e.Description)) });
+
+        string? labName = null;
+        // Also update tenant lab email and phone if this user is a LabAdmin
+        if (user.TenantId.HasValue && user.Role == "LabAdmin")
+        {
+            var tenant = await _context.Tenants.FirstOrDefaultAsync(t => t.Id == user.TenantId.Value);
+            if (tenant != null)
+            {
+                tenant.OwnerName = user.FullName;
+                tenant.Email = user.Email;
+                if (!string.IsNullOrWhiteSpace(user.PhoneNumber))
+                    tenant.Phone = user.PhoneNumber;
+                await _context.SaveChangesAsync();
+                labName = tenant.LabName;
+            }
         }
 
         return Ok(new
