@@ -50,12 +50,15 @@ import { environment } from '../../../environments/environment';
           <!-- Sign In Form -->
           <form *ngIf="!isRegister" (ngSubmit)="onLogin()" class="space-y-4">
             <div>
-              <label class="block text-xs font-bold text-slate-700 mb-1">WhatsApp / Mobile Number</label>
+              <label class="block text-xs font-bold text-slate-700 mb-1 flex items-center">
+                <i class="fa-solid fa-envelope text-slate-400 mr-1.5 text-xs"></i>
+                <span>Email Address or Mobile Number</span>
+              </label>
               <div class="relative">
                 <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                  <i class="fa-solid fa-mobile-screen text-xs"></i>
+                  <i class="fa-solid fa-user-check text-xs"></i>
                 </div>
-                <input type="text" [(ngModel)]="loginData.emailOrUsername" name="email" required placeholder="Enter 10-digit mobile number"
+                <input type="text" [(ngModel)]="loginData.emailOrUsername" name="email" required placeholder="Enter Email Address or 10-digit mobile"
                   class="block w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-xs sm:text-sm font-semibold transition-all">
               </div>
             </div>
@@ -434,7 +437,7 @@ export class LoginComponent implements OnInit, OnDestroy {
 
   onLogin() {
     if (!this.loginData.emailOrUsername || !this.loginData.password) {
-      this.errorMessage = 'Please enter both mobile number and password.';
+      this.errorMessage = 'Please enter both email address / mobile number and password.';
       this.cdr.markForCheck();
       return;
     }
