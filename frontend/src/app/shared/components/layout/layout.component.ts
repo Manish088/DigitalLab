@@ -1,14 +1,16 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { ApiService } from '../../../core/services/api.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { RealtimeService } from '../../../core/services/realtime.service';
 
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [CommonModule, FormsModule, RouterOutlet, RouterLink, RouterLinkActive],
   template: `
     <div class="min-h-screen bg-slate-50 flex flex-col font-sans">
       <!-- SuperAdmin Impersonation Support Banner -->
@@ -81,6 +83,10 @@ import { ToastService } from '../../../core/services/toast.service';
                 <span *ngIf="currentUser()?.role" class="hidden sm:inline-block px-2 py-0.5 text-[10px] sm:text-xs font-semibold rounded-full bg-brand-50 text-brand-700 border border-brand-200">
                   {{ currentUser()?.role }}
                 </span>
+                <span *ngIf="realtime.isConnected()" class="hidden md:inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200" title="Real-Time WebSockets Sync Active">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span>LIVE</span>
+                </span>
               </div>
               <p class="text-[10px] sm:text-xs text-slate-500 truncate">Cloud Pathology System</p>
             </div>
@@ -88,6 +94,12 @@ import { ToastService } from '../../../core/services/toast.service';
 
           <!-- Quick Action Bar & User Profile -->
           <div class="flex items-center space-x-2 sm:space-x-3">
+            <a *ngIf="isTrial && !isSubExpired && !isSuperAdmin()" routerLink="/subscription" 
+              class="hidden sm:inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-bold hover:bg-emerald-100 transition-all cursor-pointer shadow-sm">
+              <i class="fa-solid fa-gift text-emerald-600"></i>
+              <span>14-Day Free Trial: {{ trialDaysRemaining }} Days Left</span>
+            </a>
+
             <button (click)="handleNewCaseClick()" 
               [class.opacity-50]="isSubExpired && !isSuperAdmin()"
               class="inline-flex items-center px-2.5 sm:px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold bg-brand-600 text-white hover:bg-brand-700 shadow-sm shadow-brand-500/20 transition-colors shrink-0 cursor-pointer">
@@ -98,13 +110,20 @@ import { ToastService } from '../../../core/services/toast.service';
             <div class="h-6 w-px bg-slate-200 hidden sm:block"></div>
 
             <div class="flex items-center space-x-2 sm:space-x-3">
-              <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 font-semibold text-xs sm:text-sm">
-                {{ currentUser()?.fullName?.charAt(0) || 'U' }}
-              </div>
-              <div class="hidden md:block text-left">
-                <div class="text-xs font-bold text-slate-900 leading-tight">{{ currentUser()?.fullName }}</div>
-                <div class="text-[11px] text-slate-500 truncate max-w-[140px]">{{ currentUser()?.email }}</div>
-              </div>
+              <button type="button" (click)="openProfileModal()" 
+                class="flex items-center space-x-2 p-1 sm:px-2 sm:py-1 rounded-xl hover:bg-slate-100 transition-colors text-left cursor-pointer group" 
+                title="Click to view & edit Profile / Email">
+                <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 font-semibold text-xs sm:text-sm group-hover:bg-brand-50 group-hover:text-brand-600 transition-colors">
+                  {{ currentUser()?.fullName?.charAt(0) || 'U' }}
+                </div>
+                <div class="hidden md:block text-left">
+                  <div class="text-xs font-bold text-slate-900 leading-tight flex items-center space-x-1">
+                    <span>{{ currentUser()?.fullName }}</span>
+                    <i class="fa-solid fa-pen text-[9px] text-slate-400 group-hover:text-brand-600"></i>
+                  </div>
+                  <div class="text-[11px] text-slate-500 truncate max-w-[150px]">{{ currentUser()?.email }}</div>
+                </div>
+              </button>
               <button (click)="logout()" title="Logout" class="p-1.5 sm:p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer">
                 <i class="fa-solid fa-arrow-right-from-bracket text-xs sm:text-sm"></i>
               </button>
@@ -188,6 +207,10 @@ import { ToastService } from '../../../core/services/toast.service';
             <a routerLink="/support" (click)="closeMobileMenu()" routerLinkActive="bg-brand-600 text-white shadow-lg" class="flex items-center px-3 py-2 text-xs font-medium rounded-xl hover:bg-slate-800 transition-all">
               <i class="fa-solid fa-headset w-5 text-center mr-2.5"></i> Helpdesk & Support
             </a>
+
+            <a href="https://github.com/Manish088/DigitalLab/releases/download/v1.0-mobile/DigitLab.apk" target="_blank" class="flex items-center px-3 py-2 text-xs font-bold rounded-xl text-emerald-400 hover:bg-slate-800 transition-all">
+              <i class="fa-brands fa-android w-5 text-center mr-2.5 text-base"></i> Download Mobile App
+            </a>
           </ng-container>
 
           <ng-container *ngIf="isSuperAdmin()">
@@ -264,6 +287,10 @@ import { ToastService } from '../../../core/services/toast.service';
               <a routerLink="/support" routerLinkActive="bg-brand-600 text-white shadow-lg shadow-brand-600/30" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg hover:bg-slate-800 transition-all">
                 <i class="fa-solid fa-headset w-5 text-center mr-3"></i> Helpdesk & Support
               </a>
+
+              <a href="https://github.com/Manish088/DigitalLab/releases/download/v1.0-mobile/DigitLab.apk" target="_blank" class="flex items-center px-3 py-2 text-sm font-bold rounded-lg text-emerald-400 hover:bg-slate-800 transition-all">
+                <i class="fa-brands fa-android w-5 text-center mr-3 text-base"></i> Download Mobile App
+              </a>
             </ng-container>
 
             <ng-container *ngIf="isSuperAdmin()">
@@ -288,6 +315,77 @@ import { ToastService } from '../../../core/services/toast.service';
           <router-outlet></router-outlet>
         </main>
       </div>
+
+      <!-- Floating 24/7 WhatsApp Help Support Button (Step 5) -->
+      <a href="https://wa.me/917706087066?text=Namaste%20DigitalLab%20Support%2C%20mujhe%20software%20me%20help%20chahiye."
+        target="_blank" rel="noopener noreferrer"
+        class="fixed bottom-5 right-5 z-50 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white rounded-full px-4 py-2.5 shadow-2xl flex items-center space-x-2.5 border-2 border-white cursor-pointer hover:scale-105 transition-all group"
+        title="Instant 24/7 WhatsApp Helpdesk">
+        <i class="fa-brands fa-whatsapp text-2xl text-white"></i>
+        <div class="text-left hidden sm:block">
+          <div class="text-[9px] font-medium leading-none text-emerald-100">Instant Help</div>
+          <div class="text-xs font-black tracking-wide leading-tight">WhatsApp Support</div>
+        </div>
+      </a>
+
+      <!-- User Profile & Real Email Settings Modal -->
+      <div *ngIf="showProfileModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+        <div class="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-md w-full p-6 space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div class="flex items-center space-x-2.5">
+              <div class="w-9 h-9 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center text-base">
+                <i class="fa-solid fa-user-pen"></i>
+              </div>
+              <div>
+                <h3 class="text-sm font-bold text-slate-900 font-heading">My Profile & Email</h3>
+                <p class="text-[11px] text-slate-400">Update your account details and login email</p>
+              </div>
+            </div>
+            <button (click)="showProfileModal = false" class="text-slate-400 hover:text-slate-600 p-1 cursor-pointer">
+              <i class="fa-solid fa-xmark text-sm"></i>
+            </button>
+          </div>
+
+          <!-- Alert error -->
+          <div *ngIf="profileError" class="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center">
+            <i class="fa-solid fa-circle-exclamation mr-2 text-sm shrink-0"></i>
+            <span>{{ profileError }}</span>
+          </div>
+
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Full Name *</label>
+              <input type="text" [(ngModel)]="profileForm.fullName" placeholder="Enter full name"
+                class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none">
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Email Address *</label>
+              <input type="email" [(ngModel)]="profileForm.email" placeholder="e.g. yourname@gmail.com"
+                class="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none">
+              <p class="text-[10px] text-slate-400 mt-1">This email appears on your reports and is used for login.</p>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Contact Phone Number</label>
+              <input type="tel" [(ngModel)]="profileForm.phoneNumber" placeholder="10-digit mobile number" maxlength="10"
+                class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none">
+            </div>
+          </div>
+
+          <div class="flex items-center space-x-2 pt-3 border-t border-slate-100">
+            <button type="button" (click)="saveProfile()" [disabled]="savingProfile"
+              class="flex-1 py-2.5 bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs rounded-xl shadow-md shadow-brand-500/20 transition-all cursor-pointer flex items-center justify-center space-x-1.5 disabled:opacity-50">
+              <i *ngIf="savingProfile" class="fa-solid fa-spinner fa-spin mr-1"></i>
+              <i *ngIf="!savingProfile" class="fa-solid fa-check mr-1"></i>
+              <span>{{ savingProfile ? 'Saving...' : 'Save Profile Changes' }}</span>
+            </button>
+            <button type="button" (click)="showProfileModal = false" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold text-xs rounded-xl transition-all cursor-pointer">
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   `
 })
@@ -296,6 +394,7 @@ export class LayoutComponent implements OnInit {
   private apiService = inject(ApiService);
   private router = inject(Router);
   private toast = inject(ToastService);
+  public realtime = inject(RealtimeService);
 
   currentUser = this.authService.currentUserSignal;
   isSuperAdmin = this.authService.isSuperAdmin;
@@ -305,6 +404,8 @@ export class LayoutComponent implements OnInit {
 
   mobileMenuOpen = false;
   isSubExpired = false;
+  isTrial = false;
+  trialDaysRemaining = 14;
   subExpiryDate: string | null = null;
   announcement: any = null;
   announcementDismissed = false;
@@ -338,6 +439,14 @@ export class LayoutComponent implements OnInit {
         const isPastDate = sub?.subscriptionExpiryDate ? new Date(sub.subscriptionExpiryDate) < new Date() : false;
         this.subExpiryDate = sub?.subscriptionExpiryDate || null;
         this.isSubExpired = sub?.isExpired || sub?.subscriptionStatus === 'Expired' || sub?.subscriptionStatus === 'Suspended' || isPastDate;
+
+        if (!this.isSubExpired && sub?.subscriptionExpiryDate && (sub?.subscriptionStatus === 'Trial' || sub?.currentPlan?.planCode === 'TRIAL')) {
+          this.isTrial = true;
+          const diffMs = new Date(sub.subscriptionExpiryDate).getTime() - Date.now();
+          this.trialDaysRemaining = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+        } else {
+          this.isTrial = false;
+        }
       },
       error: (err) => console.error('Error checking layout subscription status:', err)
     });
@@ -361,6 +470,76 @@ export class LayoutComponent implements OnInit {
 
   closeMobileMenu(): void {
     this.mobileMenuOpen = false;
+  }
+
+  showProfileModal = false;
+  savingProfile = false;
+  profileError = '';
+  profileForm = {
+    fullName: '',
+    email: '',
+    phoneNumber: ''
+  };
+
+  openProfileModal(): void {
+    const u = this.currentUser();
+    this.profileForm = {
+      fullName: u?.fullName || '',
+      email: u?.email || '',
+      phoneNumber: ''
+    };
+    this.profileError = '';
+    this.showProfileModal = true;
+    this.apiService.getMyProfile().subscribe({
+      next: (res) => {
+        if (res) {
+          this.profileForm.fullName = res.fullName || this.profileForm.fullName;
+          this.profileForm.email = res.email || this.profileForm.email;
+          this.profileForm.phoneNumber = res.phoneNumber || '';
+        }
+      },
+      error: () => {}
+    });
+  }
+
+  saveProfile(): void {
+    if (!this.profileForm.fullName?.trim() || !this.profileForm.email?.trim()) {
+      this.profileError = 'Please enter both your full name and email address.';
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(this.profileForm.email.trim())) {
+      this.profileError = 'Please enter a valid email address (e.g. lab@example.com).';
+      return;
+    }
+
+    this.savingProfile = true;
+    this.profileError = '';
+    this.apiService.updateMyProfile({
+      fullName: this.profileForm.fullName.trim(),
+      email: this.profileForm.email.trim().toLowerCase(),
+      phoneNumber: this.profileForm.phoneNumber?.trim() || undefined
+    }).subscribe({
+      next: (res) => {
+        this.savingProfile = false;
+        this.showProfileModal = false;
+        const curUser = this.currentUser();
+        if (curUser) {
+          const updated = {
+            ...curUser,
+            fullName: res.fullName || this.profileForm.fullName.trim(),
+            email: res.email || this.profileForm.email.trim().toLowerCase()
+          };
+          localStorage.setItem('lab_user_profile', JSON.stringify(updated));
+          this.authService.currentUserSignal.set(updated);
+        }
+        this.toast.success('Profile and email updated successfully!');
+      },
+      error: (err) => {
+        this.savingProfile = false;
+        this.profileError = err.error?.message || 'Failed to update profile. Please try again.';
+      }
+    });
   }
 
   logout(): void {

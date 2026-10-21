@@ -76,10 +76,10 @@ public class PdfReportService : IPdfReportService
         var normalRangesLookup = normalRangesList.ToLookup(nr => nr.ParameterId);
 
         // Dynamic Letterhead Margins from Tenant Settings
-        var marginTop = isLetterheadMode ? 12f : (float)(lab?.LetterheadMarginTopMm ?? 45.0);
-        var marginBottom = isLetterheadMode ? 12f : (float)(lab?.LetterheadMarginBottomMm ?? 25.0);
-        var marginLeft = isLetterheadMode ? 12f : (float)(lab?.LetterheadMarginLeftMm ?? 12.0);
-        var marginRight = isLetterheadMode ? 12f : (float)(lab?.LetterheadMarginRightMm ?? 12.0);
+        var marginTop = isLetterheadMode ? 8f : (float)(lab?.LetterheadMarginTopMm ?? 45.0);
+        var marginBottom = isLetterheadMode ? 8f : (float)(lab?.LetterheadMarginBottomMm ?? 25.0);
+        var marginLeft = isLetterheadMode ? 10f : (float)(lab?.LetterheadMarginLeftMm ?? 12.0);
+        var marginRight = isLetterheadMode ? 10f : (float)(lab?.LetterheadMarginRightMm ?? 12.0);
 
         var sampleTypes = caseOrder.Items
             .Select(i => i.Test?.SampleType)
@@ -314,11 +314,11 @@ public class PdfReportService : IPdfReportService
 
                         table.Header(header =>
                         {
-                            header.Cell().Background("#e0f2fe").BorderBottom(1).BorderColor("#93c5fd").Padding(3.5f).Text("TEST / INVESTIGATION PARAMETER").Bold().FontSize(7.5f).FontColor("#0369a1");
-                            header.Cell().Background("#e0f2fe").BorderBottom(1).BorderColor("#93c5fd").Padding(3.5f).Text("RESULT VALUE").Bold().FontSize(7.5f).FontColor("#0369a1");
-                            header.Cell().Background("#e0f2fe").BorderBottom(1).BorderColor("#93c5fd").Padding(3.5f).Text("UNIT").Bold().FontSize(7.5f).FontColor("#0369a1");
-                            header.Cell().Background("#e0f2fe").BorderBottom(1).BorderColor("#93c5fd").Padding(3.5f).Text("REFERENCE INTERVAL").Bold().FontSize(7.5f).FontColor("#0369a1");
-                            header.Cell().Background("#e0f2fe").BorderBottom(1).BorderColor("#93c5fd").Padding(3.5f).AlignCenter().Text("FLAG").Bold().FontSize(7.5f).FontColor("#0369a1");
+                            header.Cell().Background("#e0f2fe").BorderBottom(1).BorderColor("#93c5fd").PaddingVertical(2).PaddingHorizontal(3).Text("TEST / INVESTIGATION PARAMETER").Bold().FontSize(7.5f).FontColor("#0369a1");
+                            header.Cell().Background("#e0f2fe").BorderBottom(1).BorderColor("#93c5fd").PaddingVertical(2).PaddingHorizontal(3).Text("RESULT VALUE").Bold().FontSize(7.5f).FontColor("#0369a1");
+                            header.Cell().Background("#e0f2fe").BorderBottom(1).BorderColor("#93c5fd").PaddingVertical(2).PaddingHorizontal(3).Text("UNIT").Bold().FontSize(7.5f).FontColor("#0369a1");
+                            header.Cell().Background("#e0f2fe").BorderBottom(1).BorderColor("#93c5fd").PaddingVertical(2).PaddingHorizontal(3).Text("REFERENCE INTERVAL").Bold().FontSize(7.5f).FontColor("#0369a1");
+                            header.Cell().Background("#e0f2fe").BorderBottom(1).BorderColor("#93c5fd").PaddingVertical(2).PaddingHorizontal(3).AlignCenter().Text("FLAG").Bold().FontSize(7.5f).FontColor("#0369a1");
                         });
 
                         foreach (var item in caseOrder.Items)
@@ -326,12 +326,12 @@ public class PdfReportService : IPdfReportService
                             var deptName = item.Test?.Category?.CategoryName ?? "INVESTIGATION";
                             var testTitle = item.Test != null ? $"{deptName.ToUpperInvariant()} - {item.Test.TestName.ToUpperInvariant()} ({item.Test.TestCode})" : "INVESTIGATION";
 
-                            table.Cell().ColumnSpan(5).Background("#f1f5f9").PaddingVertical(3).PaddingHorizontal(4).Row(r =>
+                            table.Cell().ColumnSpan(5).Background("#f1f5f9").PaddingVertical(2).PaddingHorizontal(3).Row(r =>
                             {
-                                r.RelativeItem().Text(testTitle).Bold().FontSize(8).FontColor("#0f172a");
+                                r.RelativeItem().Text(testTitle).Bold().FontSize(7.5f).FontColor("#0f172a");
                                 if (!string.IsNullOrWhiteSpace(item.Test?.Methodology))
                                 {
-                                    r.AutoItem().Text($"Method: {item.Test.Methodology}").Italic().FontSize(7f).FontColor("#64748b");
+                                    r.AutoItem().Text($"Method: {item.Test.Methodology}").Italic().FontSize(6.5f).FontColor("#64748b");
                                 }
                             });
 
@@ -389,26 +389,26 @@ public class PdfReportService : IPdfReportService
 
                                 // 1. Parameter Name
                                 var paramName = !string.IsNullOrWhiteSpace(res.ParameterName) ? res.ParameterName : "Parameter";
-                                table.Cell().BorderBottom(0.5f).BorderColor("#e2e8f0").Padding(3)
-                                    .Text(paramName).FontSize(8);
+                                table.Cell().BorderBottom(0.5f).BorderColor("#e2e8f0").PaddingVertical(1.8f).PaddingHorizontal(3)
+                                    .Text(paramName).FontSize(7.5f);
 
                                 // 2. Result Value
                                 var valDisplay = !string.IsNullOrWhiteSpace(res.ResultValue) ? res.ResultValue : "-";
-                                table.Cell().BorderBottom(0.5f).BorderColor("#e2e8f0").Padding(3)
+                                table.Cell().BorderBottom(0.5f).BorderColor("#e2e8f0").PaddingVertical(1.8f).PaddingHorizontal(3)
                                     .Text(t =>
                                     {
-                                        var span = t.Span(valDisplay).FontSize(8.5f).FontColor(valColor);
+                                        var span = t.Span(valDisplay).FontSize(8f).FontColor(valColor);
                                         if (isAbnormal && valDisplay != "-") span.Bold();
                                     });
 
                                 // 3. Unit
                                 var unitDisplay = !string.IsNullOrWhiteSpace(res.Unit) ? res.Unit : "-";
-                                table.Cell().BorderBottom(0.5f).BorderColor("#e2e8f0").Padding(3)
-                                    .Text(unitDisplay).FontSize(7.5f).FontColor("#64748b");
+                                table.Cell().BorderBottom(0.5f).BorderColor("#e2e8f0").PaddingVertical(1.8f).PaddingHorizontal(3)
+                                    .Text(unitDisplay).FontSize(7f).FontColor("#64748b");
 
                                 // 4. Reference Interval
-                                table.Cell().BorderBottom(0.5f).BorderColor("#e2e8f0").Padding(3)
-                                    .Text(normalRangeDisplay).FontSize(7.5f).FontColor("#475569");
+                                table.Cell().BorderBottom(0.5f).BorderColor("#e2e8f0").PaddingVertical(1.8f).PaddingHorizontal(3)
+                                    .Text(normalRangeDisplay).FontSize(7f).FontColor("#475569");
 
                                 // 5. Flag
                                 var flagText = currentFlag switch
@@ -420,10 +420,10 @@ public class PdfReportService : IPdfReportService
                                     _ => "NORMAL"
                                 };
 
-                                table.Cell().BorderBottom(0.5f).BorderColor("#e2e8f0").Padding(3).AlignCenter()
+                                table.Cell().BorderBottom(0.5f).BorderColor("#e2e8f0").PaddingVertical(1.8f).PaddingHorizontal(3).AlignCenter()
                                     .Text(t =>
                                     {
-                                        var span = t.Span(flagText).FontSize(7.5f).FontColor(flagColor);
+                                        var span = t.Span(flagText).FontSize(7f).FontColor(flagColor);
                                         if (isAbnormal) span.Bold();
                                     });
                             }
@@ -431,20 +431,20 @@ public class PdfReportService : IPdfReportService
                             // Remarks / Clinical Interpretation Notes
                             if (!string.IsNullOrWhiteSpace(item.PathologistRemarks) || !string.IsNullOrWhiteSpace(item.InterpretationNote) || !string.IsNullOrWhiteSpace(item.Test?.ClinicalSignificance))
                             {
-                                table.Cell().ColumnSpan(5).Background("#fafafa").BorderBottom(0.5f).BorderColor("#e2e8f0").Padding(3.5f).Column(c =>
+                                table.Cell().ColumnSpan(5).Background("#fafafa").BorderBottom(0.5f).BorderColor("#e2e8f0").PaddingVertical(1.5f).PaddingHorizontal(3).Column(c =>
                                 {
                                     if (!string.IsNullOrWhiteSpace(item.PathologistRemarks))
-                                        c.Item().Text(t => { t.Span("Remarks: ").Bold().FontSize(7.5f); t.Span(item.PathologistRemarks).FontSize(7.5f); });
+                                        c.Item().Text(t => { t.Span("Remarks: ").Bold().FontSize(7f); t.Span(item.PathologistRemarks).FontSize(7f); });
                                     if (!string.IsNullOrWhiteSpace(item.InterpretationNote))
-                                        c.Item().Text(t => { t.Span("Clinical Interpretation: ").Bold().FontSize(7.5f); t.Span(item.InterpretationNote).FontSize(7.5f); });
+                                        c.Item().Text(t => { t.Span("Clinical Interpretation: ").Bold().FontSize(7f); t.Span(item.InterpretationNote).FontSize(7f); });
                                     if (!string.IsNullOrWhiteSpace(item.Test?.ClinicalSignificance))
-                                        c.Item().Text(t => { t.Span("Clinical Significance: ").Italic().FontSize(7f).FontColor("#64748b"); t.Span(item.Test.ClinicalSignificance).FontSize(7f).FontColor("#64748b"); });
+                                        c.Item().Text(t => { t.Span("Clinical Significance: ").Italic().FontSize(6.5f).FontColor("#64748b"); t.Span(item.Test.ClinicalSignificance).FontSize(6.5f).FontColor("#64748b"); });
                                 });
                             }
                         }
                     });
 
-                    // Verification & Signature Section (Dynamic or Removed if not configured)
+                    // Verification & Signature Section (Wrapped in ShowEntire so it never fragments across pages)
                     var isSignatureEnabled = lab?.ShowDigitalSignature ?? true;
                     var dynamicDoctorName = !string.IsNullOrWhiteSpace(lab?.PathologistName) 
                         ? lab.PathologistName.Trim() 
@@ -452,91 +452,94 @@ public class PdfReportService : IPdfReportService
 
                     var hasValidDoctorSignature = isSignatureEnabled && !string.IsNullOrWhiteSpace(dynamicDoctorName);
 
-                    if (hasValidDoctorSignature)
+                    col.Item().ShowEntire().Column(sigCol =>
                     {
-                        col.Item().PaddingTop(8).Table(table =>
+                        if (hasValidDoctorSignature)
                         {
-                            table.ColumnsDefinition(cols =>
+                            sigCol.Item().PaddingTop(4).Table(table =>
                             {
-                                cols.RelativeColumn(1.2f); // Online Verification Token & ISO Note
-                                cols.RelativeColumn(1.8f); // Doctor Signature
-                            });
-
-                            table.Cell().Column(c =>
-                            {
-                                c.Item().Text("Online Report Verification:").FontSize(7.5f).Bold().FontColor("#475569");
-                                c.Item().Text($"Token: {caseOrder.PublicAccessToken}").FontSize(6.5f).FontColor("#94a3b8");
-                                c.Item().Text($"Report Generated: {DateTime.Now:dd-MMM-yyyy hh:mm tt}").FontSize(6.5f).FontColor("#64748b");
-                                c.Item().Text("Note: Tests performed on automated calibrated analyzers with standard quality controls.").FontSize(6f).Italic().FontColor("#94a3b8");
-                                c.Item().Text("Partial reproduction of this report is not permitted without laboratory approval.").FontSize(5.5f).Italic().FontColor("#94a3b8");
-                            });
-
-                            table.Cell().Column(c =>
-                            {
-                                var sigImageBytes = LoadImageBytes(lab?.DigitalSignatureUrl);
-                                if (sigImageBytes != null)
+                                table.ColumnsDefinition(cols =>
                                 {
-                                    c.Item().AlignRight().Height(24).PaddingBottom(2).Image(sigImageBytes).FitArea();
-                                }
-
-                                c.Item().Text(t =>
-                                {
-                                    t.AlignRight();
-                                    t.Span("Verified & Digitally Signed By:").FontSize(7.5f).Italic().FontColor("#475569");
+                                    cols.RelativeColumn(1.3f); // Online Verification Token & ISO Note
+                                    cols.RelativeColumn(1.7f); // Doctor Signature
                                 });
 
-                                c.Item().PaddingTop(2).Text(t =>
+                                table.Cell().Column(c =>
                                 {
-                                    t.AlignRight();
-                                    t.Span(dynamicDoctorName).Bold().FontSize(8.5f).FontColor("#0f172a");
+                                    c.Item().Text("Online Report Verification:").FontSize(7f).Bold().FontColor("#475569");
+                                    c.Item().Text($"Token: {caseOrder.PublicAccessToken}").FontSize(6f).FontColor("#94a3b8");
+                                    c.Item().Text($"Report Generated: {DateTime.Now:dd-MMM-yyyy hh:mm tt}").FontSize(6f).FontColor("#64748b");
+                                    c.Item().Text("Note: Tests performed on automated calibrated analyzers with standard quality controls.").FontSize(5.5f).Italic().FontColor("#94a3b8");
+                                    c.Item().Text("Partial reproduction of this report is not permitted without laboratory approval.").FontSize(5f).Italic().FontColor("#94a3b8");
                                 });
 
-                                if (!string.IsNullOrWhiteSpace(lab?.PathologistDegree))
+                                table.Cell().Column(c =>
                                 {
+                                    var sigImageBytes = LoadImageBytes(lab?.DigitalSignatureUrl);
+                                    if (sigImageBytes != null)
+                                    {
+                                        c.Item().AlignRight().Height(20).PaddingBottom(1).Image(sigImageBytes).FitArea();
+                                    }
+
                                     c.Item().Text(t =>
                                     {
                                         t.AlignRight();
-                                        t.Span(lab.PathologistDegree.Trim()).FontSize(7f).FontColor("#64748b");
+                                        t.Span("Verified & Digitally Signed By:").FontSize(7f).Italic().FontColor("#475569");
                                     });
-                                }
 
-                                if (!string.IsNullOrWhiteSpace(lab?.PathologistRegNo))
-                                {
+                                    c.Item().PaddingTop(1).Text(t =>
+                                    {
+                                        t.AlignRight();
+                                        t.Span(dynamicDoctorName).Bold().FontSize(8f).FontColor("#0f172a");
+                                    });
+
+                                    if (!string.IsNullOrWhiteSpace(lab?.PathologistDegree))
+                                    {
+                                        c.Item().Text(t =>
+                                        {
+                                            t.AlignRight();
+                                            t.Span(lab.PathologistDegree.Trim()).FontSize(6.5f).FontColor("#64748b");
+                                        });
+                                    }
+
+                                    if (!string.IsNullOrWhiteSpace(lab?.PathologistRegNo))
+                                    {
+                                        c.Item().Text(t =>
+                                        {
+                                            t.AlignRight();
+                                            t.Span($"Reg. No: {lab.PathologistRegNo.Trim()}").FontSize(6.5f).Bold().FontColor(primaryColor);
+                                        });
+                                    }
+
                                     c.Item().Text(t =>
                                     {
                                         t.AlignRight();
-                                        t.Span($"Reg. No: {lab.PathologistRegNo.Trim()}").FontSize(7f).Bold().FontColor(primaryColor);
+                                        t.Span("Consultant Pathologist").FontSize(6.5f).Italic().FontColor("#475569");
                                     });
-                                }
-
-                                c.Item().Text(t =>
-                                {
-                                    t.AlignRight();
-                                    t.Span("Consultant Pathologist").FontSize(7f).Italic().FontColor("#475569");
                                 });
                             });
-                        });
-                    }
-                    else
-                    {
-                        // Signature disabled or not configured: render verification token note only
-                        col.Item().PaddingTop(8).Table(table =>
+                        }
+                        else
                         {
-                            table.ColumnsDefinition(cols =>
+                            // Signature disabled or not configured: render verification token note only
+                            sigCol.Item().PaddingTop(4).Table(table =>
                             {
-                                cols.RelativeColumn(1f);
-                            });
+                                table.ColumnsDefinition(cols =>
+                                {
+                                    cols.RelativeColumn(1f);
+                                });
 
-                            table.Cell().Column(c =>
-                            {
-                                c.Item().Text("Online Report Verification:").FontSize(7.5f).Bold().FontColor("#475569");
-                                c.Item().Text($"Token: {caseOrder.PublicAccessToken}  |  Report Generated: {DateTime.Now:dd-MMM-yyyy hh:mm tt}").FontSize(6.5f).FontColor("#64748b");
-                                c.Item().Text("Note: Tests performed on automated calibrated analyzers with standard quality controls. Partial reproduction of this report is not permitted without laboratory approval.").FontSize(6f).Italic().FontColor("#94a3b8");
+                                table.Cell().Column(c =>
+                                {
+                                    c.Item().Text("Online Report Verification:").FontSize(7f).Bold().FontColor("#475569");
+                                    c.Item().Text($"Token: {caseOrder.PublicAccessToken}  |  Report Generated: {DateTime.Now:dd-MMM-yyyy hh:mm tt}").FontSize(6f).FontColor("#64748b");
+                                    c.Item().Text("Note: Tests performed on automated calibrated analyzers with standard quality controls. Partial reproduction of this report is not permitted without laboratory approval.").FontSize(5.5f).Italic().FontColor("#94a3b8");
+                                });
                             });
-                        });
-                    }
+                        }
 
-                    col.Item().PaddingTop(5).AlignCenter().Text("--- End of Diagnostic Report ---").FontSize(7.5f).Bold().FontColor("#94a3b8");
+                        sigCol.Item().PaddingTop(2).AlignCenter().Text("--- End of Diagnostic Report ---").FontSize(7f).Bold().FontColor("#94a3b8");
+                    });
                 });
 
                 // 3. Footer
@@ -548,19 +551,26 @@ public class PdfReportService : IPdfReportService
                         col.Item().PaddingBottom(2).Image(footerImageBytes).FitWidth();
                     }
 
-                    col.Item().Row(row =>
+                    col.Item().PaddingHorizontal(2).Table(table =>
                     {
-                        row.RelativeItem().Text(t =>
+                        table.ColumnsDefinition(cols =>
                         {
-                            t.DefaultTextStyle(x => x.FontSize(7.5f).FontColor("#94a3b8"));
+                            cols.RelativeColumn(1.0f);
+                            cols.RelativeColumn(2.0f);
+                            cols.RelativeColumn(1.6f);
+                        });
+
+                        table.Cell().AlignLeft().Text(t =>
+                        {
+                            t.DefaultTextStyle(x => x.FontSize(7f).FontColor("#94a3b8"));
                             t.Span("Page ");
                             t.CurrentPageNumber();
                             t.Span(" of ");
                             t.TotalPages();
                         });
 
-                        row.RelativeItem().AlignCenter().Text($"Verified Diagnostic Report | Case: {caseOrder.CaseNumber}").FontSize(7f).FontColor("#94a3b8");
-                        row.RelativeItem().AlignRight().Text($"{labName} | Automated LIMS").FontSize(7.5f).FontColor("#94a3b8");
+                        table.Cell().AlignCenter().Text($"Verified Diagnostic Report | Case: {caseOrder.CaseNumber}").FontSize(7f).FontColor("#94a3b8");
+                        table.Cell().AlignRight().Text(labName).FontSize(7f).FontColor("#94a3b8");
                     });
                 });
             });

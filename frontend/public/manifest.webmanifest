@@ -1,0 +1,24 @@
+{
+  "name": "DigitalLab LIMS - Pathology & Diagnostics",
+  "short_name": "DigitalLab",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0284c7",
+  "theme_color": "#0284c7",
+  "orientation": "portrait-primary",
+  "description": "Cloud Pathology & Diagnostic Laboratory Management System with Live Real-Time Sync",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

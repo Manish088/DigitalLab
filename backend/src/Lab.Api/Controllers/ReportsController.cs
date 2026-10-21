@@ -1,4 +1,5 @@
 using Lab.Application.Common.Interfaces;
+using Lab.Domain.Entities;
 using Lab.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -102,16 +103,44 @@ public class ReportsController : ControllerBase
     // Public QR Code token-based access (No login needed!)
     [AllowAnonymous]
     [HttpGet("public/{token}")]
-    public async Task<IActionResult> GetPublicReportByToken(Guid token)
+    public async Task<IActionResult> GetPublicReportByToken(string token)
     {
-        var caseOrder = await _context.CaseOrders
-            .IgnoreQueryFilters()
-            .Include(c => c.Patient)
-            .Include(c => c.Items).ThenInclude(i => i.Test)
-            .FirstOrDefaultAsync(c => c.PublicAccessToken == token);
+        if (string.IsNullOrWhiteSpace(token) ||
+            token.Equals("undefined", StringComparison.OrdinalIgnoreCase) ||
+            token.Equals("null", StringComparison.OrdinalIgnoreCase))
+        {
+            return BadRequest(new { message = "Invalid report verification link. Please check the URL or request the lab to resend the link." });
+        }
+
+        var trimmedToken = token.Trim();
+        CaseOrder? caseOrder = null;
+
+        if (Guid.TryParse(trimmedToken, out var guidToken) && guidToken != Guid.Empty)
+        {
+            caseOrder = await _context.CaseOrders
+                .IgnoreQueryFilters()
+                .Include(c => c.Patient)
+                .Include(c => c.Items).ThenInclude(i => i.Test)
+                .FirstOrDefaultAsync(c => c.PublicAccessToken == guidToken || c.Id == guidToken);
+        }
+
+        if (caseOrder == null)
+        {
+            caseOrder = await _context.CaseOrders
+                .IgnoreQueryFilters()
+                .Include(c => c.Patient)
+                .Include(c => c.Items).ThenInclude(i => i.Test)
+                .FirstOrDefaultAsync(c => c.CaseNumber.ToLower() == trimmedToken.ToLower() || c.Barcode.ToLower() == trimmedToken.ToLower());
+        }
 
         if (caseOrder == null)
             return NotFound(new { message = "Report link is invalid or expired." });
+
+        if (caseOrder.PublicAccessToken == Guid.Empty)
+        {
+            caseOrder.PublicAccessToken = Guid.NewGuid();
+            await _context.SaveChangesAsync();
+        }
 
         var lab = await _context.Tenants
             .IgnoreQueryFilters()
@@ -124,10 +153,12 @@ public class ReportsController : ControllerBase
         return Ok(new
         {
             CaseId = caseOrder.Id,
+            caseOrder.PublicAccessToken,
             caseOrder.CaseNumber,
             caseOrder.Barcode,
-            PatientName = caseOrder.Patient.FullName,
-            PatientAgeGender = $"{caseOrder.Patient.AgeYears} Y / {caseOrder.Patient.Gender}",
+            PatientName = caseOrder.Patient?.FullName ?? "Patient",
+            PatientPhone = caseOrder.Patient?.Phone,
+            PatientAgeGender = $"{caseOrder.Patient?.AgeYears ?? 0} Y / {caseOrder.Patient?.Gender.ToString() ?? "N/A"}",
             caseOrder.OrderDate,
             Status = caseOrder.Status.ToString(),
             caseOrder.ApprovedByName,
@@ -135,21 +166,47 @@ public class ReportsController : ControllerBase
             LabName = lab?.LabName ?? "Pathology Lab",
             LabPhone = lab?.Phone,
             LabAddress = $"{lab?.Address}, {lab?.City}",
-            Tests = caseOrder.Items.Select(i => i.Test.TestName).ToList()
+            Tests = caseOrder.Items.Select(i => i.Test?.TestName ?? "Investigation").ToList()
         });
     }
 
     [AllowAnonymous]
     [HttpGet("public/{token}/download")]
     [Produces("application/pdf")]
-    public async Task<IActionResult> DownloadPublicReportPdf(Guid token, [FromQuery] bool letterheadMode = true)
+    public async Task<IActionResult> DownloadPublicReportPdf(string token, [FromQuery] bool letterheadMode = true, [FromQuery] bool download = false)
     {
-        var caseOrder = await _context.CaseOrders
-            .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(c => c.PublicAccessToken == token);
+        if (string.IsNullOrWhiteSpace(token) ||
+            token.Equals("undefined", StringComparison.OrdinalIgnoreCase) ||
+            token.Equals("null", StringComparison.OrdinalIgnoreCase))
+        {
+            return BadRequest(new { message = "Invalid report verification token." });
+        }
+
+        var trimmedToken = token.Trim();
+        CaseOrder? caseOrder = null;
+
+        if (Guid.TryParse(trimmedToken, out var guidToken) && guidToken != Guid.Empty)
+        {
+            caseOrder = await _context.CaseOrders
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(c => c.PublicAccessToken == guidToken || c.Id == guidToken);
+        }
+
+        if (caseOrder == null)
+        {
+            caseOrder = await _context.CaseOrders
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(c => c.CaseNumber.ToLower() == trimmedToken.ToLower() || c.Barcode.ToLower() == trimmedToken.ToLower());
+        }
 
         if (caseOrder == null)
             return NotFound(new { message = "Report link is invalid or expired." });
+
+        if (caseOrder.PublicAccessToken == Guid.Empty)
+        {
+            caseOrder.PublicAccessToken = Guid.NewGuid();
+            await _context.SaveChangesAsync();
+        }
 
         if (!await IsLabSubscriptionActiveAsync(caseOrder.Id))
             return StatusCode(403, new { message = "Laboratory access is currently inactive / expired. Please contact laboratory administration." });
@@ -157,7 +214,7 @@ public class ReportsController : ControllerBase
         if (caseOrder.Status != CaseStatus.Approved)
             return BadRequest(new { message = "Report is currently under lab testing/processing and has not been approved yet." });
 
-        var cacheKey = $"public_report_pdf_{token}_{letterheadMode}";
+        var cacheKey = $"public_report_pdf_{caseOrder.PublicAccessToken}_{letterheadMode}";
         if (!_cache.TryGetValue(cacheKey, out byte[]? pdfBytes) || pdfBytes == null)
         {
             pdfBytes = await _pdfReportService.GeneratePatientReportPdfAsync(caseOrder.Id, letterheadMode);
@@ -168,7 +225,8 @@ public class ReportsController : ControllerBase
             });
         }
 
-        Response.Headers.Append("Content-Disposition", $"inline; filename=Report_{caseOrder.CaseNumber}.pdf");
+        var disposition = download ? "attachment" : "inline";
+        Response.Headers.Append("Content-Disposition", $"{disposition}; filename=Report_{caseOrder.CaseNumber}.pdf");
         return File(pdfBytes, "application/pdf");
     }
 

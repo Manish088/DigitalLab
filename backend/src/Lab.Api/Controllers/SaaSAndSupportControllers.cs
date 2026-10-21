@@ -96,6 +96,9 @@ public class SubscriptionsController : ControllerBase
 
         return Ok(new
         {
+            lab.LabCode,
+            lab.LabName,
+            lab.Phone,
             lab.SubscriptionStatus,
             lab.SubscriptionExpiryDate,
             IsExpired = isExpired,

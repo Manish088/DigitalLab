@@ -23,10 +23,16 @@ export const routes: Routes = [
   { path: '', component: LandingPageComponent },
   { path: 'home', component: LandingPageComponent },
   { path: 'login', component: LoginComponent },
+  { path: 'register', component: LoginComponent },
+  { path: 'free-trial', component: LoginComponent },
   { path: 'launch', component: SetupComponent },
   { path: 'setup', component: SetupComponent },
   { path: 'init', component: SetupComponent },
   { path: 'report/download/:token', component: PublicDownloadComponent },
+  { path: 'reports/download/:token', component: PublicDownloadComponent },
+  { path: 'report/verify/:token', component: PublicDownloadComponent },
+  { path: 'reports/verify/:token', component: PublicDownloadComponent },
+  { path: 'report/:token', component: PublicDownloadComponent },
 
   {
     path: '',

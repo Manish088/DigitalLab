@@ -1,10 +1,12 @@
 using System.Globalization;
+using Lab.Api.Hubs;
 using Lab.Application.Common.Interfaces;
 using Lab.Application.DTOs;
 using Lab.Domain.Entities;
 using Lab.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 
@@ -18,15 +20,23 @@ public class InvestigationsController : ControllerBase
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
     private readonly IMemoryCache _cache;
+    private readonly IHubContext<LabRealtimeHub> _hubContext;
 
     public InvestigationsController(
         IApplicationDbContext context,
         ICurrentUserService currentUserService,
-        IMemoryCache cache)
+        IMemoryCache cache,
+        IHubContext<LabRealtimeHub> hubContext)
     {
         _context = context;
         _currentUserService = currentUserService;
         _cache = cache;
+        _hubContext = hubContext;
+    }
+
+    private IClientProxy GetTenantGroup(Guid tenantId)
+    {
+        return _hubContext.Clients.Group($"Tenant_{tenantId.ToString().ToLowerInvariant()}");
     }
 
     [HttpGet("{caseOrderId}")]
@@ -38,6 +48,12 @@ public class InvestigationsController : ControllerBase
             .FirstOrDefaultAsync(c => c.Id == caseOrderId);
 
         if (caseOrder == null) return NotFound();
+
+        if (caseOrder.PublicAccessToken == Guid.Empty)
+        {
+            caseOrder.PublicAccessToken = Guid.NewGuid();
+            await _context.SaveChangesAsync();
+        }
 
         var itemsList = await _context.CaseOrderItems
             .Include(i => i.Test).ThenInclude(t => t.Category)
@@ -120,6 +136,7 @@ public class InvestigationsController : ControllerBase
             caseOrder.Id,
             caseOrder.CaseNumber,
             caseOrder.Barcode,
+            caseOrder.PublicAccessToken,
             Patient = new
             {
                 caseOrder.Patient.Id,
@@ -129,9 +146,14 @@ public class InvestigationsController : ControllerBase
                 caseOrder.Patient.AgeYears,
                 caseOrder.Patient.AgeMonths,
                 caseOrder.Patient.AgeDays,
-                caseOrder.Patient.BloodGroup
+                caseOrder.Patient.BloodGroup,
+                caseOrder.Patient.Phone
             },
+            PatientName = caseOrder.Patient.FullName,
+            PatientPhone = caseOrder.Patient.Phone,
             DoctorName = caseOrder.ReferringDoctor?.DoctorName ?? "Direct",
+            DoctorPhone = caseOrder.ReferringDoctor?.Phone,
+            ReferringDoctorId = caseOrder.ReferringDoctorId,
             caseOrder.OrderDate,
             Status = caseOrder.Status.ToString(),
             caseOrder.ApprovedByName,
@@ -294,6 +316,42 @@ public class InvestigationsController : ControllerBase
         await _context.SaveChangesAsync();
         EvictReportCache(caseOrder.Id, caseOrder.PublicAccessToken);
 
+        // SignalR Real-Time Broadcast
+        try
+        {
+            var criticalResults = caseOrder.Items
+                .SelectMany(i => i.Results)
+                .Where(r => r.IsCriticalPanic)
+                .Select(r => new { r.ParameterName, r.ResultValue, r.Unit, r.NormalRangeText })
+                .ToList();
+
+            if (criticalResults.Any())
+            {
+                await GetTenantGroup(caseOrder.TenantId).SendAsync("CriticalPanicAlert", new
+                {
+                    caseId = caseOrder.Id,
+                    caseNumber = caseOrder.CaseNumber,
+                    patientName = caseOrder.Patient?.FullName ?? "Patient",
+                    criticalCount = criticalResults.Count,
+                    parameters = criticalResults,
+                    alertTime = DateTime.UtcNow
+                });
+            }
+
+            await GetTenantGroup(caseOrder.TenantId).SendAsync("CaseStatusChanged", new
+            {
+                caseId = caseOrder.Id,
+                caseNumber = caseOrder.CaseNumber,
+                status = caseOrder.Status.ToString(),
+                patientName = caseOrder.Patient?.FullName ?? "Patient",
+                hasCriticalPanic = criticalResults.Any()
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[SignalR Broadcast Error] {ex.Message}");
+        }
+
         return Ok(new { 
             message = "All investigation results saved successfully. Ready for verification." 
         });
@@ -359,10 +417,35 @@ public class InvestigationsController : ControllerBase
             item.VerifiedAt = DateTime.UtcNow;
         }
 
+        if (caseOrder.PublicAccessToken == Guid.Empty)
+        {
+            caseOrder.PublicAccessToken = Guid.NewGuid();
+        }
+
         await _context.SaveChangesAsync();
         EvictReportCache(caseOrderId, caseOrder.PublicAccessToken);
 
-        return Ok(new { message = "Report verified and approved successfully.", ApprovedByName = caseOrder.ApprovedByName, ApprovedAt = caseOrder.ApprovedAt });
+        try
+        {
+            await GetTenantGroup(caseOrder.TenantId).SendAsync("ReportApproved", new
+            {
+                caseId = caseOrder.Id,
+                caseNumber = caseOrder.CaseNumber,
+                status = caseOrder.Status.ToString(),
+                approvedByName = caseOrder.ApprovedByName,
+                approvedAt = caseOrder.ApprovedAt,
+                publicAccessToken = caseOrder.PublicAccessToken
+            });
+        }
+        catch {}
+
+        return Ok(new 
+        { 
+            message = "Report verified and approved successfully.", 
+            ApprovedByName = caseOrder.ApprovedByName, 
+            ApprovedAt = caseOrder.ApprovedAt,
+            PublicAccessToken = caseOrder.PublicAccessToken 
+        });
     }
 
     [HttpPost("{caseOrderId}/unlock")]

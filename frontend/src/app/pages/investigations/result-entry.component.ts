@@ -1,9 +1,11 @@
-import { Component, OnInit, inject, ChangeDetectorRef, Input } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
+import { RealtimeService } from '../../core/services/realtime.service';
 import { TestMaster, TestCategory } from '../../core/models/lims.models';
 
 @Component({
@@ -622,16 +624,142 @@ import { TestMaster, TestCategory } from '../../core/models/lims.models';
             </div>
           </div>
         </div>
+
+        <!-- WhatsApp Share Report Modal (Patient + Referral Doctor) -->
+        <div *ngIf="waModalCase" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
+          <div class="bg-white rounded-2xl sm:rounded-3xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-slate-100 space-y-4 animate-in fade-in zoom-in-95 duration-200">
+            <!-- Header -->
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div class="flex items-center space-x-2.5">
+                <div class="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-xl shadow-inner">
+                  <i class="fa-brands fa-whatsapp"></i>
+                </div>
+                <div>
+                  <h3 class="text-base font-bold text-slate-900 font-heading">Share Report on WhatsApp</h3>
+                  <p class="text-xs text-slate-500 font-mono">Case: <span class="font-bold text-slate-800">{{ waModalCase.caseNumber }}</span></p>
+                </div>
+              </div>
+              <button (click)="waModalCase = null" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-600 flex items-center justify-center transition-colors">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+
+            <!-- 1-Click Both Send Banner (Hero Button) -->
+            <div *ngIf="waModalCase.hasDoctor" class="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-4 text-white shadow-lg shadow-emerald-500/20">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-emerald-100">
+                    <i class="fa-solid fa-bolt text-amber-300"></i>
+                    <span>1-Click Dual Delivery</span>
+                  </div>
+                  <h4 class="text-sm font-bold text-white mt-0.5">Send Report to Both (Patient + Doctor)</h4>
+                  <p class="text-[11px] text-emerald-100 mt-0.5">Dono ko ek sath unke WhatsApp par verified report link chali jayegi.</p>
+                </div>
+              </div>
+              <button (click)="sendReportToBoth()" type="button"
+                class="mt-3 w-full py-2.5 px-4 bg-white hover:bg-emerald-50 text-emerald-800 font-bold text-sm rounded-xl transition-all shadow-md flex items-center justify-center space-x-2 cursor-pointer active:scale-[0.98]">
+                <i class="fa-brands fa-whatsapp text-emerald-600 text-base"></i>
+                <span>🚀 1-Click: Send to Both</span>
+              </button>
+            </div>
+
+            <!-- Popup Blocked Alert Helper -->
+            <div *ngIf="doctorTabBlocked" class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-xs space-y-2 animate-in fade-in duration-200">
+              <div class="flex items-center space-x-1.5 font-bold">
+                <i class="fa-solid fa-triangle-exclamation text-amber-600"></i>
+                <span>Patient WhatsApp khul gaya ✓ (Doctor tab blocked)</span>
+              </div>
+              <p class="text-[11px] text-amber-800">
+                Browser ne doosra tab block kiya hai. Doctor ka WhatsApp kholne ke liye ye button dabayein:
+              </p>
+              <button (click)="sendReportToDoctor()" type="button"
+                class="w-full py-2 px-3 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs rounded-lg transition-colors flex items-center justify-center space-x-1.5 cursor-pointer shadow-sm">
+                <i class="fa-brands fa-whatsapp text-sm"></i>
+                <span>👉 Open Doctor WhatsApp ({{ waModalCase.doctorName.startsWith('Dr') ? waModalCase.doctorName : 'Dr. ' + waModalCase.doctorName }})</span>
+              </button>
+              <p class="text-[10px] text-amber-700 italic">
+                💡 <strong>Tip:</strong> Agli baar 1-click me dono auto-open karne ke liye browser URL bar me <strong>"Always allow pop-ups"</strong> allow kar dein.
+              </p>
+            </div>
+
+            <!-- Recipients Cards -->
+            <div class="space-y-3">
+              <!-- Patient Card -->
+              <div class="p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white hover:border-emerald-300 transition-all">
+                <div class="flex items-center justify-between mb-2">
+                  <div class="flex items-center space-x-2">
+                    <span class="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-bold">
+                      <i class="fa-solid fa-user"></i>
+                    </span>
+                    <span class="text-xs font-bold text-slate-800">Patient: {{ waModalCase.patientName || waModalCase.patient?.fullName }}</span>
+                  </div>
+                  <button (click)="sendReportToPatient()" type="button"
+                    class="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors flex items-center space-x-1 cursor-pointer">
+                    <i class="fa-brands fa-whatsapp"></i>
+                    <span>Send to Patient</span>
+                  </button>
+                </div>
+                <div class="flex items-center space-x-2">
+                  <label class="text-[11px] text-slate-500 font-medium">WhatsApp No:</label>
+                  <input type="text" [(ngModel)]="waModalCase.patientPhone" placeholder="10-digit mobile"
+                    class="flex-1 px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500 font-mono" />
+                </div>
+              </div>
+
+              <!-- Doctor Card -->
+              <div class="p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white hover:border-teal-300 transition-all">
+                <div class="flex items-center justify-between mb-2">
+                  <div class="flex items-center space-x-2">
+                    <span class="w-6 h-6 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center text-xs font-bold">
+                      <i class="fa-solid fa-user-doctor"></i>
+                    </span>
+                    <span class="text-xs font-bold text-slate-800">Doctor: {{ waModalCase.doctorName || 'Direct (Self)' }}</span>
+                  </div>
+                  <button *ngIf="waModalCase.hasDoctor" (click)="sendReportToDoctor()" type="button"
+                    class="px-3 py-1 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-lg transition-colors flex items-center space-x-1 cursor-pointer">
+                    <i class="fa-brands fa-whatsapp"></i>
+                    <span>Send to Doctor</span>
+                  </button>
+                  <span *ngIf="!waModalCase.hasDoctor" class="text-[11px] font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">
+                    Direct / Walk-in
+                  </span>
+                </div>
+                <div *ngIf="waModalCase.hasDoctor" class="flex items-center space-x-2">
+                  <label class="text-[11px] text-slate-500 font-medium">WhatsApp No:</label>
+                  <input type="text" [(ngModel)]="waModalCase.doctorPhone" placeholder="Enter Doctor's WhatsApp number"
+                    class="flex-1 px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-teal-500 font-mono" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick Help Note -->
+            <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-[11px] text-slate-500 flex items-start space-x-2">
+              <i class="fa-solid fa-circle-info text-emerald-500 mt-0.5"></i>
+              <span>
+                <strong>Tip:</strong> 1-Click dabane par dono ke WhatsApp khul jayenge aur verified PDF download link auto-fill ho jayegi.
+              </span>
+            </div>
+
+            <div class="flex justify-end pt-1">
+              <button (click)="waModalCase = null" type="button"
+                class="px-4 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
       </ng-container>
     </div>
   `
 })
-export class ResultEntryComponent implements OnInit {
+export class ResultEntryComponent implements OnInit, OnDestroy {
   public api = inject(ApiService);
   private toast = inject(ToastService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
+  private realtime = inject(RealtimeService);
+  private realtimeSubs = new Subscription();
 
   @Input() id?: string;
 
@@ -643,6 +771,8 @@ export class ResultEntryComponent implements OnInit {
   showApproveModal = false;
   showUnlockModal = false;
   unlocking = false;
+  waModalCase: any = null;
+  doctorTabBlocked = false;
   highlightEmptyFields = false;
   errorMessage = '';
 
@@ -696,6 +826,33 @@ export class ResultEntryComponent implements OnInit {
         this.cdr.detectChanges();
       }
     });
+
+    // Auto-refresh when case status updates or pathogist approves elsewhere
+    this.realtimeSubs.add(
+      this.realtime.caseStatusChanged$.subscribe(ev => {
+        if (ev.caseId === this.caseId) {
+          this.loadInvestigationDetails();
+        }
+      })
+    );
+    this.realtimeSubs.add(
+      this.realtime.reportApproved$.subscribe(ev => {
+        if (ev.caseId === this.caseId) {
+          this.loadInvestigationDetails();
+        }
+      })
+    );
+    this.realtimeSubs.add(
+      this.realtime.paymentUpdated$.subscribe(ev => {
+        if (ev.caseId === this.caseId) {
+          this.loadInvestigationDetails();
+        }
+      })
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.realtimeSubs.unsubscribe();
   }
 
   loadSubscriptionStatus(): void {
@@ -884,24 +1041,158 @@ export class ResultEntryComponent implements OnInit {
       return;
     }
 
-    const rawPhone = (this.caseDetails.patientPhone || this.caseDetails.patient?.phone || '').replace(/\D/g, '');
-    const patientName = this.caseDetails.patientName || this.caseDetails.patient?.fullName || 'Patient';
-    const caseNo = this.caseDetails.caseNumber || '';
-    const origin = window.location.origin;
-    const downloadUrl = `${origin}/report/download/${this.caseDetails.publicAccessToken}`;
+    const docName = (this.caseDetails.doctorName || '').trim();
+    const hasDoctor = !!(docName && docName.toLowerCase() !== 'direct' && docName.toLowerCase() !== 'self');
+    this.doctorTabBlocked = false;
 
-    const message = `*Namaste ${patientName} Ji*,\n\nAapki Diagnostic Test Report ready aur verify ho chuki hai (Case No: *${caseNo}*).\n\n📄 *Apni Verified Report Download karein:*\n${downloadUrl}\n\n_Thank you for choosing our Laboratory!_`;
+    this.waModalCase = {
+      ...this.caseDetails,
+      hasDoctor,
+      patientPhone: this.caseDetails.patientPhone || this.caseDetails.patient?.phone || '',
+      doctorPhone: this.caseDetails.doctorPhone || '',
+      doctorName: hasDoctor ? docName : 'Direct (Walk-in)'
+    };
+    this.cdr.detectChanges();
+  }
 
-    if (!rawPhone || rawPhone.length < 10) {
-      this.toast.warning(`Patient phone number is missing or invalid: ${this.caseDetails.patientPhone || this.caseDetails.patient?.phone || 'N/A'}`);
-      window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
-      return;
+  sendReportToBoth(): void {
+    if (!this.waModalCase) return;
+    const c = this.waModalCase;
+    this.doctorTabBlocked = false;
+
+    // 1. Open Patient WhatsApp synchronously in user click
+    const patWin = this.executePatientWhatsApp(c, true);
+
+    // 2. Open Doctor WhatsApp synchronously in user click
+    const docWin = this.executeDoctorWhatsApp(c, true);
+
+    const docName = c.doctorName || 'Doctor';
+    const patName = c.patientName || c.patient?.fullName || 'Patient';
+
+    if (patWin && docWin) {
+      this.toast.success(`1-Click Sent: Opening WhatsApp for both ${patName} & ${docName}!`);
+      this.doctorTabBlocked = false;
+    } else {
+      this.doctorTabBlocked = true;
+      this.toast.info(`Patient WhatsApp opened! Browser blocked 2nd tab. Click 'Open Doctor WhatsApp' below or allow popups.`, 'Notice', 6000);
+    }
+    this.cdr.detectChanges();
+  }
+
+  sendReportToPatient(): void {
+    if (!this.waModalCase) return;
+    this.executePatientWhatsApp(this.waModalCase);
+  }
+
+  sendReportToDoctor(): void {
+    if (!this.waModalCase) return;
+    this.executeDoctorWhatsApp(this.waModalCase);
+    this.doctorTabBlocked = false;
+    this.cdr.detectChanges();
+  }
+
+  private resolveReportToken(c: any): string | null {
+    const isValid = (val: any) =>
+      val &&
+      val !== 'undefined' &&
+      val !== 'null' &&
+      val !== '00000000-0000-0000-0000-000000000000';
+
+    return isValid(c.publicAccessToken)
+      ? c.publicAccessToken
+      : (isValid(c.PublicAccessToken)
+          ? c.PublicAccessToken
+          : (isValid(c.id) ? c.id : c.caseNumber));
+  }
+
+  private executePatientWhatsApp(c: any, silentToast = false): boolean {
+    const token = this.resolveReportToken(c);
+    if (!token) {
+      this.toast.error('Report verification token is missing. Please reload the case.');
+      return false;
     }
 
-    const targetPhone = rawPhone.length === 10 ? `91${rawPhone}` : rawPhone;
+    const rawPhone = (c.patientPhone || c.patient?.phone || '').replace(/\D/g, '');
+    const patientName = c.patientName || c.patient?.fullName || 'Patient';
+    const caseNo = c.caseNumber || '';
+    const origin = window.location.origin;
+    const downloadUrl = `${origin}/report/download/${token}`;
+
+    const message = `*Namaste ${patientName} Ji*,\n\nAapki Diagnostic Test Report ready aur verify ho chuki hai (Case No: *${caseNo}*).\n\n\uD83D\uDCC4 *Apni Verified Report Download karein:*\n${downloadUrl}\n\n_Thank you for choosing our Laboratory!_`;
+
+    const isMobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+    if (!rawPhone || rawPhone.length < 10) {
+      this.toast.warning(`Patient phone number is missing or invalid: ${c.patientPhone || c.patient?.phone || 'N/A'}`);
+      const waUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+      if (isMobile) {
+        window.location.href = waUrl;
+        return true;
+      } else {
+        const win = window.open(waUrl, '_blank');
+        return !!(win && !win.closed && typeof win.closed !== 'undefined');
+      }
+    }
+
+    const targetPhone = (rawPhone.length === 10) ? `91${rawPhone}` : (rawPhone.startsWith('91') && rawPhone.length === 12 ? rawPhone : (rawPhone.length > 10 ? rawPhone : `91${rawPhone}`));
     const waUrl = `https://wa.me/${targetPhone}?text=${encodeURIComponent(message)}`;
-    window.open(waUrl, '_blank');
-    this.toast.success(`Opening WhatsApp for ${patientName}...`);
+
+    if (isMobile) {
+      window.location.href = waUrl;
+      return true;
+    } else {
+      const win = window.open(waUrl, '_blank');
+      if (!silentToast) {
+        this.toast.success(`Opening WhatsApp for ${patientName}...`);
+      }
+      return !!(win && !win.closed && typeof win.closed !== 'undefined');
+    }
+  }
+
+  private executeDoctorWhatsApp(c: any, silentToast = false): boolean {
+    const token = this.resolveReportToken(c);
+    if (!token) {
+      this.toast.error('Report verification token is missing. Please reload the case.');
+      return false;
+    }
+
+    const rawPhone = (c.doctorPhone || '').replace(/\D/g, '');
+    const doctorName = c.doctorName || 'Doctor';
+    const patientName = c.patientName || c.patient?.fullName || 'Patient';
+    const caseNo = c.caseNumber || '';
+    const origin = window.location.origin;
+    const downloadUrl = `${origin}/report/download/${token}`;
+
+    const docTitle = doctorName.trim().toLowerCase().startsWith('dr') ? doctorName.trim() : `Dr. ${doctorName.trim()}`;
+    const message = `*Respected ${docTitle}*,\n\nDiagnostic Test Report for your referred patient *${patientName}* (Case No: *${caseNo}*) has been verified and approved.\n\n\uD83D\uDCC4 *View Verified Report:*\n${downloadUrl}\n\n_Thank you for your valuable referral!_`;
+
+    const isMobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+    if (!rawPhone || rawPhone.length < 10) {
+      this.toast.warning(`Doctor phone number is missing or not provided.`);
+      const waUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+      if (isMobile) {
+        window.location.href = waUrl;
+        return true;
+      } else {
+        const win = window.open(waUrl, '_blank');
+        return !!(win && !win.closed && typeof win.closed !== 'undefined');
+      }
+    }
+
+    const targetPhone = (rawPhone.length === 10) ? `91${rawPhone}` : (rawPhone.startsWith('91') && rawPhone.length === 12 ? rawPhone : (rawPhone.length > 10 ? rawPhone : `91${rawPhone}`));
+    const waUrl = `https://wa.me/${targetPhone}?text=${encodeURIComponent(message)}`;
+
+    if (isMobile) {
+      window.location.href = waUrl;
+      return true;
+    } else {
+      const win = window.open(waUrl, '_blank');
+      if (!silentToast) {
+        this.toast.success(`Opening WhatsApp for Dr. ${doctorName}...`);
+      }
+      return !!(win && !win.closed && typeof win.closed !== 'undefined');
+    }
   }
 
   getItemStatus(item: any): { text: string; color: string } {
@@ -1063,9 +1354,15 @@ export class ResultEntryComponent implements OnInit {
     this.api.saveInvestigationResults(payload).subscribe({
       next: () => {
         this.api.approveReport(this.caseId).subscribe({
-          next: () => {
+          next: (res: any) => {
             this.approving = false;
             this.showApproveModal = false;
+            if (this.caseDetails) {
+              this.caseDetails.status = 'Approved';
+              if (res?.publicAccessToken || res?.PublicAccessToken) {
+                this.caseDetails.publicAccessToken = res.publicAccessToken || res.PublicAccessToken;
+              }
+            }
             this.toast.success('Report verified & digitally approved with Doctor Signature!');
             this.cdr.detectChanges();
             this.loadInvestigationDetails();

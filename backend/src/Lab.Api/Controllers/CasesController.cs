@@ -1,9 +1,11 @@
+using Lab.Api.Hubs;
 using Lab.Application.Common.Interfaces;
 using Lab.Application.DTOs;
 using Lab.Domain.Entities;
 using Lab.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 namespace Lab.Api.Controllers;
@@ -16,15 +18,23 @@ public class CasesController : ControllerBase
     private readonly IApplicationDbContext _context;
     private readonly IBarcodeService _barcodeService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IHubContext<LabRealtimeHub> _hubContext;
 
     public CasesController(
         IApplicationDbContext context,
         IBarcodeService barcodeService,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IHubContext<LabRealtimeHub> hubContext)
     {
         _context = context;
         _barcodeService = barcodeService;
         _currentUserService = currentUserService;
+        _hubContext = hubContext;
+    }
+
+    private IClientProxy GetTenantGroup(Guid tenantId)
+    {
+        return _hubContext.Clients.Group($"Tenant_{tenantId.ToString().ToLowerInvariant()}");
     }
 
     [HttpGet]
@@ -84,6 +94,8 @@ public class CasesController : ControllerBase
                 PatientAgeGender = $"{c.Patient.AgeYears} Y / {c.Patient.Gender}",
                 PatientPhone = c.Patient.Phone,
                 DoctorName = c.ReferringDoctor != null ? c.ReferringDoctor.DoctorName : "Direct",
+                DoctorPhone = c.ReferringDoctor != null ? c.ReferringDoctor.Phone : null,
+                ReferringDoctorId = c.ReferringDoctorId,
                 c.OrderDate,
                 Status = c.Status.ToString(),
                 c.TotalAmount,
@@ -126,6 +138,12 @@ public class CasesController : ControllerBase
 
         if (c == null) return NotFound();
 
+        if (c.PublicAccessToken == Guid.Empty)
+        {
+            c.PublicAccessToken = Guid.NewGuid();
+            await _context.SaveChangesAsync();
+        }
+
         var dto = new CaseOrderDto(
             c.Id,
             c.TenantId,
@@ -135,6 +153,7 @@ public class CasesController : ControllerBase
             new PatientDto(c.Patient.Id, c.Patient.Uhid, c.Patient.FullName, c.Patient.Gender, c.Patient.AgeYears, c.Patient.AgeMonths, c.Patient.AgeDays, c.Patient.Phone, c.Patient.Email, c.Patient.Address, c.Patient.BloodGroup),
             c.ReferringDoctorId,
             c.ReferringDoctor?.DoctorName,
+            c.ReferringDoctor?.Phone,
             c.CollectionAgentId,
             c.CollectionAgent?.AgentName,
             c.OrderDate,
@@ -229,17 +248,25 @@ public class CasesController : ControllerBase
                     return StatusCode(402, new { message = $"Your laboratory subscription expired on {expFormatted}. Please renew your plan to register new patients and create bills." });
                 }
 
-                // Monthly Case Quota Check
+                // Monthly Case Quota Check (Strictly Enforced: Up to 100 cases/month for Starter Lab)
                 if (lab.SubscriptionPlanId.HasValue)
                 {
                     var plan = await _context.SubscriptionPlans.FirstOrDefaultAsync(p => p.Id == lab.SubscriptionPlanId.Value);
                     if (plan != null && plan.MaxCasesPerMonth > 0)
                     {
                         var startOfMonth = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
-                        var casesThisMonth = await _context.CaseOrders.CountAsync(c => c.CreatedAt >= startOfMonth);
+                        var casesThisMonth = await _context.CaseOrders
+                            .IgnoreQueryFilters()
+                            .CountAsync(c => c.TenantId == lab.Id && !c.IsDeleted && c.CreatedAt >= startOfMonth);
+
                         if (casesThisMonth >= plan.MaxCasesPerMonth)
                         {
-                            return StatusCode(402, new { message = $"You have reached your monthly quota limit of {plan.MaxCasesPerMonth} cases. Please upgrade your subscription plan to continue billing." });
+                            return StatusCode(402, new { 
+                                message = $"Monthly limit reached! Your '{plan.PlanName}' plan allows a maximum of {plan.MaxCasesPerMonth} cases/month (Used: {casesThisMonth}/{plan.MaxCasesPerMonth}). Isse zyada cases is mahine create nahi ho sakte. Please upgrade your subscription plan to continue.",
+                                casesThisMonth,
+                                maxCasesPerMonth = plan.MaxCasesPerMonth,
+                                planName = plan.PlanName
+                            });
                         }
                     }
                 }
@@ -256,6 +283,29 @@ public class CasesController : ControllerBase
                         effectiveTenantId = masterLab.Id;
                     }
                 }
+            }
+
+            // 1. Strict 10-Digit Mobile Number Validation for Patient
+            string? cleanPhone = null;
+            if (dto.NewPatient != null && !string.IsNullOrWhiteSpace(dto.NewPatient.Phone))
+            {
+                cleanPhone = new string(dto.NewPatient.Phone.Where(char.IsDigit).ToArray());
+                if (cleanPhone.Length == 11 && cleanPhone.StartsWith("0"))
+                    cleanPhone = cleanPhone.Substring(1);
+                else if (cleanPhone.Length == 12 && cleanPhone.StartsWith("91"))
+                    cleanPhone = cleanPhone.Substring(2);
+
+                if (cleanPhone.Length != 10)
+                {
+                    return BadRequest(new { message = "Patient mobile number must be exactly 10 digits." });
+                }
+
+                if (!"6789".Contains(cleanPhone[0]))
+                {
+                    return BadRequest(new { message = "Invalid mobile number. Indian mobile numbers must start with 6, 7, 8, or 9." });
+                }
+
+
             }
 
             Guid patientId;
@@ -275,8 +325,8 @@ public class CasesController : ControllerBase
                         existingPatient.AgeYears = dto.NewPatient.AgeYears;
                         existingPatient.AgeMonths = dto.NewPatient.AgeMonths;
                         existingPatient.AgeDays = dto.NewPatient.AgeDays;
-                        if (!string.IsNullOrWhiteSpace(dto.NewPatient.Phone))
-                            existingPatient.Phone = dto.NewPatient.Phone.Trim();
+                        if (!string.IsNullOrWhiteSpace(cleanPhone))
+                            existingPatient.Phone = cleanPhone;
                         if (!string.IsNullOrWhiteSpace(dto.NewPatient.Address))
                             existingPatient.Address = dto.NewPatient.Address.Trim();
                         if (!string.IsNullOrWhiteSpace(dto.NewPatient.BloodGroup))
@@ -305,7 +355,7 @@ public class CasesController : ControllerBase
                     AgeYears = dto.NewPatient.AgeYears,
                     AgeMonths = dto.NewPatient.AgeMonths,
                     AgeDays = dto.NewPatient.AgeDays,
-                    Phone = dto.NewPatient.Phone?.Trim(),
+                    Phone = cleanPhone,
                     Email = dto.NewPatient.Email?.Trim(),
                     Address = dto.NewPatient.Address?.Trim(),
                     BloodGroup = dto.NewPatient.BloodGroup
@@ -389,6 +439,7 @@ public class CasesController : ControllerBase
                 TenantId = effectiveTenantId ?? Guid.Empty,
                 CaseNumber = caseNumber,
                 Barcode = barcode,
+                PublicAccessToken = Guid.NewGuid(),
                 PatientId = patientId,
                 ReferringDoctorId = validDoctorId,
                 CollectionAgentId = validAgentId,
@@ -489,7 +540,31 @@ public class CasesController : ControllerBase
 
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetCase), new { id = caseOrder.Id }, await GetCaseDtoById(caseOrder.Id));
+            var caseDto = await GetCaseDtoById(caseOrder.Id);
+
+            // Real-Time SignalR Broadcast to all connected Web & Mobile devices in this tenant
+            try
+            {
+                await GetTenantGroup(caseOrder.TenantId).SendAsync("CaseCreated", new
+                {
+                    caseId = caseOrder.Id,
+                    caseNumber = caseOrder.CaseNumber,
+                    patientName = patientObj.FullName,
+                    uhid = patientObj.Uhid,
+                    barcode = caseOrder.Barcode,
+                    status = caseOrder.Status.ToString(),
+                    netAmount = caseOrder.NetAmount,
+                    dueAmount = caseOrder.DueAmount,
+                    orderDate = caseOrder.OrderDate,
+                    testNames = tests.Select(t => t.TestName).ToList()
+                });
+            }
+            catch (Exception hubEx)
+            {
+                Console.WriteLine($"[SignalR Broadcast Error] {hubEx.Message}");
+            }
+
+            return CreatedAtAction(nameof(GetCase), new { id = caseOrder.Id }, caseDto);
         }
         catch (Exception ex)
         {
@@ -531,6 +606,19 @@ public class CasesController : ControllerBase
         await _context.PaymentTransactions.AddAsync(tx);
 
         await _context.SaveChangesAsync();
+
+        try
+        {
+            await GetTenantGroup(caseOrder.TenantId).SendAsync("PaymentUpdated", new
+            {
+                caseId = caseOrder.Id,
+                caseNumber = caseOrder.CaseNumber,
+                paidAmount = caseOrder.PaidAmount,
+                dueAmount = caseOrder.DueAmount,
+                paymentStatus = caseOrder.PaymentStatus.ToString()
+            });
+        }
+        catch {}
 
         return Ok(new { message = "Due payment recorded successfully.", caseOrder.PaidAmount, caseOrder.DueAmount, PaymentStatus = caseOrder.PaymentStatus.ToString() });
     }
@@ -691,6 +779,27 @@ public class CasesController : ControllerBase
 
             await _context.SaveChangesAsync();
 
+            try
+            {
+                await GetTenantGroup(caseOrder.TenantId).SendAsync("PaymentUpdated", new
+                {
+                    caseId = caseOrder.Id,
+                    caseNumber = caseOrder.CaseNumber,
+                    paidAmount = caseOrder.PaidAmount,
+                    dueAmount = caseOrder.DueAmount,
+                    paymentStatus = caseOrder.PaymentStatus.ToString()
+                });
+
+                await GetTenantGroup(caseOrder.TenantId).SendAsync("CaseStatusChanged", new
+                {
+                    caseId = caseOrder.Id,
+                    caseNumber = caseOrder.CaseNumber,
+                    status = caseOrder.Status.ToString(),
+                    patientName = (await _context.Patients.Where(p => p.Id == caseOrder.PatientId).Select(p => p.FullName).FirstOrDefaultAsync()) ?? "Patient"
+                });
+            }
+            catch {}
+
             return Ok(new
             {
                 message = $"{testsToAdd.Count} test(s) added successfully to case {caseOrder.CaseNumber}.",
@@ -748,6 +857,19 @@ public class CasesController : ControllerBase
 
             await _context.SaveChangesAsync();
 
+            try
+            {
+                await GetTenantGroup(caseOrder.TenantId).SendAsync("PaymentUpdated", new
+                {
+                    caseId = caseOrder.Id,
+                    caseNumber = caseOrder.CaseNumber,
+                    paidAmount = caseOrder.PaidAmount,
+                    dueAmount = caseOrder.DueAmount,
+                    paymentStatus = caseOrder.PaymentStatus.ToString()
+                });
+            }
+            catch {}
+
             return Ok(new
             {
                 message = $"Test {itemToRemove.Test?.TestName ?? "Investigation"} removed from case.",
@@ -787,6 +909,24 @@ public class CasesController : ControllerBase
             caseOrder.SampleCollectedDate = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
+
+        try
+        {
+            var patientName = await _context.Patients
+                .Where(p => p.Id == caseOrder.PatientId)
+                .Select(p => p.FullName)
+                .FirstOrDefaultAsync() ?? "Patient";
+
+            await GetTenantGroup(caseOrder.TenantId).SendAsync("CaseStatusChanged", new
+            {
+                caseId = caseOrder.Id,
+                caseNumber = caseOrder.CaseNumber,
+                status = status.ToString(),
+                patientName = patientName
+            });
+        }
+        catch {}
+
         return Ok(new { message = "Case status updated.", status = status.ToString() });
     }
 

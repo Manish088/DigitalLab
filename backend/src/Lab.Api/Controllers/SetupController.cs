@@ -165,34 +165,51 @@ public class SetupController : ControllerBase
                 },
                 new()
                 {
-                    PlanCode = "STANDARD",
-                    PlanName = "Standard Lab Plan",
-                    Description = "Ideal for single branch standalone pathology labs.",
-                    MonthlyPrice = 999,
-                    AnnualPrice = 9990,
-                    MaxCasesPerMonth = 1500,
-                    MaxStaffAccounts = 5,
-                    HasCustomLetterhead = true,
+                    PlanCode = "STARTER",
+                    PlanName = "Starter Lab",
+                    Description = "Chhoti clinic lab & single-technician collection points.",
+                    MonthlyPrice = 399,
+                    AnnualPrice = 4790,
+                    MaxCasesPerMonth = 100,
+                    MaxStaffAccounts = 1,
+                    HasCustomLetterhead = false,
                     HasPublicQrDownload = true,
-                    HasDoctorReferralModule = true,
+                    HasDoctorReferralModule = false,
                     HasThermalPrinting = true,
+                    HasWhatsAppAlerts = false,
                     DisplayOrder = 2
                 },
                 new()
                 {
-                    PlanCode = "PREMIUM",
-                    PlanName = "Enterprise / Multi-Branch",
-                    Description = "Unlimited cases, multi-centre collection tracking, WhatsApp alerts.",
-                    MonthlyPrice = 1999,
-                    AnnualPrice = 19990,
-                    MaxCasesPerMonth = 10000,
-                    MaxStaffAccounts = 25,
+                    PlanCode = "PRO",
+                    PlanName = "Pro Lab",
+                    Description = "Medium diagnostic labs with high daily footfall.",
+                    MonthlyPrice = 799,
+                    AnnualPrice = 9590,
+                    MaxCasesPerMonth = 0,
+                    MaxStaffAccounts = 5,
                     HasCustomLetterhead = true,
                     HasPublicQrDownload = true,
                     HasDoctorReferralModule = true,
                     HasThermalPrinting = true,
                     HasWhatsAppAlerts = true,
                     DisplayOrder = 3
+                },
+                new()
+                {
+                    PlanCode = "ADVANCED",
+                    PlanName = "Advanced / Multi-Branch",
+                    Description = "Badi Lab, Hospital diagnostic labs & franchise chains.",
+                    MonthlyPrice = 1599,
+                    AnnualPrice = 18990,
+                    MaxCasesPerMonth = 0,
+                    MaxStaffAccounts = 25,
+                    HasCustomLetterhead = true,
+                    HasPublicQrDownload = true,
+                    HasDoctorReferralModule = true,
+                    HasThermalPrinting = true,
+                    HasWhatsAppAlerts = true,
+                    DisplayOrder = 4
                 }
             };
             await _context.SubscriptionPlans.AddRangeAsync(plans);

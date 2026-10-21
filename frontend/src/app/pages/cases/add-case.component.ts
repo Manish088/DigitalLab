@@ -209,16 +209,23 @@ import { DoctorReferral, CollectionAgent, TestMaster, TestCategory, Gender, Prio
 
               <!-- Mobile Number with Live Dropdown Popup -->
               <div class="relative">
-                <label class="block text-xs font-semibold text-slate-700 mb-1 flex justify-between items-center">
-                  <span>Mobile Number *</span>
-                  <span *ngIf="showPatientDropdown && activeSearchContext === 'phone' && existingPatients.length > 0" class="text-[11px] text-emerald-600 font-semibold">
-                    {{ existingPatients.length }} match(es) 👇
-                  </span>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">
+                  Mobile Number *
                 </label>
                 <div class="relative">
-                  <input type="tel" [(ngModel)]="patient.phone" (input)="onPhoneChange(patient.phone)" (blur)="onPhoneBlur()" placeholder="7706087066"
-                    class="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 text-xs font-bold">
+                    +91
+                  </div>
+                  <input type="tel" [(ngModel)]="patient.phone" (input)="onPhoneInput($event)" (blur)="onPhoneBlur()"
+                    placeholder="10-digit number" maxlength="10" inputmode="numeric" required
+                    [class.border-rose-500]="patient.phone && !phoneStatus.valid"
+                    [class.focus:ring-rose-400]="patient.phone && !phoneStatus.valid"
+                    [class.border-emerald-500]="phoneStatus.valid"
+                    [class.focus:ring-emerald-400]="phoneStatus.valid"
+                    class="w-full pl-10 pr-8 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none transition-colors">
                   <i *ngIf="searchingPatients && activeSearchContext === 'phone'" class="fa-solid fa-circle-notch fa-spin absolute right-3 top-3 text-emerald-600 text-xs"></i>
+                  <i *ngIf="!searchingPatients && phoneStatus.valid" class="fa-solid fa-circle-check absolute right-3 top-3 text-emerald-500 text-sm"></i>
+                  <i *ngIf="!searchingPatients && patient.phone && !phoneStatus.valid" class="fa-solid fa-circle-xmark absolute right-3 top-3 text-rose-500 text-sm"></i>
                 </div>
 
                 <!-- Attached Mobile Number Dropdown Suggestions Popup -->
@@ -740,20 +747,41 @@ export class AddCaseComponent implements OnInit {
     });
   }
 
-  onPhoneChange(phone: string): void {
+  get phoneStatus(): { valid: boolean; text?: string; color?: string } {
+    const p = this.patient.phone;
+    if (!p || p.length !== 10) return { valid: false };
+    if (!/^[6-9]/.test(p)) return { valid: false };
+
+    return { valid: true };
+  }
+
+  onPhoneInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    let digits = (input.value || '').replace(/\D/g, '');
+    if (digits.length === 11 && digits.startsWith('0')) {
+      digits = digits.substring(1);
+    } else if (digits.length === 12 && digits.startsWith('91')) {
+      digits = digits.substring(2);
+    }
+    if (digits.length > 10) {
+      digits = digits.slice(0, 10);
+    }
+    this.patient.phone = digits;
+    input.value = digits;
+
     if (this.selectedPatientId) return;
-    if (phone && phone.trim().length >= 3) {
-      this.onPatientSearchInput(phone, 'phone');
+    if (digits.length >= 3) {
+      this.onPatientSearchInput(digits, 'phone');
     } else {
       this.existingPatients = [];
       this.showPatientDropdown = false;
-      this.cdr.detectChanges();
     }
+    this.cdr.detectChanges();
   }
 
   onPhoneBlur(): void {
     const phone = this.patient.phone;
-    if (!this.selectedPatientId && phone && phone.trim().length >= 10) {
+    if (!this.selectedPatientId && phone && phone.trim().length === 10) {
       this.onPatientSearchInput(phone, 'phone');
     }
   }
@@ -869,6 +897,14 @@ export class AddCaseComponent implements OnInit {
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
+
+    if (!this.patient.phone || this.patient.phone.trim().length !== 10 || !this.phoneStatus.valid) {
+      this.validationError = 'Please enter a valid 10-digit Indian mobile number (must start with 6, 7, 8 or 9).';
+      this.toast.warning('Please enter a valid 10-digit mobile number.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
     if (this.selectedTests.length === 0) {
       this.validationError = 'Please select at least one Test / Investigation package from the catalog.';
       this.toast.warning('Please select at least one Test from catalog.');

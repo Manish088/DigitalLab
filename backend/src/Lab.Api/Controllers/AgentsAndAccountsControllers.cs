@@ -176,11 +176,13 @@ public class LetterheadController : ControllerBase
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly UserManager<ApplicationUser> _userManager;
 
-    public LetterheadController(IApplicationDbContext context, ICurrentUserService currentUserService)
+    public LetterheadController(IApplicationDbContext context, ICurrentUserService currentUserService, UserManager<ApplicationUser> userManager)
     {
         _context = context;
         _currentUserService = currentUserService;
+        _userManager = userManager;
     }
 
     [HttpGet]
@@ -275,7 +277,22 @@ public class LetterheadController : ControllerBase
         lab.Tagline = dto.Tagline;
         lab.OwnerName = dto.OwnerName;
         lab.Phone = dto.Phone;
-        lab.Email = dto.Email;
+        if (!string.IsNullOrWhiteSpace(dto.Email) && dto.Email.Contains('@') && dto.Email.Contains('.'))
+        {
+            var cleanLabEmail = dto.Email.Trim().ToLowerInvariant();
+            lab.Email = cleanLabEmail;
+            var adminUser = await _userManager.Users.FirstOrDefaultAsync(u => u.TenantId == tenantId && u.Role == "LabAdmin");
+            if (adminUser != null)
+            {
+                adminUser.Email = cleanLabEmail;
+                adminUser.UserName = cleanLabEmail;
+                await _userManager.UpdateAsync(adminUser);
+            }
+        }
+        else
+        {
+            lab.Email = dto.Email;
+        }
         lab.Address = dto.Address;
         lab.City = dto.City;
         lab.State = dto.State;
@@ -438,11 +455,13 @@ public class StaffController : ControllerBase
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IApplicationDbContext _context;
 
-    public StaffController(UserManager<ApplicationUser> userManager, ICurrentUserService currentUserService)
+    public StaffController(UserManager<ApplicationUser> userManager, ICurrentUserService currentUserService, IApplicationDbContext context)
     {
         _userManager = userManager;
         _currentUserService = currentUserService;
+        _context = context;
     }
 
     [HttpGet]
@@ -470,6 +489,30 @@ public class StaffController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateStaff([FromBody] CreateStaffUserRequest req)
     {
+        var tenantId = _currentUserService.TenantId;
+        if (tenantId.HasValue && tenantId.Value != Guid.Empty)
+        {
+            var lab = await _context.Tenants.FirstOrDefaultAsync(t => t.Id == tenantId.Value);
+            if (lab != null && lab.SubscriptionPlanId.HasValue)
+            {
+                var plan = await _context.SubscriptionPlans.FirstOrDefaultAsync(p => p.Id == lab.SubscriptionPlanId.Value);
+                if (plan != null && plan.MaxStaffAccounts > 0)
+                {
+                    var activeStaffCount = await _userManager.Users
+                        .CountAsync(u => u.TenantId == tenantId.Value && u.Role != "LabAdmin" && u.Role != "SuperAdmin" && u.IsActive);
+                    if (activeStaffCount >= plan.MaxStaffAccounts)
+                    {
+                        return StatusCode(402, new { 
+                            message = $"Staff account limit reached! Your '{plan.PlanName}' plan allows a maximum of {plan.MaxStaffAccounts} staff user account(s). Please upgrade your subscription plan to add more staff.",
+                            activeStaffCount,
+                            maxStaffAccounts = plan.MaxStaffAccounts,
+                            planName = plan.PlanName
+                        });
+                    }
+                }
+            }
+        }
+
         var existing = await _userManager.FindByEmailAsync(req.Email);
         if (existing != null)
             return BadRequest(new { message = "Email already in use." });

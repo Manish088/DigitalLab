@@ -2,6 +2,7 @@ import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
+import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
 import { LetterheadConfig } from '../../core/models/lims.models';
 import { environment } from '../../../environments/environment';
@@ -315,7 +316,7 @@ import { environment } from '../../../environments/environment';
                       <div>
                         <h1 class="text-base font-black text-brand-700 tracking-tight leading-none">{{ config.labName }}</h1>
                         <p class="text-[10px] text-slate-500 italic">{{ config.tagline }}</p>
-                        <p class="text-[9px] text-slate-600 mt-0.5">{{ config.address }} • Phone: {{ config.phone }}</p>
+                        <p class="text-[9px] text-slate-600 mt-0.5">{{ config.address }} • Phone: {{ config.phone }}<span *ngIf="config.email"> • Email: {{ config.email }}</span></p>
                       </div>
                     </div>
                     <div class="text-right text-[9px] space-y-1">
@@ -420,6 +421,7 @@ import { environment } from '../../../environments/environment';
 })
 export class LetterheadComponent implements OnInit {
   private api = inject(ApiService);
+  private authService = inject(AuthService);
   private toast = inject(ToastService);
   private cdr = inject(ChangeDetectorRef);
 
@@ -497,6 +499,12 @@ export class LetterheadComponent implements OnInit {
     this.api.updateLetterheadConfig(this.config).subscribe({
       next: () => {
         this.saving = false;
+        const curUser = this.authService.currentUserSignal();
+        if (curUser && this.config?.email) {
+          const updatedProfile = { ...curUser, email: this.config.email.trim().toLowerCase() };
+          localStorage.setItem('lab_user_profile', JSON.stringify(updatedProfile));
+          this.authService.currentUserSignal.set(updatedProfile);
+        }
         this.cdr.detectChanges();
         this.toast.success('Letterhead, logo, and branding settings saved successfully!');
       },

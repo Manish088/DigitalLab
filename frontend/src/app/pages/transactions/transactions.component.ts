@@ -1,8 +1,10 @@
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Subscription } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
+import { RealtimeService } from '../../core/services/realtime.service';
 
 @Component({
   selector: 'app-transactions',
@@ -265,10 +267,12 @@ import { ToastService } from '../../core/services/toast.service';
     </div>
   `
 })
-export class TransactionsComponent implements OnInit {
+export class TransactionsComponent implements OnInit, OnDestroy {
   private api = inject(ApiService);
   private toast = inject(ToastService);
   private cdr = inject(ChangeDetectorRef);
+  private realtime = inject(RealtimeService);
+  private subs = new Subscription();
 
   transactions: any[] = [];
   totalCollection = 0;
@@ -330,6 +334,14 @@ export class TransactionsComponent implements OnInit {
     this.api.getLetterheadConfig().subscribe(cfg => {
       if (cfg?.labName) this.labName = cfg.labName;
     });
+
+    // Auto-refresh financial ledger on any payment receipt or new case billing
+    this.subs.add(this.realtime.paymentUpdated$.subscribe(() => this.loadTransactions()));
+    this.subs.add(this.realtime.caseCreated$.subscribe(() => this.loadTransactions()));
+  }
+
+  ngOnDestroy(): void {
+    this.subs.unsubscribe();
   }
 
   onFilterChange(): void {
