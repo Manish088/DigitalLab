@@ -94,8 +94,8 @@ export class AuthService {
     }
   }
 
-  sendOtp(phone: string): Observable<{ success: boolean; message: string; phone: string; demoOtp?: string; expiresInSeconds: number }> {
-    return this.http.post<{ success: boolean; message: string; phone: string; demoOtp?: string; expiresInSeconds: number }>(`${this.baseUrl}/send-otp`, { phone });
+  sendOtp(phone: string, email?: string): Observable<{ success: boolean; message: string; phone: string; demoOtp?: string; expiresInSeconds: number }> {
+    return this.http.post<{ success: boolean; message: string; phone: string; demoOtp?: string; expiresInSeconds: number }>(`${this.baseUrl}/send-otp`, { phone, email });
   }
 
   verifyOtp(phone: string, otp: string): Observable<{ success: boolean; message: string }> {

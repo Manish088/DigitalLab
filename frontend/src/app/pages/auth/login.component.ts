@@ -549,7 +549,7 @@ export class LoginComponent implements OnInit, OnDestroy {
     this.errorMessage = '';
     this.cdr.markForCheck();
 
-    this.authService.sendOtp(cleanPhone).subscribe({
+    this.authService.sendOtp(cleanPhone, this.regData.email?.trim().toLowerCase()).subscribe({
       next: (res) => {
         this.sendingOtp = false;
         this.demoOtp = res.demoOtp || '';
@@ -627,7 +627,7 @@ export class LoginComponent implements OnInit, OnDestroy {
     this.otpError = '';
     this.cdr.markForCheck();
 
-    this.authService.sendOtp(cleanPhone).subscribe({
+    this.authService.sendOtp(cleanPhone, this.regData.email?.trim().toLowerCase()).subscribe({
       next: (res) => {
         this.resendingOtp = false;
         this.demoOtp = res.demoOtp || '';

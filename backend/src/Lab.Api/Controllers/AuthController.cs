@@ -136,10 +136,30 @@ public class AuthController : ControllerBase
 
 
 
-        // Check if already registered
+        // Check duplicate email (if provided)
+        if (!string.IsNullOrWhiteSpace(request.Email))
+        {
+            var checkEmail = request.Email.Trim().ToLowerInvariant();
+            if (checkEmail.Contains('@') && checkEmail.Contains('.'))
+            {
+                var existingUserByEmail = await _userManager.FindByEmailAsync(checkEmail);
+                if (existingUserByEmail != null)
+                    return BadRequest(new { message = "An account with this email address is already registered. Please Sign In with this email or use a different email." });
+
+                var existingTenantByEmail = await _context.Tenants.FirstOrDefaultAsync(t => t.Email != null && t.Email.ToLower() == checkEmail);
+                if (existingTenantByEmail != null)
+                    return BadRequest(new { message = "An account with this email address is already registered. Please Sign In with this email or use a different email." });
+            }
+        }
+
+        // Check duplicate mobile number in AspNetUsers and Tenants
         var existingUser = await _userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == cleanPhone || u.UserName == cleanPhone || u.Email == $"{cleanPhone}@digitlab.in");
         if (existingUser != null)
-            return BadRequest(new { message = "An account with this mobile number already exists. Please Sign In." });
+            return BadRequest(new { message = "An account with this mobile number is already registered. Please Sign In with this number or use a different number." });
+
+        var existingTenantByPhone = await _context.Tenants.FirstOrDefaultAsync(t => t.Phone == cleanPhone);
+        if (existingTenantByPhone != null)
+            return BadRequest(new { message = "An account with this mobile number is already registered. Please Sign In with this number or use a different number." });
 
         // Rate limit check
         var rateKey = $"otp_rate_{cleanPhone}";
@@ -272,15 +292,27 @@ public class AuthController : ControllerBase
 
         var userEmail = request.Email.Trim().ToLowerInvariant();
 
+        // 1. Check duplicate email in AspNetUsers
         var existingUser = await _userManager.FindByEmailAsync(userEmail);
         if (existingUser != null)
-            return BadRequest(new { message = "An account with this email address already exists. Please Sign In." });
+            return BadRequest(new { message = "An account with this email address is already registered. Please Sign In with this email or use a different email." });
 
+        // 2. Check duplicate email in Tenants
+        var existingTenantByEmail = await _context.Tenants.FirstOrDefaultAsync(t => t.Email != null && t.Email.ToLower() == userEmail);
+        if (existingTenantByEmail != null)
+            return BadRequest(new { message = "An account with this email address is already registered. Please Sign In with this email or use a different email." });
+
+        // 3. Check duplicate phone in AspNetUsers
         if (!string.IsNullOrWhiteSpace(cleanPhone))
         {
-            var existingByPhone = await _userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == cleanPhone || u.UserName == cleanPhone);
+            var existingByPhone = await _userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == cleanPhone || u.UserName == cleanPhone || u.Email == $"{cleanPhone}@digitlab.in");
             if (existingByPhone != null)
-                return BadRequest(new { message = "An account with this mobile number already exists. Please Sign In." });
+                return BadRequest(new { message = "An account with this mobile number is already registered. Please Sign In with this number or use a different number." });
+
+            // 4. Check duplicate phone in Tenants
+            var existingTenantByPhone = await _context.Tenants.FirstOrDefaultAsync(t => t.Phone == cleanPhone);
+            if (existingTenantByPhone != null)
+                return BadRequest(new { message = "An account with this mobile number is already registered. Please Sign In with this number or use a different number." });
         }
 
         var labCode = "LAB" + new Random().Next(1000, 9999);
