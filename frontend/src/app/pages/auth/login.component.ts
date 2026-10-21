@@ -490,11 +490,7 @@ export class LoginComponent implements OnInit, OnDestroy {
     if (p.length < 10) {
       return { valid: false, text: `${p.length}/10 digits`, color: 'text-slate-400 font-medium' };
     }
-    const uniqueDigits = new Set(p.split('')).size;
-    const dummySequences = ['9876543210', '8765432109', '7654321098', '6789012345', '7890123456', '8901234567', '9012345678', '9123456789', '9898989898', '9988776655'];
-    if (uniqueDigits < 3 || dummySequences.includes(p)) {
-      return { valid: false, text: 'Dummy number', color: 'text-rose-500 font-bold' };
-    }
+
     return { valid: true, text: '✓ Valid Number', color: 'text-emerald-600 font-bold' };
   }
 
@@ -541,18 +537,7 @@ export class LoginComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const uniqueDigits = new Set(cleanPhone.split('')).size;
-    const dummySequences = [
-      '9876543210', '8765432109', '7654321098',
-      '6789012345', '7890123456', '8901234567', '9012345678',
-      '9123456789', '9898989898', '9988776655'
-    ];
 
-    if (uniqueDigits < 3 || dummySequences.includes(cleanPhone)) {
-      this.errorMessage = 'Please enter a genuine active mobile number (fake or repetitive dummy numbers are not allowed).';
-      this.cdr.markForCheck();
-      return;
-    }
 
     if (this.regData.password.length < 6) {
       this.errorMessage = 'Password must be at least 6 characters.';

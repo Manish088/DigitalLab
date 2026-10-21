@@ -751,11 +751,7 @@ export class AddCaseComponent implements OnInit {
     const p = this.patient.phone;
     if (!p || p.length !== 10) return { valid: false };
     if (!/^[6-9]/.test(p)) return { valid: false };
-    const uniqueDigits = new Set(p.split('')).size;
-    const dummySequences = ['9876543210', '8765432109', '7654321098', '6789012345', '7890123456', '8901234567', '9012345678', '9123456789', '9898989898', '8989898989', '9988776655'];
-    if (uniqueDigits < 3 || dummySequences.includes(p)) {
-      return { valid: false };
-    }
+
     return { valid: true };
   }
 

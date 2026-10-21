@@ -305,12 +305,7 @@ public class CasesController : ControllerBase
                     return BadRequest(new { message = "Invalid mobile number. Indian mobile numbers must start with 6, 7, 8, or 9." });
                 }
 
-                var uniqueCount = cleanPhone.Distinct().Count();
-                var dummyNumbers = new[] { "9876543210", "8765432109", "7654321098", "6789012345", "7890123456", "8901234567", "9012345678", "9123456789", "9898989898", "8989898989", "9988776655" };
-                if (uniqueCount < 3 || dummyNumbers.Contains(cleanPhone))
-                {
-                    return BadRequest(new { message = "Please enter a valid mobile number. Fake or repeated dummy numbers are not allowed." });
-                }
+
             }
 
             Guid patientId;
