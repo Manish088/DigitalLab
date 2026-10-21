@@ -360,10 +360,7 @@ import { RealtimeService } from '../../../core/services/realtime.service';
             </div>
 
             <div>
-              <label class="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
-                <span>Email Address *</span>
-                <span class="text-[10px] text-brand-600 font-normal">Real Email (e.g. rahul&#64;gmail.com)</span>
-              </label>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Email Address *</label>
               <input type="email" [(ngModel)]="profileForm.email" placeholder="e.g. yourname@gmail.com"
                 class="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none">
               <p class="text-[10px] text-slate-400 mt-1">This email appears on your reports and is used for login.</p>
