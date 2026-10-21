@@ -250,8 +250,20 @@ import { environment } from '../../../environments/environment';
 
             <div>
               <label class="block text-xs font-bold text-slate-700 mb-1">Server URL</label>
-              <input type="text" [(ngModel)]="customServerInput" placeholder="http://10.17.135.22:5000"
+              <input type="text" [(ngModel)]="customServerInput" placeholder="http://192.168.0.196:5000"
                 class="w-full px-3 py-2 text-xs font-mono border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none">
+            </div>
+
+            <div class="space-y-1.5 pt-1">
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">1-Tap Quick Presets:</span>
+              <button type="button" (click)="customServerInput = 'http://192.168.0.196:5000'" class="w-full text-left px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 rounded-lg text-xs font-medium text-slate-700 border border-slate-200 transition-all flex items-center justify-between">
+                <span>💻 Laptop Wi-Fi IP</span>
+                <span class="font-mono text-[10px] text-brand-600">192.168.0.196:5000</span>
+              </button>
+              <button type="button" (click)="customServerInput = 'https://digitlab.runasp.net'" class="w-full text-left px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 rounded-lg text-xs font-medium text-slate-700 border border-slate-200 transition-all flex items-center justify-between">
+                <span>☁️ Live Cloud Server</span>
+                <span class="font-mono text-[10px] text-emerald-600">digitlab.runasp.net</span>
+              </button>
             </div>
 
             <div class="flex items-center space-x-2 pt-2">

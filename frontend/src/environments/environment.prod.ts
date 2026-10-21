@@ -17,7 +17,7 @@ function resolveApiUrl(): string {
   
   if (isCapacitor) {
     // Default to the host PC's Wi-Fi network IP for local wireless testing
-    return 'http://10.17.135.22:5000/api';
+    return 'http://192.168.0.196:5000/api';
   }
 
   // 3. Web Browser in development
