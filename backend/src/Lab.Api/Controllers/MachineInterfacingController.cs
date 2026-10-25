@@ -42,7 +42,13 @@ public class MachineInterfacingController : ControllerBase
         ["RDW"] = new[] { "RDW", "RDW-CV", "RDW-SD" },
         ["GLUF"] = new[] { "GLUF", "FBS", "GLU", "GLUCOSE", "BSF", "FASTING BLOOD SUGAR", "FASTING GLUCOSE" },
         ["FBS"] = new[] { "GLUF", "FBS", "GLU", "GLUCOSE", "BSF", "FASTING BLOOD SUGAR", "FASTING GLUCOSE" },
-        ["PPBS"] = new[] { "PPBS", "BSPP", "POST PRANDIAL BLOOD SUGAR" },
+        ["GLUPP"] = new[] { "GLUPP", "PPBS", "BSPP", "POST PRANDIAL BLOOD SUGAR", "POST PRANDIAL GLUCOSE", "GLUCOSE PP", "PP BLOOD SUGAR" },
+        ["PPBS"] = new[] { "GLUPP", "PPBS", "BSPP", "POST PRANDIAL BLOOD SUGAR", "POST PRANDIAL GLUCOSE", "GLUCOSE PP", "PP BLOOD SUGAR" },
+        ["CRP_VAL"] = new[] { "CRP_VAL", "CRP", "C-REACTIVE PROTEIN", "C REACTIVE PROTEIN", "HSCRP" },
+        ["CRP"] = new[] { "CRP_VAL", "CRP", "C-REACTIVE PROTEIN", "C REACTIVE PROTEIN", "HSCRP" },
+        ["DENG_NS1"] = new[] { "DENG_NS1", "NS1", "DENGUE NS1", "DENGUE NS1 ANTIGEN" },
+        ["DENG_IGG"] = new[] { "DENG_IGG", "DENGUE IGG", "IGG" },
+        ["DENG_IGM"] = new[] { "DENG_IGM", "DENGUE IGM", "IGM" },
         ["RBS"] = new[] { "RBS", "RANDOM BLOOD SUGAR" },
         ["CREAT"] = new[] { "CREAT", "CREATININE", "CREA" },
         ["UREA"] = new[] { "UREA", "BUN", "BLOOD UREA" },
@@ -542,10 +548,16 @@ public class MachineInterfacingController : ControllerBase
                     new() { ParameterCode = "MONO", Value = "5", Unit = "%" },
                     new() { ParameterCode = "EOS", Value = "2", Unit = "%" },
                     new() { ParameterCode = "BASO", Value = "1", Unit = "%" },
-                    // Biochemistry (FBS / Glucose)
+                    // Biochemistry & Immunoassay (FBS, PPBS, CRP, Dengue, KFT)
                     new() { ParameterCode = "GLUF", Value = "92", Unit = "mg/dL" },
                     new() { ParameterCode = "FBS", Value = "92", Unit = "mg/dL" },
-                    new() { ParameterCode = "PPBS", Value = "130", Unit = "mg/dL" },
+                    new() { ParameterCode = "GLUPP", Value = "128", Unit = "mg/dL" },
+                    new() { ParameterCode = "PPBS", Value = "128", Unit = "mg/dL" },
+                    new() { ParameterCode = "CRP_VAL", Value = "3.2", Unit = "mg/L" },
+                    new() { ParameterCode = "CRP", Value = "3.2", Unit = "mg/L" },
+                    new() { ParameterCode = "DENG_NS1", Value = "Negative" },
+                    new() { ParameterCode = "DENG_IGG", Value = "Negative" },
+                    new() { ParameterCode = "DENG_IGM", Value = "Negative" },
                     new() { ParameterCode = "CREAT", Value = "0.95", Unit = "mg/dL" },
                     new() { ParameterCode = "UREA", Value = "28", Unit = "mg/dL" }
                 };
