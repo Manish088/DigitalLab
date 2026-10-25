@@ -40,7 +40,8 @@ public class MachineInterfacingController : ControllerBase
         ["MCH"] = new[] { "MCH" },
         ["MCHC"] = new[] { "MCHC" },
         ["RDW"] = new[] { "RDW", "RDW-CV", "RDW-SD" },
-        ["FBS"] = new[] { "FBS", "GLU", "GLUCOSE", "BSF", "FASTING BLOOD SUGAR" },
+        ["GLUF"] = new[] { "GLUF", "FBS", "GLU", "GLUCOSE", "BSF", "FASTING BLOOD SUGAR", "FASTING GLUCOSE" },
+        ["FBS"] = new[] { "GLUF", "FBS", "GLU", "GLUCOSE", "BSF", "FASTING BLOOD SUGAR", "FASTING GLUCOSE" },
         ["PPBS"] = new[] { "PPBS", "BSPP", "POST PRANDIAL BLOOD SUGAR" },
         ["RBS"] = new[] { "RBS", "RANDOM BLOOD SUGAR" },
         ["CREAT"] = new[] { "CREAT", "CREATININE", "CREA" },
@@ -523,6 +524,49 @@ public class MachineInterfacingController : ControllerBase
 
         switch (dto.MachinePreset)
         {
+            case "All_Tests":
+            case "All":
+                results = new List<MachineParameterResultDto>
+                {
+                    // Hematology (CBC)
+                    new() { ParameterCode = "HGB", Value = "14.2", Unit = "g/dL" },
+                    new() { ParameterCode = "WBC", Value = "7400", Unit = "/cumm" },
+                    new() { ParameterCode = "PLT", Value = "245000", Unit = "cells/cumm" },
+                    new() { ParameterCode = "RBC", Value = "4.85", Unit = "mil/cumm" },
+                    new() { ParameterCode = "PCV", Value = "42.5", Unit = "%" },
+                    new() { ParameterCode = "MCV", Value = "88.2", Unit = "fL" },
+                    new() { ParameterCode = "MCH", Value = "29.4", Unit = "pg" },
+                    new() { ParameterCode = "MCHC", Value = "33.5", Unit = "g/dL" },
+                    new() { ParameterCode = "NEUT", Value = "62", Unit = "%" },
+                    new() { ParameterCode = "LYMPH", Value = "30", Unit = "%" },
+                    new() { ParameterCode = "MONO", Value = "5", Unit = "%" },
+                    new() { ParameterCode = "EOS", Value = "2", Unit = "%" },
+                    new() { ParameterCode = "BASO", Value = "1", Unit = "%" },
+                    // Biochemistry (FBS / Glucose)
+                    new() { ParameterCode = "GLUF", Value = "92", Unit = "mg/dL" },
+                    new() { ParameterCode = "FBS", Value = "92", Unit = "mg/dL" },
+                    new() { ParameterCode = "PPBS", Value = "130", Unit = "mg/dL" },
+                    new() { ParameterCode = "CREAT", Value = "0.95", Unit = "mg/dL" },
+                    new() { ParameterCode = "UREA", Value = "28", Unit = "mg/dL" }
+                };
+                break;
+
+            case "Biochemistry_FBS":
+            case "FBS":
+                results = new List<MachineParameterResultDto>
+                {
+                    new() { ParameterCode = "GLUF", Value = "92", Unit = "mg/dL" },
+                    new() { ParameterCode = "FBS", Value = "92", Unit = "mg/dL" }
+                };
+                break;
+
+            case "Biochemistry_FBS_High":
+                results = new List<MachineParameterResultDto>
+                {
+                    new() { ParameterCode = "GLUF", Value = "245", Unit = "mg/dL" },
+                    new() { ParameterCode = "FBS", Value = "245", Unit = "mg/dL" }
+                };
+                break;
             case "Severe_Anemia":
                 results = new List<MachineParameterResultDto>
                 {

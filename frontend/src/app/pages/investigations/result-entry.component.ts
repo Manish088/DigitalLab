@@ -324,7 +324,8 @@ import { TestMaster, TestCategory } from '../../core/models/lims.models';
 
         <!-- Machine Interfacing & Test Simulator Modal Popup -->
         <div *ngIf="showMachineModal" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 transform transition-all animate-in fade-in zoom-in-95 duration-200">
+          <div class="bg-white rounded-3xl max-w-xl w-full p-6 shadow-2xl border border-slate-100 transform transition-all animate-in fade-in zoom-in-95 duration-200">
+            <!-- Header -->
             <div class="flex items-center justify-between pb-3 border-b border-slate-100">
               <div class="flex items-center space-x-3">
                 <div class="w-10 h-10 rounded-xl bg-violet-100 text-violet-600 flex items-center justify-center shadow-inner">
@@ -332,10 +333,10 @@ import { TestMaster, TestCategory } from '../../core/models/lims.models';
                 </div>
                 <div>
                   <h3 class="text-base font-bold text-slate-900 font-heading">Analyzer Machine Sync</h3>
-                  <p class="text-xs text-slate-500">ASTM 1381/1394 & HL7 Analyzer Interfacing</p>
+                  <p class="text-xs text-slate-500">Hematology & Biochemistry Machine Interfacing</p>
                 </div>
               </div>
-              <button type="button" (click)="closeMachineModal()" class="text-slate-400 hover:text-slate-600 p-1">
+              <button type="button" (click)="closeMachineModal()" class="text-slate-400 hover:text-slate-600 p-1 cursor-pointer">
                 <i class="fa-solid fa-xmark text-lg"></i>
               </button>
             </div>
@@ -347,68 +348,102 @@ import { TestMaster, TestCategory } from '../../core/models/lims.models';
                   <div class="text-[11px] font-semibold text-violet-800 uppercase tracking-wider">Sample Barcode ID</div>
                   <div class="text-lg font-mono font-bold text-slate-900">{{ caseDetails?.barcode || caseDetails?.caseNumber }}</div>
                 </div>
-                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
-                  <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse mr-1.5"></span>
-                  Port 5100 Ready
-                </span>
-              </div>
-
-              <div class="text-xs text-slate-600 leading-relaxed bg-slate-50 p-3.5 rounded-xl border border-slate-200">
-                <div class="font-bold text-slate-800 mb-1 flex items-center">
-                  <i class="fa-solid fa-circle-info text-blue-500 mr-1.5"></i> Live Analyzer Connection:
+                <div class="text-right">
+                  <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse mr-1.5"></span>
+                    Port 5100 Ready
+                  </span>
+                  <div class="text-[10px] text-slate-500 mt-1">ASTM / HL7 Socket</div>
                 </div>
-                When your Mindray / Sysmex / Erba analyzer runs this blood sample, results transfer instantly into this report without any manual typing.
               </div>
 
-              <!-- Simulation Options -->
+              <!-- 1-Click Sync ALL Tests (CBC + FBS + Biochemistry) -->
+              <button type="button" (click)="runSimulation('All_Tests')" [disabled]="simulating"
+                class="w-full p-3.5 rounded-2xl bg-gradient-to-r from-violet-600 via-indigo-600 to-brand-600 hover:from-violet-500 hover:to-brand-500 text-white shadow-lg shadow-violet-500/25 transition-all text-left flex items-center justify-between cursor-pointer border border-violet-400/30">
+                <div>
+                  <div class="font-bold text-sm flex items-center">
+                    <i class="fa-solid fa-bolt mr-2 text-amber-300"></i>
+                    Sync All Tests in this Case (CBC + FBS)
+                  </div>
+                  <div class="text-xs text-violet-100 mt-0.5">Automatically syncs both Blood Glucose (FBS) and Complete Blood Count together</div>
+                </div>
+                <div class="ml-3 flex-shrink-0">
+                  <span *ngIf="!simulating" class="px-2.5 py-1 bg-white/20 rounded-lg text-xs font-bold">1-Click</span>
+                  <i *ngIf="simulating" class="fa-solid fa-spinner fa-spin text-base"></i>
+                </div>
+              </button>
+
+              <!-- Option 1: Hematology (CBC Machine) -->
               <div>
-                <div class="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 flex items-center justify-between">
-                  <span>1-Click Test Simulation (No Machine Needed):</span>
-                  <i *ngIf="simulating" class="fa-solid fa-spinner fa-spin text-violet-600"></i>
+                <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center">
+                  <i class="fa-solid fa-droplet text-red-500 mr-1.5"></i> 1. Hematology Analyzer (Mindray / Sysmex CBC):
                 </div>
-                <div class="grid grid-cols-2 gap-2.5">
+                <div class="grid grid-cols-2 gap-2">
                   <button type="button" (click)="runSimulation('Mindray_CBC')" [disabled]="simulating"
-                    class="p-3 rounded-xl border border-slate-200 hover:border-violet-400 bg-white hover:bg-violet-50/50 text-left transition-all cursor-pointer">
+                    class="p-2.5 rounded-xl border border-slate-200 hover:border-violet-400 bg-white hover:bg-violet-50/40 text-left transition-all cursor-pointer">
                     <div class="font-bold text-xs text-slate-900 flex items-center">
                       <i class="fa-solid fa-check-circle text-emerald-500 mr-1.5"></i> Normal CBC
                     </div>
-                    <div class="text-[11px] text-slate-500 mt-0.5">Hb 14.2, WBC 7400, PLT 2.45L</div>
+                    <div class="text-[10px] text-slate-500 mt-0.5">Hb 14.2, WBC 7400, PLT 2.45L</div>
                   </button>
 
                   <button type="button" (click)="runSimulation('Severe_Anemia')" [disabled]="simulating"
-                    class="p-3 rounded-xl border border-slate-200 hover:border-red-400 bg-white hover:bg-red-50/50 text-left transition-all cursor-pointer">
+                    class="p-2.5 rounded-xl border border-slate-200 hover:border-red-400 bg-white hover:bg-red-50/40 text-left transition-all cursor-pointer">
                     <div class="font-bold text-xs text-slate-900 flex items-center">
                       <i class="fa-solid fa-triangle-exclamation text-red-500 mr-1.5"></i> Severe Anemia
                     </div>
-                    <div class="text-[11px] text-slate-500 mt-0.5">Hb 5.2 (Critical Panic Alert)</div>
+                    <div class="text-[10px] text-slate-500 mt-0.5">Hb 5.2 (Critical Panic)</div>
                   </button>
 
                   <button type="button" (click)="runSimulation('High_Infection')" [disabled]="simulating"
-                    class="p-3 rounded-xl border border-slate-200 hover:border-amber-400 bg-white hover:bg-amber-50/50 text-left transition-all cursor-pointer">
+                    class="p-2.5 rounded-xl border border-slate-200 hover:border-amber-400 bg-white hover:bg-amber-50/40 text-left transition-all cursor-pointer">
                     <div class="font-bold text-xs text-slate-900 flex items-center">
                       <i class="fa-solid fa-virus text-amber-500 mr-1.5"></i> High Infection
                     </div>
-                    <div class="text-[11px] text-slate-500 mt-0.5">WBC 28,500 /cumm (High)</div>
+                    <div class="text-[10px] text-slate-500 mt-0.5">WBC 28,500 /cumm</div>
                   </button>
 
                   <button type="button" (click)="runSimulation('Thrombocytopenia')" [disabled]="simulating"
-                    class="p-3 rounded-xl border border-slate-200 hover:border-rose-400 bg-white hover:bg-rose-50/50 text-left transition-all cursor-pointer">
+                    class="p-2.5 rounded-xl border border-slate-200 hover:border-rose-400 bg-white hover:bg-rose-50/40 text-left transition-all cursor-pointer">
                     <div class="font-bold text-xs text-slate-900 flex items-center">
-                      <i class="fa-solid fa-droplet text-rose-500 mr-1.5"></i> Dengue / Low PLT
+                      <i class="fa-solid fa-heart-pulse text-rose-500 mr-1.5"></i> Dengue / Low PLT
                     </div>
-                    <div class="text-[11px] text-slate-500 mt-0.5">PLT 18,000 /cumm (Critical)</div>
+                    <div class="text-[10px] text-slate-500 mt-0.5">PLT 18,000 /cumm (Panic)</div>
                   </button>
                 </div>
               </div>
 
-              <!-- CLI command tip -->
-              <div class="p-3 bg-slate-900 text-slate-200 rounded-xl text-[11px] font-mono leading-relaxed">
-                <span class="text-emerald-400 font-bold"># Or test via ASTM TCP Socket:</span><br/>
-                node tools/lis-machine-bridge/machine_simulator.js {{ caseDetails?.barcode || '2600101' }} normal
+              <!-- Option 2: Biochemistry (Erba / Chemistry Machine) -->
+              <div>
+                <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center">
+                  <i class="fa-solid fa-flask-vial text-blue-500 mr-1.5"></i> 2. Biochemistry Analyzer (Erba Chem - Blood Glucose / FBS):
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                  <button type="button" (click)="runSimulation('Biochemistry_FBS')" [disabled]="simulating"
+                    class="p-2.5 rounded-xl border border-slate-200 hover:border-blue-400 bg-white hover:bg-blue-50/40 text-left transition-all cursor-pointer">
+                    <div class="font-bold text-xs text-slate-900 flex items-center">
+                      <i class="fa-solid fa-check text-emerald-600 mr-1.5"></i> Normal Fasting Glucose
+                    </div>
+                    <div class="text-[10px] text-slate-500 mt-0.5">FBS 92 mg/dL (Normal Range 70-100)</div>
+                  </button>
+
+                  <button type="button" (click)="runSimulation('Biochemistry_FBS_High')" [disabled]="simulating"
+                    class="p-2.5 rounded-xl border border-slate-200 hover:border-orange-400 bg-white hover:bg-orange-50/40 text-left transition-all cursor-pointer">
+                    <div class="font-bold text-xs text-slate-900 flex items-center">
+                      <i class="fa-solid fa-arrow-trend-up text-orange-600 mr-1.5"></i> Diabetic High Glucose
+                    </div>
+                    <div class="text-[10px] text-slate-500 mt-0.5">FBS 245 mg/dL (High Alert)</div>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Real-world machine info -->
+              <div class="p-3 bg-slate-50 text-slate-600 rounded-xl text-[11px] leading-relaxed border border-slate-200">
+                <strong>Real Lab Machine Setup:</strong> In a real lab, CBC connects to your <em>Hematology Analyzer</em> (Lavender tube) and Fasting Glucose connects to your <em>Biochemistry Analyzer</em> (Grey tube). Both machines sync via Port 5100 using this same barcode.
               </div>
             </div>
 
-            <div class="mt-6 flex justify-end">
+            <div class="mt-5 flex justify-end">
               <button type="button" (click)="closeMachineModal()"
                 class="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-semibold text-xs hover:bg-slate-50 transition-colors cursor-pointer">
                 Close
