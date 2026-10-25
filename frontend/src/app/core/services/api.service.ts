@@ -138,6 +138,32 @@ export class ApiService {
     return `${this.baseUrl}/reports/public/${token}/download${dl}`;
   }
 
+  getWhatsAppStatus(): Observable<{ isConfigured: boolean; provider: string; message: string }> {
+    return this.http.get<{ isConfigured: boolean; provider: string; message: string }>(`${this.baseUrl}/reports/whatsapp-status`);
+  }
+
+  sendWhatsAppPdfViaServer(data: {
+    caseOrderId: string;
+    recipientType: string;
+    customPhone?: string;
+    letterheadMode?: boolean;
+    customMessage?: string;
+  }): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/reports/send-whatsapp-pdf`, data);
+  }
+
+  getPublicReportPdfBlob(token: string, letterheadMode: boolean = true): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/reports/public/${token}/download?letterheadMode=${letterheadMode}`, {
+      responseType: 'blob'
+    });
+  }
+
+  getCaseReportPdfBlob(caseOrderId: string, letterheadMode: boolean = true): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/reports/pdf/${caseOrderId}?letterheadMode=${letterheadMode}`, {
+      responseType: 'blob'
+    });
+  }
+
   // Test Catalog
   getCategories(): Observable<TestCategory[]> {
     return this.http.get<TestCategory[]>(`${this.baseUrl}/tests/categories`);

@@ -119,6 +119,8 @@ builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IBarcodeService, BarcodeService>();
 builder.Services.AddScoped<IPdfReportService, PdfReportService>();
+builder.Services.AddHttpClient();
+builder.Services.AddScoped<IWhatsAppNotificationService, WhatsAppNotificationService>();
 
 // 5. In-Memory Cache for fast repeat PDF retrieval (Anti-DoS)
 builder.Services.AddMemoryCache();

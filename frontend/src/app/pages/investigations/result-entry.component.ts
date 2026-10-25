@@ -6,6 +6,7 @@ import { Subscription } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
 import { RealtimeService } from '../../core/services/realtime.service';
+import { WhatsAppShareService } from '../../core/services/whatsapp-share.service';
 import { TestMaster, TestCategory } from '../../core/models/lims.models';
 
 @Component({
@@ -644,6 +645,36 @@ import { TestMaster, TestCategory } from '../../core/models/lims.models';
               </button>
             </div>
 
+            <!-- Send Format Mode Toggle (PDF Document vs Link) -->
+            <div class="grid grid-cols-2 p-1 bg-slate-100 rounded-xl text-xs font-bold">
+              <button type="button" (click)="waSendMode = 'pdf'"
+                [class]="waSendMode === 'pdf' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'"
+                class="py-2 px-3 rounded-lg transition-all flex items-center justify-center space-x-1.5 cursor-pointer">
+                <i class="fa-solid fa-file-pdf text-rose-500"></i>
+                <span>Send PDF File</span>
+                <span class="text-[9px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-black">NEW</span>
+              </button>
+              <button type="button" (click)="waSendMode = 'link'"
+                [class]="waSendMode === 'link' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'"
+                class="py-2 px-3 rounded-lg transition-all flex items-center justify-center space-x-1.5 cursor-pointer">
+                <i class="fa-solid fa-link text-brand-500"></i>
+                <span>Send Link Only</span>
+              </button>
+            </div>
+
+            <!-- PDF Options & Quick Preview Toolbar -->
+            <div *ngIf="waSendMode === 'pdf'" class="flex items-center justify-between px-3 py-2 bg-slate-50 rounded-xl border border-slate-100 text-xs">
+              <label class="flex items-center space-x-2 text-slate-600 font-medium cursor-pointer select-none">
+                <input type="checkbox" [(ngModel)]="waIncludeLetterhead" class="rounded text-emerald-600 focus:ring-emerald-500" />
+                <span>Include Lab Letterhead</span>
+              </label>
+              <button type="button" (click)="downloadReportPdfDirect()"
+                class="text-xs font-bold text-emerald-700 hover:text-emerald-800 hover:underline flex items-center space-x-1 cursor-pointer">
+                <i class="fa-solid fa-eye text-emerald-600"></i>
+                <span>Preview / Download PDF</span>
+              </button>
+            </div>
+
             <!-- 1-Click Both Send Banner (Hero Button) -->
             <div *ngIf="waModalCase.hasDoctor" class="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-4 text-white shadow-lg shadow-emerald-500/20">
               <div class="flex items-center justify-between">
@@ -652,15 +683,27 @@ import { TestMaster, TestCategory } from '../../core/models/lims.models';
                     <i class="fa-solid fa-bolt text-amber-300"></i>
                     <span>1-Click Dual Delivery</span>
                   </div>
-                  <h4 class="text-sm font-bold text-white mt-0.5">Send Report to Both (Patient + Doctor)</h4>
-                  <p class="text-[11px] text-emerald-100 mt-0.5">Dono ko ek sath unke WhatsApp par verified report link chali jayegi.</p>
+                  <h4 class="text-sm font-bold text-white mt-0.5">Send to Both (Patient + Doctor)</h4>
+                  <p class="text-[11px] text-emerald-100 mt-0.5">
+                    {{ waSendMode === 'pdf' ? 'Dono ko verified PDF report document WhatsApp par chali jayegi.' : 'Dono ko ek sath unke WhatsApp par verified report link chali jayegi.' }}
+                  </p>
                 </div>
               </div>
-              <button (click)="sendReportToBoth()" type="button"
-                class="mt-3 w-full py-2.5 px-4 bg-white hover:bg-emerald-50 text-emerald-800 font-bold text-sm rounded-xl transition-all shadow-md flex items-center justify-center space-x-2 cursor-pointer active:scale-[0.98]">
-                <i class="fa-brands fa-whatsapp text-emerald-600 text-base"></i>
-                <span>🚀 1-Click: Send to Both</span>
+              <button (click)="sendReportToBoth()" [disabled]="waSending" type="button"
+                class="mt-3 w-full py-2.5 px-4 bg-white hover:bg-emerald-50 text-emerald-800 font-bold text-sm rounded-xl transition-all shadow-md flex items-center justify-center space-x-2 cursor-pointer active:scale-[0.98] disabled:opacity-60">
+                <i *ngIf="!waSending" class="fa-brands fa-whatsapp text-emerald-600 text-base"></i>
+                <i *ngIf="waSending" class="fa-solid fa-spinner fa-spin text-emerald-600 text-base"></i>
+                <span>{{ waSending ? 'Preparing & Attaching PDF...' : (waSendMode === 'pdf' ? '🚀 1-Click: Send PDF to Both' : '🚀 1-Click: Send Link to Both') }}</span>
               </button>
+            </div>
+
+            <!-- In-app Delivery Guidance / Desktop Info Notice -->
+            <div *ngIf="waDeliveryNotice" class="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-900 text-xs space-y-1 animate-in fade-in duration-200">
+              <div class="flex items-center space-x-1.5 font-bold">
+                <i class="fa-solid fa-circle-check text-emerald-600"></i>
+                <span>PDF Delivery Ready ✓</span>
+              </div>
+              <p class="text-[11px] text-emerald-800 leading-relaxed">{{ waDeliveryNotice }}</p>
             </div>
 
             <!-- Popup Blocked Alert Helper -->
@@ -693,10 +736,11 @@ import { TestMaster, TestCategory } from '../../core/models/lims.models';
                     </span>
                     <span class="text-xs font-bold text-slate-800">Patient: {{ waModalCase.patientName || waModalCase.patient?.fullName }}</span>
                   </div>
-                  <button (click)="sendReportToPatient()" type="button"
-                    class="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors flex items-center space-x-1 cursor-pointer">
-                    <i class="fa-brands fa-whatsapp"></i>
-                    <span>Send to Patient</span>
+                  <button (click)="sendReportToPatient()" [disabled]="waSending" type="button"
+                    class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors flex items-center space-x-1.5 cursor-pointer disabled:opacity-50">
+                    <i *ngIf="waSendMode === 'pdf'" class="fa-solid fa-file-pdf text-rose-200"></i>
+                    <i *ngIf="waSendMode === 'link'" class="fa-brands fa-whatsapp"></i>
+                    <span>{{ waSendMode === 'pdf' ? 'Send PDF to Patient' : 'Send Link to Patient' }}</span>
                   </button>
                 </div>
                 <div class="flex items-center space-x-2">
@@ -715,10 +759,11 @@ import { TestMaster, TestCategory } from '../../core/models/lims.models';
                     </span>
                     <span class="text-xs font-bold text-slate-800">Doctor: {{ waModalCase.doctorName || 'Direct (Self)' }}</span>
                   </div>
-                  <button *ngIf="waModalCase.hasDoctor" (click)="sendReportToDoctor()" type="button"
-                    class="px-3 py-1 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-lg transition-colors flex items-center space-x-1 cursor-pointer">
-                    <i class="fa-brands fa-whatsapp"></i>
-                    <span>Send to Doctor</span>
+                  <button *ngIf="waModalCase.hasDoctor" (click)="sendReportToDoctor()" [disabled]="waSending" type="button"
+                    class="px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-lg transition-colors flex items-center space-x-1.5 cursor-pointer disabled:opacity-50">
+                    <i *ngIf="waSendMode === 'pdf'" class="fa-solid fa-file-pdf text-rose-200"></i>
+                    <i *ngIf="waSendMode === 'link'" class="fa-brands fa-whatsapp"></i>
+                    <span>{{ waSendMode === 'pdf' ? 'Send PDF to Doctor' : 'Send Link to Doctor' }}</span>
                   </button>
                   <span *ngIf="!waModalCase.hasDoctor" class="text-[11px] font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">
                     Direct / Walk-in
@@ -735,8 +780,11 @@ import { TestMaster, TestCategory } from '../../core/models/lims.models';
             <!-- Quick Help Note -->
             <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-[11px] text-slate-500 flex items-start space-x-2">
               <i class="fa-solid fa-circle-info text-emerald-500 mt-0.5"></i>
-              <span>
-                <strong>Tip:</strong> 1-Click dabane par dono ke WhatsApp khul jayenge aur verified PDF download link auto-fill ho jayegi.
+              <span *ngIf="waSendMode === 'pdf'">
+                <strong>PDF Send Info:</strong> Mobile / Tablet par actual PDF document direct attach ho jayegi. Desktop par PDF download hogi aur WhatsApp Web khul jayega jisme aap 1-click me PDF attach / drag kar sakte hain.
+              </span>
+              <span *ngIf="waSendMode === 'link'">
+                <strong>Link Share Info:</strong> Patient aur Doctor ko official verified download URL send hoga jahan se wo bina login kiye report dekh sakte hain.
               </span>
             </div>
 
@@ -760,6 +808,12 @@ export class ResultEntryComponent implements OnInit, OnDestroy {
   private cdr = inject(ChangeDetectorRef);
   private realtime = inject(RealtimeService);
   private realtimeSubs = new Subscription();
+  private waShare = inject(WhatsAppShareService);
+
+  waSendMode: 'pdf' | 'link' = 'pdf';
+  waIncludeLetterhead = true;
+  waSending = false;
+  waDeliveryNotice = '';
 
   @Input() id?: string;
 
@@ -1044,6 +1098,10 @@ export class ResultEntryComponent implements OnInit, OnDestroy {
     const docName = (this.caseDetails.doctorName || '').trim();
     const hasDoctor = !!(docName && docName.toLowerCase() !== 'direct' && docName.toLowerCase() !== 'self');
     this.doctorTabBlocked = false;
+    this.waSendMode = 'pdf';
+    this.waIncludeLetterhead = true;
+    this.waSending = false;
+    this.waDeliveryNotice = '';
 
     this.waModalCase = {
       ...this.caseDetails,
@@ -1055,143 +1113,147 @@ export class ResultEntryComponent implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
-  sendReportToBoth(): void {
+  downloadReportPdfDirect(): void {
     if (!this.waModalCase) return;
+    const token = this.waShare.resolveReportToken(this.waModalCase);
+    const dlUrl = this.api.getPublicReportDownloadUrl(token || this.waModalCase.id, true);
+    window.open(dlUrl, '_blank');
+  }
+
+  async sendReportToBoth(): Promise<void> {
+    if (!this.waModalCase || this.waSending) return;
     const c = this.waModalCase;
     this.doctorTabBlocked = false;
+    this.waDeliveryNotice = '';
 
-    // 1. Open Patient WhatsApp synchronously in user click
-    const patWin = this.executePatientWhatsApp(c, true);
-
-    // 2. Open Doctor WhatsApp synchronously in user click
-    const docWin = this.executeDoctorWhatsApp(c, true);
-
-    const docName = c.doctorName || 'Doctor';
-    const patName = c.patientName || c.patient?.fullName || 'Patient';
-
-    if (patWin && docWin) {
-      this.toast.success(`1-Click Sent: Opening WhatsApp for both ${patName} & ${docName}!`);
-      this.doctorTabBlocked = false;
-    } else {
-      this.doctorTabBlocked = true;
-      this.toast.info(`Patient WhatsApp opened! Browser blocked 2nd tab. Click 'Open Doctor WhatsApp' below or allow popups.`, 'Notice', 6000);
+    if (this.waSendMode === 'link') {
+      const patRes = this.waShare.sendReportLinkOnly({
+        caseOrder: c,
+        recipientType: 'Patient',
+        customPhone: c.patientPhone
+      });
+      const docRes = this.waShare.sendReportLinkOnly({
+        caseOrder: c,
+        recipientType: 'Doctor',
+        customPhone: c.doctorPhone
+      });
+      if (patRes.opened && docRes.opened) {
+        this.toast.success(`1-Click Sent: Opening WhatsApp for both ${c.patientName || 'Patient'} & ${c.doctorName}!`);
+        this.doctorTabBlocked = false;
+      } else {
+        this.doctorTabBlocked = true;
+        this.toast.info(`Patient WhatsApp opened! Click 'Open Doctor WhatsApp' below if browser blocked popup.`, 'Notice', 6000);
+      }
+      this.cdr.detectChanges();
+      return;
     }
+
+    // PDF Mode:
+    this.waSending = true;
     this.cdr.detectChanges();
+    try {
+      const patResult = await this.waShare.sendReportPdf({
+        caseOrder: c,
+        recipientType: 'Patient',
+        customPhone: c.patientPhone,
+        letterheadMode: this.waIncludeLetterhead
+      });
+
+      if (patResult.mode === 'desktop_auto_download') {
+        this.waDeliveryNotice = `📥 PDF file download ho chuki hai! WhatsApp Web khul gaya hai. Chat me 📎 Attach ➔ Document select karein ya PDF ko drag & drop karein.`;
+        this.toast.success(`Patient WhatsApp khul gaya aur Report PDF download ho gayi!`);
+      } else if (patResult.success) {
+        this.toast.success(patResult.message || `PDF report sent to ${c.patientName || 'Patient'}!`);
+      }
+
+      if (c.hasDoctor) {
+        this.toast.info(`Ab Doctor ke WhatsApp par PDF bhejane ke liye 'Send PDF to Doctor' dabayein.`);
+      }
+    } catch (err: any) {
+      this.toast.error(err.message || 'Failed to send WhatsApp PDF report.');
+    } finally {
+      this.waSending = false;
+      this.cdr.detectChanges();
+    }
   }
 
-  sendReportToPatient(): void {
-    if (!this.waModalCase) return;
-    this.executePatientWhatsApp(this.waModalCase);
+  async sendReportToPatient(): Promise<void> {
+    if (!this.waModalCase || this.waSending) return;
+    const c = this.waModalCase;
+    this.waDeliveryNotice = '';
+
+    if (this.waSendMode === 'link') {
+      this.waShare.sendReportLinkOnly({
+        caseOrder: c,
+        recipientType: 'Patient',
+        customPhone: c.patientPhone
+      });
+      this.toast.success(`Opening WhatsApp for ${c.patientName || c.patient?.fullName || 'Patient'}...`);
+      return;
+    }
+
+    this.waSending = true;
+    this.cdr.detectChanges();
+    try {
+      const res = await this.waShare.sendReportPdf({
+        caseOrder: c,
+        recipientType: 'Patient',
+        customPhone: c.patientPhone,
+        letterheadMode: this.waIncludeLetterhead
+      });
+
+      if (res.mode === 'desktop_auto_download') {
+        this.waDeliveryNotice = `📥 ${res.fileName} download ho gayi hai! WhatsApp Web khul gaya hai. Chat me 📎 Attach ➔ Document select karein ya PDF ko drag-and-drop karein.`;
+        this.toast.success(`WhatsApp khul gaya aur Report PDF download ho gayi!`);
+      } else if (res.success) {
+        this.toast.success(res.message);
+      }
+    } catch (err: any) {
+      this.toast.error(err.message || 'Error generating or sending PDF report.');
+    } finally {
+      this.waSending = false;
+      this.cdr.detectChanges();
+    }
   }
 
-  sendReportToDoctor(): void {
-    if (!this.waModalCase) return;
-    this.executeDoctorWhatsApp(this.waModalCase);
+  async sendReportToDoctor(): Promise<void> {
+    if (!this.waModalCase || this.waSending) return;
+    const c = this.waModalCase;
     this.doctorTabBlocked = false;
+    this.waDeliveryNotice = '';
+
+    if (this.waSendMode === 'link') {
+      this.waShare.sendReportLinkOnly({
+        caseOrder: c,
+        recipientType: 'Doctor',
+        customPhone: c.doctorPhone
+      });
+      this.toast.success(`Opening WhatsApp for Dr. ${c.doctorName}...`);
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.waSending = true;
     this.cdr.detectChanges();
-  }
+    try {
+      const res = await this.waShare.sendReportPdf({
+        caseOrder: c,
+        recipientType: 'Doctor',
+        customPhone: c.doctorPhone,
+        letterheadMode: this.waIncludeLetterhead
+      });
 
-  private resolveReportToken(c: any): string | null {
-    const isValid = (val: any) =>
-      val &&
-      val !== 'undefined' &&
-      val !== 'null' &&
-      val !== '00000000-0000-0000-0000-000000000000';
-
-    return isValid(c.publicAccessToken)
-      ? c.publicAccessToken
-      : (isValid(c.PublicAccessToken)
-          ? c.PublicAccessToken
-          : (isValid(c.id) ? c.id : c.caseNumber));
-  }
-
-  private executePatientWhatsApp(c: any, silentToast = false): boolean {
-    const token = this.resolveReportToken(c);
-    if (!token) {
-      this.toast.error('Report verification token is missing. Please reload the case.');
-      return false;
-    }
-
-    const rawPhone = (c.patientPhone || c.patient?.phone || '').replace(/\D/g, '');
-    const patientName = c.patientName || c.patient?.fullName || 'Patient';
-    const caseNo = c.caseNumber || '';
-    const origin = window.location.origin;
-    const downloadUrl = `${origin}/report/download/${token}`;
-
-    const message = `*Namaste ${patientName} Ji*,\n\nAapki Diagnostic Test Report ready aur verify ho chuki hai (Case No: *${caseNo}*).\n\n\uD83D\uDCC4 *Apni Verified Report Download karein:*\n${downloadUrl}\n\n_Thank you for choosing our Laboratory!_`;
-
-    const isMobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
-    if (!rawPhone || rawPhone.length < 10) {
-      this.toast.warning(`Patient phone number is missing or invalid: ${c.patientPhone || c.patient?.phone || 'N/A'}`);
-      const waUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-      if (isMobile) {
-        window.location.href = waUrl;
-        return true;
-      } else {
-        const win = window.open(waUrl, '_blank');
-        return !!(win && !win.closed && typeof win.closed !== 'undefined');
+      if (res.mode === 'desktop_auto_download') {
+        this.waDeliveryNotice = `📥 ${res.fileName} download ho gayi hai! WhatsApp Web me Dr. ${c.doctorName} ko PDF attach karein.`;
+        this.toast.success(`Doctor WhatsApp khul gaya aur Report PDF download ho gayi!`);
+      } else if (res.success) {
+        this.toast.success(res.message);
       }
-    }
-
-    const targetPhone = (rawPhone.length === 10) ? `91${rawPhone}` : (rawPhone.startsWith('91') && rawPhone.length === 12 ? rawPhone : (rawPhone.length > 10 ? rawPhone : `91${rawPhone}`));
-    const waUrl = `https://wa.me/${targetPhone}?text=${encodeURIComponent(message)}`;
-
-    if (isMobile) {
-      window.location.href = waUrl;
-      return true;
-    } else {
-      const win = window.open(waUrl, '_blank');
-      if (!silentToast) {
-        this.toast.success(`Opening WhatsApp for ${patientName}...`);
-      }
-      return !!(win && !win.closed && typeof win.closed !== 'undefined');
-    }
-  }
-
-  private executeDoctorWhatsApp(c: any, silentToast = false): boolean {
-    const token = this.resolveReportToken(c);
-    if (!token) {
-      this.toast.error('Report verification token is missing. Please reload the case.');
-      return false;
-    }
-
-    const rawPhone = (c.doctorPhone || '').replace(/\D/g, '');
-    const doctorName = c.doctorName || 'Doctor';
-    const patientName = c.patientName || c.patient?.fullName || 'Patient';
-    const caseNo = c.caseNumber || '';
-    const origin = window.location.origin;
-    const downloadUrl = `${origin}/report/download/${token}`;
-
-    const docTitle = doctorName.trim().toLowerCase().startsWith('dr') ? doctorName.trim() : `Dr. ${doctorName.trim()}`;
-    const message = `*Respected ${docTitle}*,\n\nDiagnostic Test Report for your referred patient *${patientName}* (Case No: *${caseNo}*) has been verified and approved.\n\n\uD83D\uDCC4 *View Verified Report:*\n${downloadUrl}\n\n_Thank you for your valuable referral!_`;
-
-    const isMobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
-    if (!rawPhone || rawPhone.length < 10) {
-      this.toast.warning(`Doctor phone number is missing or not provided.`);
-      const waUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-      if (isMobile) {
-        window.location.href = waUrl;
-        return true;
-      } else {
-        const win = window.open(waUrl, '_blank');
-        return !!(win && !win.closed && typeof win.closed !== 'undefined');
-      }
-    }
-
-    const targetPhone = (rawPhone.length === 10) ? `91${rawPhone}` : (rawPhone.startsWith('91') && rawPhone.length === 12 ? rawPhone : (rawPhone.length > 10 ? rawPhone : `91${rawPhone}`));
-    const waUrl = `https://wa.me/${targetPhone}?text=${encodeURIComponent(message)}`;
-
-    if (isMobile) {
-      window.location.href = waUrl;
-      return true;
-    } else {
-      const win = window.open(waUrl, '_blank');
-      if (!silentToast) {
-        this.toast.success(`Opening WhatsApp for Dr. ${doctorName}...`);
-      }
-      return !!(win && !win.closed && typeof win.closed !== 'undefined');
+    } catch (err: any) {
+      this.toast.error(err.message || 'Error sending PDF to Doctor.');
+    } finally {
+      this.waSending = false;
+      this.cdr.detectChanges();
     }
   }
 

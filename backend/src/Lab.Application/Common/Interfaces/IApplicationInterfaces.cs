@@ -54,3 +54,26 @@ public interface IBarcodeService
     string GenerateCode39Svg(string barcodeText);
     string GenerateQrCodeSvg(string content);
 }
+
+public class WhatsAppSendResult
+{
+    public bool Success { get; set; }
+    public string Message { get; set; } = string.Empty;
+    public string? MessageId { get; set; }
+    public string DeliveryChannel { get; set; } = "None"; // MetaCloudApi, UltraMsg, Twilio, ClientShareNeeded
+    public bool RequiresClientShare { get; set; }
+}
+
+public interface IWhatsAppNotificationService
+{
+    bool IsConfigured { get; }
+    string ProviderName { get; }
+    Task<WhatsAppSendResult> SendReportPdfAsync(
+        string recipientPhone,
+        string recipientName,
+        string caseNumber,
+        string downloadUrl,
+        byte[] pdfBytes,
+        string fileName,
+        string? customMessage = null);
+}

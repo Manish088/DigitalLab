@@ -9,6 +9,15 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace Lab.Api.Controllers;
 
+public class SendWhatsAppPdfRequest
+{
+    public Guid CaseOrderId { get; set; }
+    public string RecipientType { get; set; } = "Patient"; // "Patient", "Doctor", "Both"
+    public string? CustomPhone { get; set; }
+    public bool LetterheadMode { get; set; } = true;
+    public string? CustomMessage { get; set; }
+}
+
 [ApiController]
 [Route("api/[controller]")]
 [EnableRateLimiting("PdfReportPolicy")]
@@ -17,15 +26,18 @@ public class ReportsController : ControllerBase
     private readonly IPdfReportService _pdfReportService;
     private readonly IApplicationDbContext _context;
     private readonly IMemoryCache _cache;
+    private readonly IWhatsAppNotificationService _whatsAppNotificationService;
 
     public ReportsController(
         IPdfReportService pdfReportService,
         IApplicationDbContext context,
-        IMemoryCache cache)
+        IMemoryCache cache,
+        IWhatsAppNotificationService whatsAppNotificationService)
     {
         _pdfReportService = pdfReportService;
         _context = context;
         _cache = cache;
+        _whatsAppNotificationService = whatsAppNotificationService;
     }
 
     [AllowAnonymous]
@@ -98,6 +110,124 @@ public class ReportsController : ControllerBase
         var disposition = download ? "attachment" : "inline";
         Response.Headers.Append("Content-Disposition", $"{disposition}; filename=ThermalReceipt_{caseOrderId}.pdf");
         return File(pdfBytes, "application/pdf", download ? $"ThermalReceipt_{caseOrderId}.pdf" : null);
+    }
+
+    // WhatsApp Cloud Gateway Status
+    [AllowAnonymous]
+    [HttpGet("whatsapp-status")]
+    public IActionResult GetWhatsAppStatus()
+    {
+        return Ok(new
+        {
+            isConfigured = _whatsAppNotificationService.IsConfigured,
+            provider = _whatsAppNotificationService.ProviderName,
+            message = _whatsAppNotificationService.IsConfigured
+                ? $"WhatsApp Cloud API ({_whatsAppNotificationService.ProviderName}) is configured for direct PDF delivery."
+                : "Direct Cloud Gateway is not configured. Direct PDF file share via device / Web Share API will be used."
+        });
+    }
+
+    // Direct WhatsApp PDF Document Dispatch Endpoint
+    [HttpPost("send-whatsapp-pdf")]
+    public async Task<IActionResult> SendWhatsAppReportPdf([FromBody] SendWhatsAppPdfRequest request)
+    {
+        if (request == null || request.CaseOrderId == Guid.Empty)
+            return BadRequest(new { message = "Invalid request. CaseOrderId is required." });
+
+        var caseOrder = await _context.CaseOrders
+            .IgnoreQueryFilters()
+            .Include(c => c.Patient)
+            .Include(c => c.ReferringDoctor)
+            .FirstOrDefaultAsync(c => c.Id == request.CaseOrderId);
+
+        if (caseOrder == null)
+            return NotFound(new { message = "Case order not found." });
+
+        if (!await IsLabSubscriptionActiveAsync(caseOrder.Id))
+            return StatusCode(403, new { message = "Laboratory subscription has expired. Please renew your plan." });
+
+        if (caseOrder.PublicAccessToken == Guid.Empty)
+        {
+            caseOrder.PublicAccessToken = Guid.NewGuid();
+            await _context.SaveChangesAsync();
+        }
+
+        var pdfBytes = await _pdfReportService.GeneratePatientReportPdfAsync(caseOrder.Id, request.LetterheadMode);
+        var origin = $"{Request.Scheme}://{Request.Host}";
+        var downloadUrl = $"{origin}/api/reports/public/{caseOrder.PublicAccessToken}/download?letterheadMode={request.LetterheadMode}";
+        var fileName = $"Report_{caseOrder.CaseNumber}.pdf";
+
+        var isBoth = request.RecipientType.Equals("Both", StringComparison.OrdinalIgnoreCase);
+        var isDoctor = request.RecipientType.Equals("Doctor", StringComparison.OrdinalIgnoreCase);
+
+        var sendOutcomes = new List<object>();
+
+        if (isBoth || !isDoctor)
+        {
+            var patientPhone = request.CustomPhone ?? caseOrder.Patient?.Phone ?? "";
+            var patientName = caseOrder.Patient?.FullName ?? "Patient";
+            var patResult = await _whatsAppNotificationService.SendReportPdfAsync(
+                patientPhone,
+                patientName,
+                caseOrder.CaseNumber,
+                downloadUrl,
+                pdfBytes,
+                fileName,
+                request.CustomMessage);
+
+            sendOutcomes.Add(new
+            {
+                recipient = "Patient",
+                name = patientName,
+                phone = patientPhone,
+                success = patResult.Success,
+                message = patResult.Message,
+                deliveryChannel = patResult.DeliveryChannel,
+                requiresClientShare = patResult.RequiresClientShare
+            });
+        }
+
+        if (isBoth || isDoctor)
+        {
+            var doctorPhone = (isBoth ? null : request.CustomPhone) ?? caseOrder.ReferringDoctor?.Phone ?? "";
+            var doctorName = caseOrder.ReferringDoctor?.DoctorName ?? "Doctor";
+            var docTitle = doctorName.Trim().ToLower().StartsWith("dr") ? doctorName.Trim() : $"Dr. {doctorName.Trim()}";
+            var docResult = await _whatsAppNotificationService.SendReportPdfAsync(
+                doctorPhone,
+                docTitle,
+                caseOrder.CaseNumber,
+                downloadUrl,
+                pdfBytes,
+                fileName,
+                request.CustomMessage);
+
+            sendOutcomes.Add(new
+            {
+                recipient = "Doctor",
+                name = docTitle,
+                phone = doctorPhone,
+                success = docResult.Success,
+                message = docResult.Message,
+                deliveryChannel = docResult.DeliveryChannel,
+                requiresClientShare = docResult.RequiresClientShare
+            });
+        }
+
+        var anySuccess = sendOutcomes.Any(o => (bool)((dynamic)o).success);
+        var allRequireClient = sendOutcomes.All(o => (bool)((dynamic)o).requiresClientShare);
+
+        return Ok(new
+        {
+            success = anySuccess,
+            requiresClientShare = allRequireClient,
+            provider = _whatsAppNotificationService.ProviderName,
+            isConfigured = _whatsAppNotificationService.IsConfigured,
+            downloadUrl,
+            fileName,
+            token = caseOrder.PublicAccessToken.ToString(),
+            caseNumber = caseOrder.CaseNumber,
+            outcomes = sendOutcomes
+        });
     }
 
     // Public QR Code token-based access (No login needed!)
