@@ -38,6 +38,7 @@ public class TenantLab : BaseEntity
 
     public bool IsActive { get; set; } = true;
     public bool IsAdFree { get; set; } = false;
+    public string? LisApiKey { get; set; }
     public Guid? SubscriptionPlanId { get; set; }
     public DateTime? SubscriptionExpiryDate { get; set; }
     public string SubscriptionStatus { get; set; } = "Trial"; // Trial, Active, Expired, Suspended

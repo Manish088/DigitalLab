@@ -103,6 +103,13 @@ import { TestMaster, TestCategory } from '../../core/models/lims.models';
               <i class="fa-solid fa-plus-circle mr-1.5"></i> Add Tests
             </button>
 
+            <!-- Machine Interfacing / Auto Sync Button -->
+            <button *ngIf="caseDetails.status !== 'Approved'" type="button" (click)="openMachineModal()"
+              class="inline-flex items-center px-3.5 py-2 rounded-xl text-sm font-semibold bg-violet-600 hover:bg-violet-500 text-white shadow-md shadow-violet-500/20 transition-all cursor-pointer">
+              <i class="fa-solid fa-microchip mr-1.5 text-violet-200"></i>
+              Machine Sync
+            </button>
+
             <!-- Save Button (Only when not approved) -->
             <button *ngIf="caseDetails.status !== 'Approved'" (click)="saveResults()" [disabled]="saving || isSubExpired"
               [class.opacity-40]="isSubExpired"
@@ -311,6 +318,101 @@ import { TestMaster, TestCategory } from '../../core/models/lims.models';
                   [class.cursor-not-allowed]="caseDetails.status === 'Approved'"
                   class="w-full p-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none"></textarea>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Machine Interfacing & Test Simulator Modal Popup -->
+        <div *ngIf="showMachineModal" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 transform transition-all animate-in fade-in zoom-in-95 duration-200">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-violet-100 text-violet-600 flex items-center justify-center shadow-inner">
+                  <i class="fa-solid fa-microchip text-lg"></i>
+                </div>
+                <div>
+                  <h3 class="text-base font-bold text-slate-900 font-heading">Analyzer Machine Sync</h3>
+                  <p class="text-xs text-slate-500">ASTM 1381/1394 & HL7 Analyzer Interfacing</p>
+                </div>
+              </div>
+              <button type="button" (click)="closeMachineModal()" class="text-slate-400 hover:text-slate-600 p-1">
+                <i class="fa-solid fa-xmark text-lg"></i>
+              </button>
+            </div>
+
+            <div class="mt-4 space-y-4">
+              <!-- Barcode Display -->
+              <div class="p-3.5 bg-violet-50/60 rounded-2xl border border-violet-100 flex items-center justify-between">
+                <div>
+                  <div class="text-[11px] font-semibold text-violet-800 uppercase tracking-wider">Sample Barcode ID</div>
+                  <div class="text-lg font-mono font-bold text-slate-900">{{ caseDetails?.barcode || caseDetails?.caseNumber }}</div>
+                </div>
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+                  <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse mr-1.5"></span>
+                  Port 5100 Ready
+                </span>
+              </div>
+
+              <div class="text-xs text-slate-600 leading-relaxed bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                <div class="font-bold text-slate-800 mb-1 flex items-center">
+                  <i class="fa-solid fa-circle-info text-blue-500 mr-1.5"></i> Live Analyzer Connection:
+                </div>
+                When your Mindray / Sysmex / Erba analyzer runs this blood sample, results transfer instantly into this report without any manual typing.
+              </div>
+
+              <!-- Simulation Options -->
+              <div>
+                <div class="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 flex items-center justify-between">
+                  <span>1-Click Test Simulation (No Machine Needed):</span>
+                  <i *ngIf="simulating" class="fa-solid fa-spinner fa-spin text-violet-600"></i>
+                </div>
+                <div class="grid grid-cols-2 gap-2.5">
+                  <button type="button" (click)="runSimulation('Mindray_CBC')" [disabled]="simulating"
+                    class="p-3 rounded-xl border border-slate-200 hover:border-violet-400 bg-white hover:bg-violet-50/50 text-left transition-all cursor-pointer">
+                    <div class="font-bold text-xs text-slate-900 flex items-center">
+                      <i class="fa-solid fa-check-circle text-emerald-500 mr-1.5"></i> Normal CBC
+                    </div>
+                    <div class="text-[11px] text-slate-500 mt-0.5">Hb 14.2, WBC 7400, PLT 2.45L</div>
+                  </button>
+
+                  <button type="button" (click)="runSimulation('Severe_Anemia')" [disabled]="simulating"
+                    class="p-3 rounded-xl border border-slate-200 hover:border-red-400 bg-white hover:bg-red-50/50 text-left transition-all cursor-pointer">
+                    <div class="font-bold text-xs text-slate-900 flex items-center">
+                      <i class="fa-solid fa-triangle-exclamation text-red-500 mr-1.5"></i> Severe Anemia
+                    </div>
+                    <div class="text-[11px] text-slate-500 mt-0.5">Hb 5.2 (Critical Panic Alert)</div>
+                  </button>
+
+                  <button type="button" (click)="runSimulation('High_Infection')" [disabled]="simulating"
+                    class="p-3 rounded-xl border border-slate-200 hover:border-amber-400 bg-white hover:bg-amber-50/50 text-left transition-all cursor-pointer">
+                    <div class="font-bold text-xs text-slate-900 flex items-center">
+                      <i class="fa-solid fa-virus text-amber-500 mr-1.5"></i> High Infection
+                    </div>
+                    <div class="text-[11px] text-slate-500 mt-0.5">WBC 28,500 /cumm (High)</div>
+                  </button>
+
+                  <button type="button" (click)="runSimulation('Thrombocytopenia')" [disabled]="simulating"
+                    class="p-3 rounded-xl border border-slate-200 hover:border-rose-400 bg-white hover:bg-rose-50/50 text-left transition-all cursor-pointer">
+                    <div class="font-bold text-xs text-slate-900 flex items-center">
+                      <i class="fa-solid fa-droplet text-rose-500 mr-1.5"></i> Dengue / Low PLT
+                    </div>
+                    <div class="text-[11px] text-slate-500 mt-0.5">PLT 18,000 /cumm (Critical)</div>
+                  </button>
+                </div>
+              </div>
+
+              <!-- CLI command tip -->
+              <div class="p-3 bg-slate-900 text-slate-200 rounded-xl text-[11px] font-mono leading-relaxed">
+                <span class="text-emerald-400 font-bold"># Or test via ASTM TCP Socket:</span><br/>
+                node tools/lis-machine-bridge/machine_simulator.js {{ caseDetails?.barcode || '2600101' }} normal
+              </div>
+            </div>
+
+            <div class="mt-6 flex justify-end">
+              <button type="button" (click)="closeMachineModal()"
+                class="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-semibold text-xs hover:bg-slate-50 transition-colors cursor-pointer">
+                Close
+              </button>
             </div>
           </div>
         </div>
@@ -823,6 +925,8 @@ export class ResultEntryComponent implements OnInit, OnDestroy {
   saving = false;
   approving = false;
   showApproveModal = false;
+  showMachineModal = false;
+  simulating = false;
   showUnlockModal = false;
   unlocking = false;
   waModalCase: any = null;
@@ -1629,4 +1733,34 @@ export class ResultEntryComponent implements OnInit, OnDestroy {
       }
     });
   }
+
+  openMachineModal(): void {
+    this.showMachineModal = true;
+  }
+
+  closeMachineModal(): void {
+    this.showMachineModal = false;
+  }
+
+  runSimulation(preset: string): void {
+    if (!this.caseDetails) return;
+    this.simulating = true;
+    const barcode = this.caseDetails.barcode || this.caseDetails.caseNumber;
+    this.api.simulateMachineTest(barcode, preset).subscribe({
+      next: (res: any) => {
+        this.simulating = false;
+        this.showMachineModal = false;
+        this.toast.success(res.message || 'Machine results synced successfully!');
+        this.loadInvestigationDetails();
+        this.cdr.detectChanges();
+      },
+      error: (err: any) => {
+        this.simulating = false;
+        const msg = err.error?.message || 'Failed to simulate machine sync.';
+        this.toast.error(msg);
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
 }

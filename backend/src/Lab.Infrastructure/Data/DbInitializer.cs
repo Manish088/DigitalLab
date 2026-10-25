@@ -30,6 +30,11 @@ public static class DbInitializer
                         ALTER TABLE Tenants ADD IsAdFree BIT NOT NULL DEFAULT 0;
                     END
 
+                    IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE Name = 'LisApiKey' AND Object_ID = Object_ID('Tenants'))
+                    BEGIN
+                        ALTER TABLE Tenants ADD LisApiKey NVARCHAR(100) NULL;
+                    END
+
                     IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE Name = 'PublicAccessToken' AND Object_ID = Object_ID('CaseOrders'))
                     BEGIN
                         ALTER TABLE CaseOrders ADD PublicAccessToken UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID();

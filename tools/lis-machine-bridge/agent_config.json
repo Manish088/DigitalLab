@@ -1,0 +1,8 @@
+{
+  "serverUrl": "http://localhost:5000",
+  "labCode": "DEFAULT_LAB",
+  "apiKey": "",
+  "machineName": "Mindray BC-5000 Hematology Analyzer",
+  "listeningPort": 5100,
+  "protocol": "ASTM-1394"
+}

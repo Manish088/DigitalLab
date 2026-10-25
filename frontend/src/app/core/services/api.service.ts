@@ -437,4 +437,17 @@ export class ApiService {
   updateMyProfile(data: { fullName: string; email: string; phoneNumber?: string }): Observable<any> {
     return this.http.put<any>(`${this.baseUrl}/auth/profile`, data);
   }
+
+
+  // Machine Interfacing (LIS)
+  getMachineInterfacingConfig(): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/machine-interfacing/config`);
+  }
+
+  simulateMachineTest(barcodeOrCaseNumber: string, preset: string = 'Mindray_CBC'): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/machine-interfacing/simulate-test`, {
+      barcodeOrCaseNumber,
+      machinePreset: preset
+    });
+  }
 }
