@@ -48,7 +48,7 @@ declare var Chart: any;
       </div>
 
       <!-- Day 10 (Trial ke 4 din pehle) Conversion & Retention Alert (Step 5) -->
-      <div *ngIf="isTrialMode && trialDaysLeft <= 4" class="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-amber-950 via-rose-950 to-slate-900 border-2 border-amber-500/60 text-white shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 animate-in fade-in duration-300">
+      <div *ngIf="isOwner() && isTrialMode && trialDaysLeft <= 4" class="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-amber-950 via-rose-950 to-slate-900 border-2 border-amber-500/60 text-white shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 animate-in fade-in duration-300">
         <div class="flex items-center space-x-3.5">
           <div class="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center text-2xl shrink-0">
             <i class="fa-solid fa-triangle-exclamation animate-bounce"></i>
@@ -75,7 +75,7 @@ declare var Chart: any;
       </div>
 
       <!-- 14-Day Free Trial Onboarding Banner (When > 4 days left) -->
-      <div *ngIf="isTrialMode && trialDaysLeft > 4" class="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-emerald-950 via-teal-900 to-slate-900 border border-emerald-500/40 text-white shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4 animate-in fade-in duration-300">
+      <div *ngIf="isOwner() && isTrialMode && trialDaysLeft > 4" class="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-emerald-950 via-teal-900 to-slate-900 border border-emerald-500/40 text-white shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4 animate-in fade-in duration-300">
         <div class="flex items-center space-x-3.5">
           <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center text-2xl shrink-0">
             <i class="fa-solid fa-gift"></i>
@@ -101,7 +101,7 @@ declare var Chart: any;
       </div>
 
       <!-- 3-Minute First Report Quick-Start Guide (Step 1 Hook) -->
-      <div *ngIf="stats && stats.totalPatients === 0" class="p-4 sm:p-5 rounded-2xl bg-white border border-brand-200 shadow-md space-y-3">
+      <div *ngIf="isOwner() && stats && stats.totalPatients === 0" class="p-4 sm:p-5 rounded-2xl bg-white border border-brand-200 shadow-md space-y-3">
         <div class="flex items-center justify-between">
           <div class="flex items-center space-x-2">
             <span class="w-2.5 h-2.5 rounded-full bg-brand-500 animate-ping"></span>
@@ -135,7 +135,7 @@ declare var Chart: any;
       </div>
 
       <!-- Referral Scheme Banner (Step 4: Customer Acquisition) -->
-      <div class="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-blue-950 via-indigo-950 to-slate-900 border border-blue-500/40 text-white shadow-lg flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+      <div *ngIf="isOwner()" class="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-blue-950 via-indigo-950 to-slate-900 border border-blue-500/40 text-white shadow-lg flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
         <div class="flex items-center space-x-3.5">
           <div class="w-12 h-12 rounded-2xl bg-blue-500/20 text-cyan-400 border border-blue-500/40 flex items-center justify-center text-2xl shrink-0">
             <i class="fa-solid fa-share-nodes"></i>
@@ -674,6 +674,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   currentUser = this.authService.currentUserSignal;
   userRole = computed(() => this.currentUser()?.role || '');
+  isOwner = computed(() => {
+    const r = this.userRole();
+    return r === 'LabAdmin' || r === 'SuperAdmin';
+  });
 
   isManagement = computed(() => {
     const r = this.userRole();

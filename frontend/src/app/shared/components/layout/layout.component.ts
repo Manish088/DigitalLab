@@ -94,7 +94,7 @@ import { RealtimeService } from '../../../core/services/realtime.service';
 
           <!-- Quick Action Bar & User Profile -->
           <div class="flex items-center space-x-2 sm:space-x-3">
-            <a *ngIf="isTrial && !isSubExpired && !isSuperAdmin()" routerLink="/subscription" 
+            <a *ngIf="isTrial && !isSubExpired && isLabAdmin()" routerLink="/subscription" 
               class="hidden sm:inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-bold hover:bg-emerald-100 transition-all cursor-pointer shadow-sm">
               <i class="fa-solid fa-gift text-emerald-600"></i>
               <span>14-Day Free Trial: {{ trialDaysRemaining }} Days Left</span>
@@ -398,6 +398,7 @@ export class LayoutComponent implements OnInit {
 
   currentUser = this.authService.currentUserSignal;
   isSuperAdmin = this.authService.isSuperAdmin;
+  isLabAdmin = this.authService.isLabAdmin;
   canManageStaff = this.authService.canManageStaff;
   canManageLab = this.authService.canManageLab;
   isImpersonating = this.authService.isImpersonatingSignal;
