@@ -100,13 +100,23 @@ import { ToastService } from '../../core/services/toast.service';
               </div>
             </div>
             <div>
-              <label class="block font-semibold text-slate-700 mb-1">Password *</label>
-              <input type="password" [(ngModel)]="newStaff.password" placeholder="••••••••" class="w-full px-3 py-2 border rounded-xl">
+              <label class="block font-semibold text-slate-700 mb-1">Phone Number (Optional)</label>
+              <input type="tel" [(ngModel)]="newStaff.phoneNumber" placeholder="e.g. 9876543210" class="w-full px-3 py-2 border rounded-xl">
+            </div>
+
+            <!-- Auto Password Generation Notice -->
+            <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-[11px] flex items-start space-x-2.5">
+              <i class="fa-solid fa-envelope-circle-check text-emerald-600 text-sm mt-0.5 shrink-0"></i>
+              <div class="leading-relaxed">
+                <strong class="text-emerald-900 block font-bold">No Password Needed</strong>
+                <span>A secure temporary password will be auto-generated and emailed to <strong class="text-emerald-950">{{ newStaff.email || 'the staff member' }}</strong>. They will set their own personal password upon first login.</span>
+              </div>
             </div>
           </div>
 
-          <button (click)="createStaff()" class="w-full py-2.5 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl text-xs shadow-md cursor-pointer">
-            Create Account
+          <button (click)="createStaff()" [disabled]="creatingStaff" class="w-full py-2.5 bg-brand-600 hover:bg-brand-500 disabled:opacity-50 text-white font-bold rounded-xl text-xs shadow-md cursor-pointer flex items-center justify-center space-x-2">
+            <i *ngIf="creatingStaff" class="fa-solid fa-spinner fa-spin mr-1"></i>
+            <span>{{ creatingStaff ? 'Creating & Sending Email...' : 'Create Account' }}</span>
           </button>
         </div>
       </div>
@@ -120,6 +130,7 @@ export class StaffComponent implements OnInit {
 
   staffList: any[] = [];
   showAddModal = false;
+  creatingStaff = false;
 
   newStaff = {
     fullName: '',
@@ -143,17 +154,33 @@ export class StaffComponent implements OnInit {
   }
 
   createStaff(): void {
-    if (!this.newStaff.fullName || !this.newStaff.email || !this.newStaff.password) {
-      this.toast.warning('Please enter staff name, email, and temporary password.');
+    if (!this.newStaff.fullName?.trim() || !this.newStaff.email?.trim()) {
+      this.toast.warning('Please enter staff name and email address.');
       return;
     }
+    this.creatingStaff = true;
     this.api.createStaff(this.newStaff).subscribe({
-      next: () => {
+      next: (res: any) => {
+        this.creatingStaff = false;
         this.showAddModal = false;
-        this.toast.success(`Staff member ${this.newStaff.fullName} created successfully!`);
+        this.toast.success(res?.message || `Staff member ${this.newStaff.fullName} created successfully! Password sent to email.`);
+        this.newStaff = {
+          fullName: '',
+          email: '',
+          phoneNumber: '',
+          role: 'Technician',
+          designation: 'Lab Technician',
+          password: '',
+          permissionsJson: '["cases", "results"]'
+        };
         this.loadStaff();
+        this.cdr.detectChanges();
       },
-      error: (err) => this.toast.error(err.error?.message || 'Error creating staff.')
+      error: (err) => {
+        this.creatingStaff = false;
+        this.toast.error(err.error?.message || 'Error creating staff.');
+        this.cdr.detectChanges();
+      }
     });
   }
 

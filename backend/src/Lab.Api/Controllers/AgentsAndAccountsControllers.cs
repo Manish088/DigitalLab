@@ -519,11 +519,15 @@ public class StaffController : ControllerBase
         if (existing != null)
             return BadRequest(new { message = "Email already in use." });
 
+        var effectivePassword = !string.IsNullOrWhiteSpace(req.Password)
+            ? req.Password.Trim()
+            : $"Staff@{System.Security.Cryptography.RandomNumberGenerator.GetInt32(1000, 9999)}";
+
         var user = new ApplicationUser
         {
-            UserName = req.Email,
-            Email = req.Email,
-            FullName = req.FullName,
+            UserName = req.Email.Trim(),
+            Email = req.Email.Trim(),
+            FullName = req.FullName.Trim(),
             PhoneNumber = req.PhoneNumber,
             TenantId = _currentUserService.TenantId,
             Role = req.Role,
@@ -534,7 +538,7 @@ public class StaffController : ControllerBase
             MustChangePassword = true
         };
 
-        var res = await _userManager.CreateAsync(user, req.Password);
+        var res = await _userManager.CreateAsync(user, effectivePassword);
         if (!res.Succeeded)
             return BadRequest(new { message = string.Join("; ", res.Errors.Select(e => e.Description)) });
 
@@ -556,7 +560,7 @@ public class StaffController : ControllerBase
                         labTitle,
                         req.Role,
                         req.Designation,
-                        req.Password);
+                        effectivePassword);
                 }
                 catch (Exception ex)
                 {

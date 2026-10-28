@@ -129,7 +129,7 @@ public static class DbInitializer
         }
 
         // 2. Seed Master Laboratory Tenant & Super Admin
-        var superAdminEmail = "admin@digitlab.com";
+        var superAdminEmail = "yadavmanishkk@gmail.com";
         var masterTenant = await context.Tenants.FirstOrDefaultAsync(t => t.Id == CurrentUserService.MasterTenantId || t.LabCode == "MASTER" || t.Email == superAdminEmail);
         if (masterTenant == null)
         {
@@ -163,7 +163,8 @@ public static class DbInitializer
             await context.SaveChangesAsync();
         }
 
-        var superAdmin = await userManager.FindByEmailAsync(superAdminEmail);
+        var superAdmin = await userManager.FindByEmailAsync(superAdminEmail)
+            ?? await userManager.FindByEmailAsync("admin@digitlab.com");
         if (superAdmin == null)
         {
             superAdmin = new ApplicationUser
@@ -182,11 +183,18 @@ public static class DbInitializer
         }
         else
         {
+            if (superAdmin.Email != superAdminEmail)
+            {
+                superAdmin.Email = superAdminEmail;
+                superAdmin.UserName = superAdminEmail;
+                superAdmin.NormalizedEmail = superAdminEmail.ToUpperInvariant();
+                superAdmin.NormalizedUserName = superAdminEmail.ToUpperInvariant();
+            }
             if (!superAdmin.TenantId.HasValue || superAdmin.TenantId == Guid.Empty)
             {
                 superAdmin.TenantId = masterTenant.Id;
-                await userManager.UpdateAsync(superAdmin);
             }
+            await userManager.UpdateAsync(superAdmin);
             if (!await userManager.CheckPasswordAsync(superAdmin, "Admin@12345"))
             {
                 var token = await userManager.GeneratePasswordResetTokenAsync(superAdmin);

@@ -14,7 +14,7 @@ public record RegisterLabRequest(string LabName, string OwnerName, string? Email
 public record ChangePasswordRequest(string OldPassword, string NewPassword);
 public record UpdateProfileRequest(string FullName, string Email, string? PhoneNumber);
 public record StaffUserDto(string Id, string FullName, string Email, string PhoneNumber, string Role, string Designation, bool IsActive, string? PermissionsJson);
-public record CreateStaffUserRequest(string FullName, string Email, string PhoneNumber, string Password, string Role, string Designation, string? PermissionsJson);
+public record CreateStaffUserRequest(string FullName, string Email, string? PhoneNumber, string? Password, string Role, string Designation, string? PermissionsJson);
 
 // Dashboard DTOs
 public record DashboardStatsDto(

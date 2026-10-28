@@ -405,8 +405,9 @@ public class EmailService : IEmailService
           </tr>
         </table>
 
-        <div style=""background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px; padding: 12px 16px; margin: 0 0 20px 0; font-size: 12px; color: #92400e; line-height: 1.5;"">
-          🔒 <strong>Security Notice:</strong> Please sign in to the portal and change your temporary password to your personal secure password.
+        <div style=""background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px; padding: 14px 16px; margin: 0 0 20px 0; font-size: 12px; color: #92400e; line-height: 1.6;"">
+          🔒 <strong>First-Time Login Security:</strong> Please sign in using this temporary password. The system will prompt you to choose your own secure password upon your first login.<br><br>
+          🔑 <strong>Lost Password?</strong> If you ever lose or delete this email, you can reset your password anytime by clicking <strong>""Forgot Password""</strong> on the sign-in page to receive a 6-digit verification code.
         </div>
 
         <div style=""background: #f1f5f9; border-radius: 10px; padding: 12px 16px; margin: 0; font-size: 11px; color: #64748b; line-height: 1.5; border-left: 3px solid #94a3b8;"">
