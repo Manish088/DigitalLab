@@ -272,11 +272,13 @@ public class SupportTicketsController : ControllerBase
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IEmailService _emailService;
 
-    public SupportTicketsController(IApplicationDbContext context, ICurrentUserService currentUserService)
+    public SupportTicketsController(IApplicationDbContext context, ICurrentUserService currentUserService, IEmailService emailService)
     {
         _context = context;
         _currentUserService = currentUserService;
+        _emailService = emailService;
     }
 
     [HttpGet]
@@ -352,6 +354,38 @@ public class SupportTicketsController : ControllerBase
         ticket.Status = _currentUserService.IsSuperAdmin ? Domain.Enums.TicketStatus.InProgress : Domain.Enums.TicketStatus.Open;
 
         await _context.SaveChangesAsync();
+
+        // Automated Email Notification when Support Admin replies
+        if (_currentUserService.IsSuperAdmin)
+        {
+            try
+            {
+                var tenant = await _context.Tenants.FirstOrDefaultAsync(t => t.Id == ticket.TenantId);
+                var targetEmail = tenant?.Email;
+                if (!string.IsNullOrWhiteSpace(targetEmail) && targetEmail.Contains('@'))
+                {
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await _emailService.SendTicketReplyNotificationEmailAsync(
+                                targetEmail.Trim(),
+                                tenant.OwnerName ?? "Lab Administrator",
+                                ticket.TicketNumber,
+                                ticket.Subject,
+                                _currentUserService.FullName ?? "DigitalLab Support Team",
+                                dto.Message);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"[Ticket Reply Email Error] {ex.Message}");
+                        }
+                    });
+                }
+            }
+            catch {}
+        }
+
         return Ok(new { message = "Reply added.", replyId = reply.Id });
     }
 }

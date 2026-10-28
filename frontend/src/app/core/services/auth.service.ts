@@ -94,12 +94,63 @@ export class AuthService {
     }
   }
 
-  sendOtp(phone: string, email?: string): Observable<{ success: boolean; message: string; phone: string; demoOtp?: string; expiresInSeconds: number }> {
-    return this.http.post<{ success: boolean; message: string; phone: string; demoOtp?: string; expiresInSeconds: number }>(`${this.baseUrl}/send-otp`, { phone, email });
+  checkUserExists(email?: string, phone?: string): Observable<{ emailExists: boolean; phoneExists: boolean; alreadyRegistered: boolean; message?: string }> {
+    let params: any = {};
+    if (email) params.email = email;
+    if (phone) params.phone = phone;
+    return this.http.get<{ emailExists: boolean; phoneExists: boolean; alreadyRegistered: boolean; message?: string }>(`${this.baseUrl}/check-user-exists`, { params });
   }
 
-  verifyOtp(phone: string, otp: string): Observable<{ success: boolean; message: string }> {
-    return this.http.post<{ success: boolean; message: string }>(`${this.baseUrl}/verify-otp`, { phone, otp });
+  sendOtp(phone: string, email: string, ownerName?: string): Observable<{ success: boolean; message: string; phone: string; email?: string; emailSent?: boolean; demoOtp?: string; expiresInSeconds: number }> {
+    return this.http.post<{ success: boolean; message: string; phone: string; email?: string; emailSent?: boolean; demoOtp?: string; expiresInSeconds: number }>(`${this.baseUrl}/send-otp`, { phone, email, ownerName });
+  }
+
+  verifyOtp(otp: string, email?: string, phone?: string): Observable<{ success: boolean; message: string }> {
+    return this.http.post<{ success: boolean; message: string }>(`${this.baseUrl}/verify-otp`, { otp, email, phone });
+  }
+
+  changePassword(oldPassword: string, newPassword: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.baseUrl}/change-password`, { oldPassword, newPassword });
+  }
+
+  forgotPasswordSendOtp(emailOrPhone: string): Observable<{
+    success: boolean;
+    userId: string;
+    maskedEmail: string;
+    emailSent: boolean;
+    message: string;
+    demoOtp?: string;
+    expiresInSeconds: number;
+  }> {
+    return this.http.post<{
+      success: boolean;
+      userId: string;
+      maskedEmail: string;
+      emailSent: boolean;
+      message: string;
+      demoOtp?: string;
+      expiresInSeconds: number;
+    }>(`${this.baseUrl}/forgot-password/send-otp`, { emailOrPhone });
+  }
+
+  forgotPasswordVerifyOtp(userId: string, otp: string): Observable<{
+    success: boolean;
+    message: string;
+  }> {
+    return this.http.post<{
+      success: boolean;
+      message: string;
+    }>(`${this.baseUrl}/forgot-password/verify-otp`, { userId, otp });
+  }
+
+  forgotPasswordReset(userId: string, otp: string, newPassword: string): Observable<{
+    success: boolean;
+    message: string;
+  }> {
+    return this.http.post<{
+      success: boolean;
+      message: string;
+    }>(`${this.baseUrl}/forgot-password/reset-password`, { userId, otp, newPassword });
   }
 
   register(data: any): Observable<LoginResponse> {

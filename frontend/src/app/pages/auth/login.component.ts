@@ -1,22 +1,22 @@
-import { Component, inject, ChangeDetectorRef, OnInit, OnDestroy } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, ActivatedRoute, RouterLink } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule],
   template: `
-    <div class="min-h-screen bg-slate-100/70 flex flex-col justify-center py-10 sm:px-6 lg:px-8 relative overflow-hidden">
-      <!-- Background subtle decorative medical accents -->
-      <div class="absolute -top-24 -left-24 w-96 h-96 bg-brand-200/40 rounded-full blur-3xl pointer-events-none"></div>
-      <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-sky-200/40 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
+      <!-- Background Decorative Blobs -->
+      <div class="absolute -top-40 -right-40 w-96 h-96 bg-brand-400/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -bottom-40 -left-40 w-96 h-96 bg-emerald-400/10 rounded-full blur-3xl pointer-events-none"></div>
 
-      <div class="sm:mx-auto sm:w-full sm:max-w-md relative z-10 text-center">
-        <a routerLink="/" class="inline-block p-2 bg-white rounded-2xl shadow-md border border-slate-200/80 mb-3 hover:scale-105 transition-transform">
+      <div class="sm:mx-auto sm:w-full sm:max-w-md text-center relative z-10 px-4 sm:px-0">
+        <a routerLink="/" class="inline-flex items-center justify-center space-x-2.5 mb-2 hover:opacity-90 transition-all">
           <img src="logo.png" alt="DigitalLab" class="w-14 h-14 rounded-xl object-contain">
         </a>
         <h2 class="text-3xl font-black text-slate-900 tracking-tight font-heading">DigitalLab LIMS</h2>
@@ -26,7 +26,7 @@ import { environment } from '../../../environments/environment';
       <div class="mt-6 sm:mx-auto sm:w-full sm:max-w-md relative z-10 px-4 sm:px-0">
         <div class="bg-white py-8 px-6 sm:px-8 shadow-xl shadow-slate-200/60 rounded-3xl border border-slate-200/80">
           
-          <!-- Mode Tabs -->
+          <!-- Mode Tabs: Sign In / Register -->
           <div class="flex border-b border-slate-200 mb-6 text-xs sm:text-sm font-bold">
             <button type="button" (click)="isRegister = false; errorMessage = ''" 
               [class]="!isRegister ? 'border-b-2 border-brand-600 text-brand-700 font-extrabold pb-3' : 'text-slate-400 hover:text-slate-600 pb-3'" 
@@ -35,30 +35,43 @@ import { environment } from '../../../environments/environment';
             </button>
             <button type="button" (click)="isRegister = true; errorMessage = ''" 
               [class]="isRegister ? 'border-b-2 border-emerald-600 text-emerald-700 font-extrabold pb-3' : 'text-slate-400 hover:text-slate-600 pb-3'" 
-              class="flex-1 text-center transition-all cursor-pointer flex items-center justify-center space-x-1.5">
-              <span>Start Free Trial</span>
-              <span class="px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-black">14 Days</span>
+              class="flex-1 text-center transition-all cursor-pointer">
+              Register
             </button>
           </div>
 
-          <!-- Alert error message -->
-          <div *ngIf="errorMessage" class="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center animate-in fade-in duration-200">
-            <i class="fa-solid fa-circle-exclamation mr-2 text-sm shrink-0"></i>
-            <span>{{ errorMessage }}</span>
+          <!-- Alert Success Message -->
+          <div *ngIf="successMessage" class="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-start space-x-2 animate-in fade-in duration-200">
+            <i class="fa-solid fa-circle-check text-emerald-600 text-sm mt-0.5 shrink-0"></i>
+            <span class="leading-relaxed">{{ successMessage }}</span>
           </div>
 
-          <!-- Sign In Form -->
+          <!-- Alert Error Message -->
+          <div *ngIf="errorMessage" class="mb-4 p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs shadow-sm animate-in fade-in duration-200">
+            <div class="flex items-center justify-between space-x-2">
+              <div class="flex items-center space-x-2 min-w-0">
+                <i class="fa-solid fa-circle-exclamation text-rose-600 text-sm shrink-0"></i>
+                <span class="font-bold text-rose-900 truncate">{{ errorMessage }}</span>
+              </div>
+              <button *ngIf="isAlreadyRegisteredError && isRegister" type="button" (click)="switchToSignIn()" class="shrink-0 px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold text-xs shadow transition-all cursor-pointer inline-flex items-center space-x-1">
+                <span>Sign In</span>
+                <i class="fa-solid fa-arrow-right text-[10px]"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Sign In Form (Email Only) -->
           <form *ngIf="!isRegister" (ngSubmit)="onLogin()" class="space-y-4">
             <div>
               <label class="block text-xs font-bold text-slate-700 mb-1 flex items-center">
                 <i class="fa-solid fa-envelope text-slate-400 mr-1.5 text-xs"></i>
-                <span>Email Address or Mobile Number</span>
+                <span>Email Address</span>
               </label>
               <div class="relative">
                 <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                  <i class="fa-solid fa-user-check text-xs"></i>
+                  <i class="fa-solid fa-at text-xs"></i>
                 </div>
-                <input type="text" [(ngModel)]="loginData.emailOrUsername" name="email" required placeholder="Enter Email Address or 10-digit mobile"
+                <input type="email" [(ngModel)]="loginData.emailOrUsername" name="email" required placeholder="Enter your registered email address"
                   class="block w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-xs sm:text-sm font-semibold transition-all">
               </div>
             </div>
@@ -66,6 +79,9 @@ import { environment } from '../../../environments/environment';
             <div>
               <div class="flex items-center justify-between mb-1">
                 <label class="block text-xs font-bold text-slate-700">Password</label>
+                <button type="button" (click)="openForgotPassword()" class="text-xs font-bold text-brand-600 hover:text-brand-700 hover:underline cursor-pointer">
+                  Forgot Password?
+                </button>
               </div>
               <div class="relative">
                 <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -88,23 +104,13 @@ import { environment } from '../../../environments/environment';
             <div class="mt-4 pt-4 border-t border-slate-100 text-center">
               <p class="text-xs text-slate-500">Don't have an account yet?</p>
               <button type="button" (click)="isRegister = true; errorMessage = ''" class="mt-1 text-xs font-extrabold text-emerald-600 hover:text-emerald-700 underline cursor-pointer">
-                Start 14-Day Free Trial (Instant 1-Min Setup) &rarr;
+                Register Here &rarr;
               </button>
             </div>
           </form>
 
-          <!-- Register / 14-Day Free Trial Form -->
+          <!-- Clean Simple Register Form -->
           <form *ngIf="isRegister" (ngSubmit)="onInitiateRegister()" class="space-y-3.5">
-            <!-- 14-Day Trial Trust Banner -->
-            <div class="p-3 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-brand-500/10 border border-emerald-500/30 text-center">
-              <div class="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase tracking-wider mb-1 border border-emerald-300">
-                <i class="fa-solid fa-shield-check text-emerald-600"></i>
-                <span>Zero Risk • 14 Days Free Trial</span>
-              </div>
-              <h3 class="text-xs sm:text-sm font-extrabold text-slate-800">Launch Your Lab in 1 Minute</h3>
-              <p class="text-[11px] text-slate-500 mt-0.5">100+ standard tests preloaded • No credit card required</p>
-            </div>
-
             <div>
               <label class="block text-xs font-bold text-slate-700 mb-1">Laboratory / Diagnostic Name *</label>
               <input type="text" [(ngModel)]="regData.labName" name="labName" required placeholder="e.g. Metro Care Diagnostics"
@@ -122,8 +128,13 @@ import { environment } from '../../../environments/environment';
                 <i class="fa-solid fa-envelope text-slate-400 mr-1 text-xs"></i>
                 <span>Email Address *</span>
               </label>
-              <input type="email" [(ngModel)]="regData.email" name="email" required placeholder="e.g. yourname@gmail.com"
+              <input type="email" [(ngModel)]="regData.email" (blur)="onEmailBlur()" (change)="onEmailBlur()" (input)="onEmailInput()" name="email" required placeholder="e.g. yourname@gmail.com"
+                [class.border-rose-400]="emailAlreadyRegistered"
+                [class.bg-rose-50]="emailAlreadyRegistered"
                 class="block w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 text-xs sm:text-sm font-semibold transition-all">
+              <p *ngIf="emailAlreadyRegistered" class="mt-1 text-[11px] font-semibold text-rose-600 flex items-center">
+                <i class="fa-solid fa-circle-exclamation mr-1 text-[10px]"></i> Email already registered.
+              </p>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -133,7 +144,7 @@ import { environment } from '../../../environments/environment';
                     <i class="fa-brands fa-whatsapp text-emerald-600 mr-1 text-sm"></i>
                     <span>WhatsApp Number *</span>
                   </span>
-                  <span *ngIf="regData.phone" [class]="phoneStatus.color" class="text-[10px] font-bold">
+                  <span *ngIf="!phoneAlreadyRegistered && regData.phone" [class]="phoneStatus.color" class="text-[10px] font-bold">
                     {{ phoneStatus.text }}
                   </span>
                 </label>
@@ -142,27 +153,24 @@ import { environment } from '../../../environments/environment';
                     +91
                   </div>
                   <input type="tel" [(ngModel)]="regData.phone" (input)="onPhoneInput($event)" name="phone" required placeholder="10-digit number" maxlength="10" inputmode="numeric"
+                    [class.border-rose-400]="phoneAlreadyRegistered"
+                    [class.bg-rose-50]="phoneAlreadyRegistered"
                     class="block w-full pl-11 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 text-xs sm:text-sm font-semibold transition-all">
                 </div>
+                <p *ngIf="phoneAlreadyRegistered" class="mt-1 text-[11px] font-semibold text-rose-600 flex items-center">
+                  <i class="fa-solid fa-circle-exclamation mr-1 text-[10px]"></i> Mobile number already registered.
+                </p>
               </div>
+
               <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1 flex items-center">
-                  <i class="fa-solid fa-lock text-slate-400 mr-1 text-xs"></i>
-                  <span>Password *</span>
+                  <i class="fa-solid fa-location-dot text-slate-400 mr-1 text-xs"></i>
+                  <span>City / Location</span>
+                  <span class="text-slate-400 font-normal text-[10px] ml-1.5">(Optional)</span>
                 </label>
-                <input type="password" [(ngModel)]="regData.password" name="password" required placeholder="Min 6 characters"
-                  class="block w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 text-xs sm:text-sm font-semibold transition-all">
+                <input type="text" [(ngModel)]="regData.city" name="city" placeholder="e.g. Mumbai, Delhi, Lucknow"
+                  class="block w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 text-xs sm:text-sm font-semibold transition-all">
               </div>
-            </div>
-
-            <div>
-              <label class="block text-xs font-bold text-slate-700 mb-1 flex items-center">
-                <i class="fa-solid fa-location-dot text-slate-400 mr-1 text-xs"></i>
-                <span>City / Location</span>
-                <span class="text-slate-400 font-normal text-[10px] ml-1.5">(Optional)</span>
-              </label>
-              <input type="text" [(ngModel)]="regData.city" name="city" placeholder="e.g. Mumbai, Delhi, Lucknow"
-                class="block w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 text-xs sm:text-sm font-semibold transition-all">
             </div>
 
             <!-- Referral Bonus Badge -->
@@ -172,19 +180,11 @@ import { environment } from '../../../environments/environment';
             </div>
 
             <button type="submit" [disabled]="loading || sendingOtp"
-              class="w-full mt-3 py-3.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-brand-600 text-white font-black text-xs sm:text-sm hover:from-emerald-500 hover:to-brand-500 transition-all shadow-lg shadow-emerald-600/30 disabled:opacity-50 cursor-pointer flex items-center justify-center space-x-2">
+              class="w-full mt-3 py-3.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-brand-600 text-white font-extrabold text-xs sm:text-sm hover:from-emerald-500 hover:to-brand-500 transition-all shadow-lg shadow-emerald-600/30 disabled:opacity-50 cursor-pointer flex items-center justify-center space-x-2">
               <i *ngIf="sendingOtp" class="fa-solid fa-spinner fa-spin mr-2"></i>
-              <i *ngIf="!sendingOtp" class="fa-brands fa-whatsapp text-emerald-200 text-base"></i>
-              <span>{{ sendingOtp ? 'Sending WhatsApp OTP...' : 'Verify Mobile & Start 14-Day Free Trial' }}</span>
+              <i *ngIf="!sendingOtp" class="fa-solid fa-user-plus text-emerald-200 text-base"></i>
+              <span>{{ sendingOtp ? 'Sending Verification OTP...' : 'Register Lab' }}</span>
             </button>
-
-            <!-- Features Included in Trial -->
-            <div class="mt-3 grid grid-cols-2 gap-1.5 text-[10px] text-slate-600 font-semibold bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-              <div class="flex items-center"><i class="fa-solid fa-check text-emerald-600 mr-1.5 text-xs"></i> 100+ Preloaded Tests</div>
-              <div class="flex items-center"><i class="fa-solid fa-check text-emerald-600 mr-1.5 text-xs"></i> Plain Paper Print</div>
-              <div class="flex items-center"><i class="fa-solid fa-check text-emerald-600 mr-1.5 text-xs"></i> WhatsApp QR Reports</div>
-              <div class="flex items-center"><i class="fa-solid fa-check text-emerald-600 mr-1.5 text-xs"></i> Zero Credit Card</div>
-            </div>
 
             <div class="pt-2 text-center">
               <span class="text-xs text-slate-500">Already have an account? </span>
@@ -194,115 +194,32 @@ import { environment } from '../../../environments/environment';
             </div>
           </form>
 
-          <!-- Mobile / Server Config Bar -->
-          <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-            <span class="flex items-center space-x-1.5 truncate max-w-[220px]" [title]="currentApiUrl">
-              <i class="fa-solid fa-server text-slate-400"></i>
-              <span>Server: <strong class="text-slate-700 font-mono font-bold">{{ displayServerUrl }}</strong></span>
-            </span>
-            <button type="button" (click)="openServerModal()" class="text-brand-600 hover:text-brand-700 font-bold hover:underline cursor-pointer shrink-0">
-              Change
-            </button>
-          </div>
-
         </div>
 
-        <!-- Mobile App 1-Click Install Card -->
-        <div class="mt-4 p-4 rounded-2xl bg-white/95 backdrop-blur-sm border border-slate-200 shadow-lg shadow-slate-200/50 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div class="flex items-center space-x-3 text-left">
-            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-600 text-white flex items-center justify-center text-lg shadow-sm shrink-0">
-              <i class="fa-brands fa-android"></i>
-            </div>
-            <div>
-              <div class="text-xs font-bold text-slate-800 flex items-center space-x-1.5">
-                <span>DigitLab Android App</span>
-                <span class="px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black">Official</span>
-              </div>
-              <div class="text-[11px] text-slate-500">Fast 1-tap direct download for mobile phones (No login needed)</div>
-            </div>
-          </div>
-          <a href="https://github.com/Manish088/DigitalLab/releases/download/v1.0-mobile/DigitLab.apk"
-             target="_blank"
-             class="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs rounded-xl shadow-md shadow-emerald-600/20 flex items-center justify-center space-x-1.5 transition-all cursor-pointer shrink-0">
-            <i class="fa-solid fa-download text-xs"></i>
-            <span>Download .APK</span>
-          </a>
-        </div>
-
-        <!-- Server Configuration Modal -->
-        <div *ngIf="showServerModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div class="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-sm w-full p-6 space-y-4">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center space-x-2.5">
-                <div class="w-8 h-8 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center text-sm">
-                  <i class="fa-solid fa-server"></i>
-                </div>
-                <h3 class="text-sm font-bold text-slate-900 font-heading">Backend Server URL</h3>
-              </div>
-              <button (click)="showServerModal = false" class="text-slate-400 hover:text-slate-600 text-sm cursor-pointer">
-                <i class="fa-solid fa-xmark"></i>
-              </button>
-            </div>
-            
-            <p class="text-xs text-slate-500">
-              Mobile phone par backend se connect karne ke liye apne laptop ka Wi-Fi IP address ya live server URL enter karein:
-            </p>
-
-            <div>
-              <label class="block text-xs font-bold text-slate-700 mb-1">Server URL</label>
-              <input type="text" [(ngModel)]="customServerInput" placeholder="http://192.168.0.196:5000"
-                class="w-full px-3 py-2 text-xs font-mono border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none">
-            </div>
-
-            <div class="space-y-1.5 pt-1">
-              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">1-Tap Quick Presets:</span>
-              <button type="button" (click)="customServerInput = 'http://192.168.0.196:5000'" class="w-full text-left px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 rounded-lg text-xs font-medium text-slate-700 border border-slate-200 transition-all flex items-center justify-between">
-                <span>💻 Laptop Wi-Fi IP</span>
-                <span class="font-mono text-[10px] text-brand-600">192.168.0.196:5000</span>
-              </button>
-              <button type="button" (click)="customServerInput = 'https://digitlab.runasp.net'" class="w-full text-left px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 rounded-lg text-xs font-medium text-slate-700 border border-slate-200 transition-all flex items-center justify-between">
-                <span>☁️ Live Cloud Server</span>
-                <span class="font-mono text-[10px] text-emerald-600">digitlab.runasp.net</span>
-              </button>
-            </div>
-
-            <div class="flex items-center space-x-2 pt-2">
-              <button type="button" (click)="saveServerUrl()" class="flex-1 py-2 bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs rounded-xl shadow-sm transition-all cursor-pointer">
-                Save & Apply
-              </button>
-              <button type="button" (click)="resetServerUrl()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold text-xs rounded-xl transition-all cursor-pointer">
-                Reset Default
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- OTP Verification Modal -->
+        <!-- Registration OTP Verification Modal -->
         <div *ngIf="showOtpModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div class="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-md w-full p-6 sm:p-8 relative overflow-hidden">
             
             <div class="w-14 h-14 mx-auto rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-3xl shadow-inner mb-4">
-              <i class="fa-brands fa-whatsapp"></i>
+              <i class="fa-solid fa-envelope-circle-check"></i>
             </div>
 
-            <h3 class="text-xl font-black text-center text-slate-900 font-heading">Verify Mobile Number</h3>
+            <h3 class="text-xl font-black text-center text-slate-900 font-heading">Verify Your Email</h3>
             <p class="text-xs text-center text-slate-500 mt-1.5 leading-relaxed">
               We sent a 6-digit verification code to <br>
-              <strong class="text-slate-800 text-sm font-bold">+91 {{ regData.phone }}</strong>
+              <strong class="text-slate-800 text-sm font-bold font-mono">{{ regData.email }}</strong>
               <button type="button" (click)="showOtpModal = false" class="text-brand-600 hover:underline text-[11px] ml-1.5 font-semibold cursor-pointer">
                 (Change)
               </button>
             </p>
 
-            <!-- Demo OTP Helper Badge (for instant demo/testing) -->
-            <div *ngIf="demoOtp" class="mt-4 p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center justify-between">
-              <span class="flex items-center">
-                <i class="fa-solid fa-key text-amber-500 mr-2"></i>
-                <span>Test / Demo OTP:</span>
-              </span>
-              <span class="font-mono font-black text-sm bg-white px-2 py-0.5 rounded-lg border border-amber-200 tracking-wider">
-                {{ demoOtp }}
-              </span>
+            <!-- Email Sent Notification Badge (No OTP displayed) -->
+            <div class="mt-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-start space-x-2.5 shadow-sm">
+              <i class="fa-solid fa-circle-check text-emerald-600 text-base mt-0.5 shrink-0"></i>
+              <div class="leading-relaxed">
+                <span class="font-bold block text-emerald-900 text-xs">OTP Sent to Email</span>
+                <span>A 6-digit verification code has been sent to your email. Please check your inbox or spam folder.</span>
+              </div>
             </div>
 
             <!-- Alert error inside modal -->
@@ -343,6 +260,250 @@ import { environment } from '../../../environments/environment';
           </div>
         </div>
 
+        <!-- First-Time Login Change Password Modal -->
+        <div *ngIf="showFirstLoginChangeModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm animate-in fade-in duration-200">
+          <div class="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-md w-full p-6 sm:p-8 relative overflow-hidden">
+            
+            <div class="w-14 h-14 mx-auto rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-3xl shadow-inner mb-3">
+              <i class="fa-solid fa-lock-open"></i>
+            </div>
+
+            <h3 class="text-xl font-black text-center text-slate-900 font-heading">Change Default Password</h3>
+            <p class="text-xs text-center text-slate-500 mt-1.5 leading-relaxed">
+              Welcome to <strong>DigitalLab LIMS</strong>!<br>
+              Since you logged in with a default password, please create your new personal password to activate your account.
+            </p>
+
+            <!-- Alert error inside first-login modal -->
+            <div *ngIf="firstLoginError" class="mt-3 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center">
+              <i class="fa-solid fa-circle-exclamation mr-2 text-sm shrink-0"></i>
+              <span>{{ firstLoginError }}</span>
+            </div>
+
+            <div class="mt-4 space-y-3.5">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">New Personal Password *</label>
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <i class="fa-solid fa-lock text-xs"></i>
+                  </div>
+                  <input [type]="firstLoginShowPassword ? 'text' : 'password'" [(ngModel)]="firstLoginNewPassword" placeholder="Minimum 6 characters"
+                    class="block w-full pl-9 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 text-xs sm:text-sm font-semibold transition-all">
+                  <button type="button" (click)="firstLoginShowPassword = !firstLoginShowPassword" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer">
+                    <i class="fa-solid" [ngClass]="firstLoginShowPassword ? 'fa-eye-slash' : 'fa-eye'"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Confirm New Password *</label>
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <i class="fa-solid fa-lock text-xs"></i>
+                  </div>
+                  <input [type]="firstLoginShowPassword ? 'text' : 'password'" [(ngModel)]="firstLoginConfirmPassword" placeholder="Re-enter new password"
+                    (keyup.enter)="onSubmitFirstLoginPassword()"
+                    class="block w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 text-xs sm:text-sm font-semibold transition-all">
+                </div>
+              </div>
+
+              <button type="button" (click)="onSubmitFirstLoginPassword()" [disabled]="firstLoginLoading || !firstLoginNewPassword || !firstLoginConfirmPassword"
+                class="w-full mt-2 py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-brand-600 text-white font-extrabold text-xs sm:text-sm hover:from-emerald-500 hover:to-brand-500 transition-all shadow-lg shadow-emerald-600/30 disabled:opacity-50 cursor-pointer flex items-center justify-center space-x-2">
+                <i *ngIf="firstLoginLoading" class="fa-solid fa-spinner fa-spin mr-2"></i>
+                <i *ngIf="!firstLoginLoading" class="fa-solid fa-circle-check"></i>
+                <span>{{ firstLoginLoading ? 'Updating Password...' : 'Save Password & Go to Dashboard' }}</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Forgot Password Modal -->
+        <div *ngIf="showForgotModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div class="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-md w-full p-6 sm:p-8 relative overflow-hidden">
+            
+            <!-- Close button -->
+            <button type="button" (click)="closeForgotPassword()" class="absolute top-5 right-5 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-all cursor-pointer">
+              <i class="fa-solid fa-xmark text-sm"></i>
+            </button>
+
+            <!-- Icon Header -->
+            <div class="w-14 h-14 mx-auto rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center text-2xl shadow-inner mb-3">
+              <i class="fa-solid fa-key" *ngIf="forgotStep === 'input'"></i>
+              <i class="fa-solid fa-shield-halved" *ngIf="forgotStep === 'otp'"></i>
+              <i class="fa-solid fa-lock" *ngIf="forgotStep === 'new-password'"></i>
+              <i class="fa-solid fa-circle-check text-emerald-500" *ngIf="forgotStep === 'success'"></i>
+            </div>
+
+            <h3 class="text-xl font-black text-center text-slate-900 font-heading">
+              <span *ngIf="forgotStep === 'input'">Reset Password</span>
+              <span *ngIf="forgotStep === 'otp'">Verify OTP</span>
+              <span *ngIf="forgotStep === 'new-password'">Set New Password</span>
+              <span *ngIf="forgotStep === 'success'">Password Reset!</span>
+            </h3>
+
+            <!-- Step Progress Indicator -->
+            <div *ngIf="forgotStep !== 'success'" class="flex items-center justify-center space-x-2 my-3">
+              <div class="flex items-center space-x-1.5 text-[11px] font-bold">
+                <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px]"
+                      [ngClass]="forgotStep === 'input' ? 'bg-brand-600 text-white' : 'bg-emerald-100 text-emerald-700'">1</span>
+                <span [ngClass]="forgotStep === 'input' ? 'text-brand-700' : 'text-slate-400'">Account</span>
+              </div>
+              <div class="w-6 h-0.5 bg-slate-200"></div>
+              <div class="flex items-center space-x-1.5 text-[11px] font-bold">
+                <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px]"
+                      [ngClass]="forgotStep === 'otp' ? 'bg-brand-600 text-white' : (forgotStep === 'new-password' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400')">2</span>
+                <span [ngClass]="forgotStep === 'otp' ? 'text-brand-700' : 'text-slate-400'">OTP</span>
+              </div>
+              <div class="w-6 h-0.5 bg-slate-200"></div>
+              <div class="flex items-center space-x-1.5 text-[11px] font-bold">
+                <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px]"
+                      [ngClass]="forgotStep === 'new-password' ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-400'">3</span>
+                <span [ngClass]="forgotStep === 'new-password' ? 'text-brand-700' : 'text-slate-400'">Reset</span>
+              </div>
+            </div>
+
+            <!-- Error Banner -->
+            <div *ngIf="forgotErrorMessage" class="mt-2 mb-3 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center animate-in fade-in">
+              <i class="fa-solid fa-circle-exclamation mr-2 text-sm shrink-0"></i>
+              <span>{{ forgotErrorMessage }}</span>
+            </div>
+
+            <!-- STEP 1: Enter Email -->
+            <div *ngIf="forgotStep === 'input'" class="space-y-4">
+              <p class="text-xs text-center text-slate-500 leading-relaxed">
+                Enter your registered <strong>Email Address</strong>. We will send an OTP to your email to verify your identity.
+              </p>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1 flex items-center">
+                  <i class="fa-solid fa-envelope text-slate-400 mr-1.5 text-xs"></i>
+                  <span>Registered Email Address</span>
+                </label>
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <i class="fa-solid fa-at text-xs"></i>
+                  </div>
+                  <input type="email" [(ngModel)]="forgotEmailOrPhone" placeholder="e.g. yourname@gmail.com"
+                    (keyup.enter)="onForgotSendOtp()"
+                    class="block w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 text-xs sm:text-sm font-semibold transition-all">
+                </div>
+              </div>
+
+              <button type="button" (click)="onForgotSendOtp()" [disabled]="forgotLoading || !forgotEmailOrPhone"
+                class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-brand-600 to-sky-600 text-white font-extrabold text-xs sm:text-sm hover:from-brand-500 hover:to-sky-500 transition-all shadow-lg shadow-brand-600/25 disabled:opacity-50 cursor-pointer flex items-center justify-center space-x-2">
+                <i *ngIf="forgotLoading" class="fa-solid fa-spinner fa-spin mr-2"></i>
+                <i *ngIf="!forgotLoading" class="fa-solid fa-paper-plane"></i>
+                <span>{{ forgotLoading ? 'Sending OTP...' : 'Send OTP to Email' }}</span>
+              </button>
+
+              <div class="text-center pt-2">
+                <button type="button" (click)="closeForgotPassword()" class="text-xs font-bold text-slate-500 hover:text-slate-700 underline cursor-pointer">
+                  Back to Sign In
+                </button>
+              </div>
+            </div>
+
+            <!-- STEP 2: Enter OTP -->
+            <div *ngIf="forgotStep === 'otp'" class="space-y-4">
+              <p class="text-xs text-center text-slate-500 leading-relaxed">
+                We sent a 6-digit verification code to:<br>
+                <strong class="text-slate-800 text-sm font-bold font-mono">{{ forgotMaskedEmail }}</strong>
+                <button type="button" (click)="forgotStep = 'input'; forgotErrorMessage = ''" class="text-brand-600 hover:underline text-[11px] ml-1.5 font-semibold cursor-pointer">
+                  (Change)
+                </button>
+              </p>
+
+              <!-- Email Sent Notification Badge -->
+              <div class="p-3 rounded-xl bg-blue-50 border border-blue-200 text-blue-800 text-xs flex items-start space-x-2.5 shadow-sm">
+                <i class="fa-solid fa-circle-check text-blue-600 text-base mt-0.5 shrink-0"></i>
+                <div class="leading-relaxed">
+                  <span class="font-bold block text-blue-900 text-xs">OTP Sent to Email</span>
+                  <span>A 6-digit password reset code has been sent to your registered email. Please check your inbox or spam folder.</span>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1.5 text-center">Enter 6-Digit Code</label>
+                <input type="text" [(ngModel)]="forgotOtp" maxlength="6" inputmode="numeric" placeholder="• • • • • •"
+                  (keyup.enter)="onForgotVerifyOtp()"
+                  class="block w-full text-center text-2xl tracking-[0.5em] font-mono font-black py-3 px-4 bg-slate-50 border-2 border-slate-200 rounded-2xl text-slate-900 placeholder-slate-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 transition-all">
+              </div>
+
+              <button type="button" (click)="onForgotVerifyOtp()" [disabled]="forgotLoading || forgotOtp.length < 6"
+                class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-brand-600 to-sky-600 text-white font-extrabold text-xs sm:text-sm hover:from-brand-500 hover:to-sky-500 transition-all shadow-lg shadow-brand-600/25 disabled:opacity-50 cursor-pointer flex items-center justify-center space-x-2">
+                <i *ngIf="forgotLoading" class="fa-solid fa-spinner fa-spin mr-2"></i>
+                <i *ngIf="!forgotLoading" class="fa-solid fa-check"></i>
+                <span>{{ forgotLoading ? 'Verifying...' : 'Verify OTP' }}</span>
+              </button>
+
+              <!-- Resend countdown -->
+              <div class="text-center pt-1">
+                <button *ngIf="forgotCountdown === 0" type="button" (click)="onForgotResendOtp()" [disabled]="forgotLoading"
+                  class="text-xs font-bold text-brand-600 hover:text-brand-700 underline cursor-pointer">
+                  Didn't receive email? Resend OTP
+                </button>
+                <span *ngIf="forgotCountdown > 0" class="text-xs text-slate-400 font-medium">
+                  Resend code in <strong class="text-slate-600 font-bold">{{ forgotCountdown }}s</strong>
+                </span>
+              </div>
+            </div>
+
+            <!-- STEP 3: Set New Password -->
+            <div *ngIf="forgotStep === 'new-password'" class="space-y-3.5">
+              <p class="text-xs text-center text-slate-500 leading-relaxed">
+                OTP verified successfully! Now choose a strong new password for your account.
+              </p>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">New Password</label>
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <i class="fa-solid fa-lock text-xs"></i>
+                  </div>
+                  <input [type]="forgotShowNewPassword ? 'text' : 'password'" [(ngModel)]="forgotNewPassword" placeholder="Min 6 characters"
+                    class="block w-full pl-9 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 text-xs sm:text-sm font-semibold transition-all">
+                  <button type="button" (click)="forgotShowNewPassword = !forgotShowNewPassword" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer">
+                    <i class="fa-solid" [ngClass]="forgotShowNewPassword ? 'fa-eye-slash' : 'fa-eye'"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Confirm New Password</label>
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <i class="fa-solid fa-lock text-xs"></i>
+                  </div>
+                  <input [type]="forgotShowNewPassword ? 'text' : 'password'" [(ngModel)]="forgotConfirmPassword" placeholder="Re-enter new password"
+                    (keyup.enter)="onForgotResetPassword()"
+                    class="block w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 text-xs sm:text-sm font-semibold transition-all">
+                </div>
+              </div>
+
+              <button type="button" (click)="onForgotResetPassword()" [disabled]="forgotLoading || !forgotNewPassword || !forgotConfirmPassword"
+                class="w-full mt-2 py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-extrabold text-xs sm:text-sm hover:from-emerald-500 hover:to-teal-500 transition-all shadow-lg shadow-emerald-600/25 disabled:opacity-50 cursor-pointer flex items-center justify-center space-x-2">
+                <i *ngIf="forgotLoading" class="fa-solid fa-spinner fa-spin mr-2"></i>
+                <i *ngIf="!forgotLoading" class="fa-solid fa-floppy-disk"></i>
+                <span>{{ forgotLoading ? 'Updating Password...' : 'Save New Password & Sign In' }}</span>
+              </button>
+            </div>
+
+            <!-- STEP 4: Success Message -->
+            <div *ngIf="forgotStep === 'success'" class="space-y-4 text-center py-2">
+              <div class="p-4 bg-emerald-50 rounded-2xl border border-emerald-200 text-emerald-800 text-xs font-medium leading-relaxed">
+                {{ forgotSuccessMessage || 'Your password has been reset successfully! You can now sign in with your new password.' }}
+              </div>
+
+              <button type="button" (click)="closeForgotPassword()"
+                class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-brand-600 to-sky-600 text-white font-extrabold text-xs sm:text-sm hover:from-brand-500 transition-all shadow-lg shadow-brand-600/25 cursor-pointer">
+                Proceed to Sign In &rarr;
+              </button>
+            </div>
+
+          </div>
+        </div>
+
         <p class="text-center text-[11px] text-slate-400 mt-6 font-medium">
           DigitalLab Cloud Pathology & LIMS Platform • Secure & ISO Compliant
         </p>
@@ -362,6 +523,66 @@ export class LoginComponent implements OnInit, OnDestroy {
   resendingOtp = false;
   showPassword = false;
   errorMessage = '';
+  successMessage = '';
+
+  // Real-time duplicate registration checks
+  emailAlreadyRegistered = false;
+  phoneAlreadyRegistered = false;
+
+  get isAlreadyRegisteredError(): boolean {
+    return !!this.errorMessage && (
+      this.errorMessage.toLowerCase().includes('already registered') ||
+      this.errorMessage.toLowerCase().includes('already user register')
+    );
+  }
+
+  switchToSignIn(): void {
+    this.isRegister = false;
+    this.errorMessage = '';
+    if (this.regData.email) {
+      this.loginData.emailOrUsername = this.regData.email.trim().toLowerCase();
+    }
+    this.cdr.markForCheck();
+  }
+
+  onEmailInput(): void {
+    this.emailAlreadyRegistered = false;
+    if (this.isAlreadyRegisteredError && !this.phoneAlreadyRegistered) {
+      this.errorMessage = '';
+    }
+  }
+
+  onEmailBlur(): void {
+    const email = (this.regData.email || '').trim().toLowerCase();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !emailRegex.test(email)) {
+      this.emailAlreadyRegistered = false;
+      return;
+    }
+
+    this.authService.checkUserExists(email, undefined).subscribe({
+      next: (res) => {
+        this.emailAlreadyRegistered = res.emailExists;
+        if (res.emailExists) {
+          this.errorMessage = res.message || 'Email address already registered.';
+        } else if (!this.phoneAlreadyRegistered && this.isAlreadyRegisteredError) {
+          this.errorMessage = '';
+        }
+        this.cdr.markForCheck();
+      },
+      error: () => {}
+    });
+  }
+
+  // First Login Change Password State
+  showFirstLoginChangeModal = false;
+  firstLoginOldPassword = '';
+  firstLoginNewPassword = '';
+  firstLoginConfirmPassword = '';
+  firstLoginShowPassword = false;
+  firstLoginLoading = false;
+  firstLoginError = '';
+  tempLoginResponse: any = null;
 
   showOtpModal = false;
   demoOtp = '';
@@ -372,6 +593,23 @@ export class LoginComponent implements OnInit, OnDestroy {
 
   showServerModal = false;
   customServerInput = '';
+
+  // Forgot Password State
+  showForgotModal = false;
+  forgotStep: 'input' | 'otp' | 'new-password' | 'success' = 'input';
+  forgotEmailOrPhone = '';
+  forgotUserId = '';
+  forgotMaskedEmail = '';
+  forgotDemoOtp = '';
+  forgotOtp = '';
+  forgotNewPassword = '';
+  forgotConfirmPassword = '';
+  forgotShowNewPassword = false;
+  forgotLoading = false;
+  forgotErrorMessage = '';
+  forgotSuccessMessage = '';
+  forgotCountdown = 0;
+  private forgotTimerInterval: any = null;
 
   get currentApiUrl(): string {
     return environment.apiUrl;
@@ -444,12 +682,13 @@ export class LoginComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.clearForgotTimer();
     this.clearOtpTimer();
   }
 
   onLogin() {
     if (!this.loginData.emailOrUsername || !this.loginData.password) {
-      this.errorMessage = 'Please enter both email address / mobile number and password.';
+      this.errorMessage = 'Please enter both your registered email address and password.';
       this.cdr.markForCheck();
       return;
     }
@@ -462,6 +701,18 @@ export class LoginComponent implements OnInit, OnDestroy {
       next: (res) => {
         this.loading = false;
         this.cdr.markForCheck();
+
+        if (res.mustChangePassword) {
+          this.tempLoginResponse = res;
+          this.firstLoginOldPassword = this.loginData.password;
+          this.firstLoginNewPassword = '';
+          this.firstLoginConfirmPassword = '';
+          this.firstLoginError = '';
+          this.showFirstLoginChangeModal = true;
+          this.cdr.markForCheck();
+          return;
+        }
+
         if (res.role === 'SuperAdmin') {
           this.router.navigate(['/admin-dashboard']);
         } else {
@@ -477,7 +728,7 @@ export class LoginComponent implements OnInit, OnDestroy {
         } else if (typeof err.error === 'string' && err.error.length < 150) {
           this.errorMessage = err.error;
         } else if (err.status === 401) {
-          this.errorMessage = 'Invalid credentials or account does not exist. Try starting your 14-Day Free Trial.';
+          this.errorMessage = 'Invalid email or password. Please verify and try again.';
         } else {
           this.errorMessage = 'Login failed. Please check your credentials and try again.';
         }
@@ -514,17 +765,35 @@ export class LoginComponent implements OnInit, OnDestroy {
     } else if (digits.length === 12 && digits.startsWith('91')) {
       digits = digits.substring(2);
     }
-    if (digits.length > 10) {
-      digits = digits.slice(0, 10);
-    }
     this.regData.phone = digits;
     input.value = digits;
+    this.phoneAlreadyRegistered = false;
+
+    if (digits.length === 10 && /^[6-9]/.test(digits)) {
+      this.authService.checkUserExists(undefined, digits).subscribe({
+        next: (res) => {
+          this.phoneAlreadyRegistered = res.phoneExists;
+          if (res.phoneExists) {
+            this.errorMessage = res.message || 'Mobile number already registered.';
+          } else if (!this.emailAlreadyRegistered && this.isAlreadyRegisteredError) {
+            this.errorMessage = '';
+          }
+          this.cdr.markForCheck();
+        },
+        error: () => {}
+      });
+    } else {
+      this.phoneAlreadyRegistered = false;
+      if (!this.emailAlreadyRegistered && this.isAlreadyRegisteredError) {
+        this.errorMessage = '';
+      }
+    }
     this.cdr.markForCheck();
   }
 
   onInitiateRegister() {
-    if (!this.regData.labName?.trim() || !this.regData.ownerName?.trim() || !this.regData.email?.trim() || !this.regData.phone?.trim() || !this.regData.password?.trim()) {
-      this.errorMessage = 'Please fill in all required fields (Lab Name, Owner/Doctor Name, Email Address, WhatsApp Number, Password).';
+    if (!this.regData.labName?.trim() || !this.regData.ownerName?.trim() || !this.regData.email?.trim() || !this.regData.phone?.trim()) {
+      this.errorMessage = 'Please fill in all required fields (Lab Name, Owner/Doctor Name, Email Address, WhatsApp Number).';
       this.cdr.markForCheck();
       return;
     }
@@ -549,10 +818,12 @@ export class LoginComponent implements OnInit, OnDestroy {
       return;
     }
 
-
-
-    if (this.regData.password.length < 6) {
-      this.errorMessage = 'Password must be at least 6 characters.';
+    if (this.emailAlreadyRegistered || this.phoneAlreadyRegistered) {
+      this.errorMessage = (this.emailAlreadyRegistered && this.phoneAlreadyRegistered)
+        ? 'Email and mobile number already registered.'
+        : this.emailAlreadyRegistered
+          ? 'Email address already registered.'
+          : 'Mobile number already registered.';
       this.cdr.markForCheck();
       return;
     }
@@ -561,10 +832,10 @@ export class LoginComponent implements OnInit, OnDestroy {
     this.errorMessage = '';
     this.cdr.markForCheck();
 
-    this.authService.sendOtp(cleanPhone, this.regData.email?.trim().toLowerCase()).subscribe({
+    this.authService.sendOtp(cleanPhone, this.regData.email?.trim().toLowerCase(), this.regData.ownerName?.trim()).subscribe({
       next: (res) => {
         this.sendingOtp = false;
-        this.demoOtp = res.demoOtp || '';
+        this.demoOtp = '';
         this.enteredOtp = '';
         this.otpError = '';
         this.showOtpModal = true;
@@ -577,8 +848,18 @@ export class LoginComponent implements OnInit, OnDestroy {
           this.errorMessage = 'Unable to connect to server. Please ensure backend is running.';
         } else if (err.error?.message) {
           this.errorMessage = err.error.message;
+          if (err.error?.emailRegistered) this.emailAlreadyRegistered = true;
+          if (err.error?.phoneRegistered) this.phoneAlreadyRegistered = true;
+          if (err.error?.alreadyRegistered) {
+            if (this.errorMessage.includes('email') && !this.errorMessage.includes('mobile')) this.emailAlreadyRegistered = true;
+            if (this.errorMessage.includes('mobile') && !this.errorMessage.includes('email')) this.phoneAlreadyRegistered = true;
+            if (this.errorMessage.includes('Both') || (this.errorMessage.includes('email') && this.errorMessage.includes('mobile'))) {
+              this.emailAlreadyRegistered = true;
+              this.phoneAlreadyRegistered = true;
+            }
+          }
         } else {
-          this.errorMessage = 'Failed to send OTP to mobile. Please try again.';
+          this.errorMessage = 'Failed to send OTP to email. Please try again.';
         }
         this.cdr.markForCheck();
       }
@@ -604,7 +885,7 @@ export class LoginComponent implements OnInit, OnDestroy {
       email: this.regData.email.trim().toLowerCase(),
       phone: cleanPhone,
       city: this.regData.city?.trim() || null,
-      password: this.regData.password,
+      password: null,
       referralCode: this.regData.referralCode?.trim() || null,
       otp: code
     };
@@ -614,8 +895,13 @@ export class LoginComponent implements OnInit, OnDestroy {
         this.loading = false;
         this.showOtpModal = false;
         this.clearOtpTimer();
+        this.authService.logout();
+        this.isRegister = false;
+        this.loginData.emailOrUsername = this.regData.email.trim().toLowerCase();
+        this.loginData.password = '';
+        this.successMessage = `🎉 Account created successfully! A temporary login password has been sent to ${this.regData.email}. Please check your email inbox and sign in.`;
+        this.errorMessage = '';
         this.cdr.markForCheck();
-        this.router.navigate(['/dashboard']);
       },
       error: (err) => {
         this.loading = false;
@@ -642,7 +928,7 @@ export class LoginComponent implements OnInit, OnDestroy {
     this.authService.sendOtp(cleanPhone, this.regData.email?.trim().toLowerCase()).subscribe({
       next: (res) => {
         this.resendingOtp = false;
-        this.demoOtp = res.demoOtp || '';
+        this.demoOtp = '';
         this.startOtpCountdown(30);
         this.cdr.markForCheck();
       },
@@ -665,6 +951,186 @@ export class LoginComponent implements OnInit, OnDestroy {
         this.clearOtpTimer();
       }
     }, 1000);
+  }
+
+  onSubmitFirstLoginPassword(): void {
+    if (!this.firstLoginNewPassword || this.firstLoginNewPassword.length < 6) {
+      this.firstLoginError = 'New password must be at least 6 characters.';
+      this.cdr.markForCheck();
+      return;
+    }
+
+    if (this.firstLoginNewPassword !== this.firstLoginConfirmPassword) {
+      this.firstLoginError = 'Passwords do not match. Please re-enter identical passwords.';
+      this.cdr.markForCheck();
+      return;
+    }
+
+    this.firstLoginLoading = true;
+    this.firstLoginError = '';
+    this.cdr.markForCheck();
+
+    this.authService.changePassword(this.firstLoginOldPassword, this.firstLoginNewPassword).subscribe({
+      next: () => {
+        this.firstLoginLoading = false;
+        this.showFirstLoginChangeModal = false;
+        this.cdr.markForCheck();
+
+        if (this.tempLoginResponse?.role === 'SuperAdmin') {
+          this.router.navigate(['/admin-dashboard']);
+        } else {
+          this.router.navigate(['/dashboard']);
+        }
+      },
+      error: (err) => {
+        this.firstLoginLoading = false;
+        this.firstLoginError = err.error?.message || 'Failed to update password. Please try again.';
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  openForgotPassword(): void {
+    this.forgotEmailOrPhone = (this.loginData.emailOrUsername || '').trim();
+    this.forgotStep = 'input';
+    this.forgotErrorMessage = '';
+    this.forgotSuccessMessage = '';
+    this.forgotOtp = '';
+    this.forgotNewPassword = '';
+    this.forgotConfirmPassword = '';
+    this.forgotDemoOtp = '';
+    this.forgotShowNewPassword = false;
+    this.showForgotModal = true;
+    this.cdr.markForCheck();
+  }
+
+  closeForgotPassword(): void {
+    this.showForgotModal = false;
+    this.clearForgotTimer();
+    this.cdr.markForCheck();
+  }
+
+  onForgotSendOtp(): void {
+    const input = (this.forgotEmailOrPhone || '').trim();
+    if (!input) {
+      this.forgotErrorMessage = 'Please enter your registered email address.';
+      this.cdr.markForCheck();
+      return;
+    }
+
+    this.forgotLoading = true;
+    this.forgotErrorMessage = '';
+    this.cdr.markForCheck();
+
+    this.authService.forgotPasswordSendOtp(input).subscribe({
+      next: (res) => {
+        this.forgotLoading = false;
+        this.forgotUserId = res.userId;
+        this.forgotMaskedEmail = res.maskedEmail || input;
+        this.forgotDemoOtp = '';
+        this.forgotStep = 'otp';
+        this.forgotOtp = '';
+        this.startForgotCountdown(60);
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        this.forgotLoading = false;
+        if (err.status === 0) {
+          this.forgotErrorMessage = 'Cannot connect to server. Please check if backend is running.';
+        } else if (err.error?.message) {
+          this.forgotErrorMessage = err.error.message;
+        } else {
+          this.forgotErrorMessage = 'Account not found. Please verify your email address.';
+        }
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  onForgotVerifyOtp(): void {
+    const otp = (this.forgotOtp || '').trim();
+    if (!otp || otp.length < 6) {
+      this.forgotErrorMessage = 'Please enter the 6-digit code received on your email.';
+      this.cdr.markForCheck();
+      return;
+    }
+
+    this.forgotLoading = true;
+    this.forgotErrorMessage = '';
+    this.cdr.markForCheck();
+
+    this.authService.forgotPasswordVerifyOtp(this.forgotUserId, otp).subscribe({
+      next: () => {
+        this.forgotLoading = false;
+        this.forgotStep = 'new-password';
+        this.forgotErrorMessage = '';
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        this.forgotLoading = false;
+        this.forgotErrorMessage = err.error?.message || 'Invalid or expired OTP. Please enter the correct code.';
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  onForgotResetPassword(): void {
+    if (!this.forgotNewPassword || this.forgotNewPassword.length < 6) {
+      this.forgotErrorMessage = 'New password must be at least 6 characters long.';
+      this.cdr.markForCheck();
+      return;
+    }
+
+    if (this.forgotNewPassword !== this.forgotConfirmPassword) {
+      this.forgotErrorMessage = 'Passwords do not match. Please re-enter identical passwords.';
+      this.cdr.markForCheck();
+      return;
+    }
+
+    this.forgotLoading = true;
+    this.forgotErrorMessage = '';
+    this.cdr.markForCheck();
+
+    this.authService.forgotPasswordReset(this.forgotUserId, this.forgotOtp, this.forgotNewPassword).subscribe({
+      next: (res) => {
+        this.forgotLoading = false;
+        this.forgotStep = 'success';
+        this.forgotSuccessMessage = res.message || 'Your password has been reset successfully!';
+        this.loginData.emailOrUsername = this.forgotEmailOrPhone;
+        this.loginData.password = '';
+        this.clearForgotTimer();
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        this.forgotLoading = false;
+        this.forgotErrorMessage = err.error?.message || 'Failed to reset password. Please try again.';
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  onForgotResendOtp(): void {
+    this.onForgotSendOtp();
+  }
+
+  startForgotCountdown(seconds: number): void {
+    this.clearForgotTimer();
+    this.forgotCountdown = seconds;
+    this.forgotTimerInterval = setInterval(() => {
+      if (this.forgotCountdown > 0) {
+        this.forgotCountdown--;
+        this.cdr.markForCheck();
+      } else {
+        this.clearForgotTimer();
+      }
+    }, 1000);
+  }
+
+  clearForgotTimer(): void {
+    if (this.forgotTimerInterval) {
+      clearInterval(this.forgotTimerInterval);
+      this.forgotTimerInterval = null;
+    }
   }
 
   clearOtpTimer() {

@@ -77,3 +77,16 @@ public interface IWhatsAppNotificationService
         string fileName,
         string? customMessage = null);
 }
+
+public interface IEmailService
+{
+    bool IsConfigured { get; }
+    Task<(bool Success, string Message)> SendPasswordResetOtpAsync(string toEmail, string recipientName, string otp);
+    Task<(bool Success, string Message)> SendRegistrationVerificationOtpAsync(string toEmail, string recipientName, string otp);
+    Task<(bool Success, string Message)> SendWelcomeCredentialsEmailAsync(string toEmail, string recipientName, string labName, string defaultPassword);
+    Task<(bool Success, string Message)> SendPatientReportReadyEmailAsync(string toEmail, string patientName, string labName, string caseNumber, string uhid, List<string> testNames, string downloadUrl);
+    Task<(bool Success, string Message)> SendPatientRegistrationReceiptEmailAsync(string toEmail, string patientName, string labName, string caseNumber, string uhid, List<string> testNames, decimal netAmount, decimal paidAmount, decimal dueAmount, string viewUrl);
+    Task<(bool Success, string Message)> SendStaffCredentialsEmailAsync(string toEmail, string staffName, string labName, string role, string designation, string password);
+    Task<(bool Success, string Message)> SendTicketReplyNotificationEmailAsync(string toEmail, string recipientName, string ticketNumber, string subject, string senderName, string replyMessage);
+    Task<(bool Success, string Message)> SendEmailAsync(string toEmail, string subject, string htmlBody);
+}

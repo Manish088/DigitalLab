@@ -54,3 +54,11 @@ Desktop.ini
 
 # Environment Variables
 .env
+
+# Scratch and Temporary Inspection Files in root
+/*.ps1
+!mobile-app/sync-from-web.ps1
+/chunk-*.js
+/login*.html
+/labsuvidha.html
+/main*.js

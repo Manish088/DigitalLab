@@ -456,12 +456,14 @@ public class StaffController : ControllerBase
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ICurrentUserService _currentUserService;
     private readonly IApplicationDbContext _context;
+    private readonly IEmailService _emailService;
 
-    public StaffController(UserManager<ApplicationUser> userManager, ICurrentUserService currentUserService, IApplicationDbContext context)
+    public StaffController(UserManager<ApplicationUser> userManager, ICurrentUserService currentUserService, IApplicationDbContext context, IEmailService emailService)
     {
         _userManager = userManager;
         _currentUserService = currentUserService;
         _context = context;
+        _emailService = emailService;
     }
 
     [HttpGet]
@@ -528,7 +530,8 @@ public class StaffController : ControllerBase
             Designation = req.Designation,
             PermissionsJson = req.PermissionsJson,
             EmailConfirmed = true,
-            IsActive = true
+            IsActive = true,
+            MustChangePassword = true
         };
 
         var res = await _userManager.CreateAsync(user, req.Password);
@@ -537,7 +540,33 @@ public class StaffController : ControllerBase
 
         await _userManager.AddToRoleAsync(user, req.Role);
 
-        return Ok(new { message = "Staff member created successfully.", userId = user.Id });
+        // Automated Staff Welcome Credentials Email
+        try
+        {
+            var lab = await _context.Tenants.FirstOrDefaultAsync(t => t.Id == user.TenantId);
+            var labTitle = lab?.LabName ?? "DigitalLab Laboratory";
+
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await _emailService.SendStaffCredentialsEmailAsync(
+                        req.Email.Trim(),
+                        req.FullName,
+                        labTitle,
+                        req.Role,
+                        req.Designation,
+                        req.Password);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[Staff Email Error] {ex.Message}");
+                }
+            });
+        }
+        catch {}
+
+        return Ok(new { message = "Staff member created successfully. Login credentials sent to their email.", userId = user.Id });
     }
 
     [HttpPut("{id}/toggle-status")]

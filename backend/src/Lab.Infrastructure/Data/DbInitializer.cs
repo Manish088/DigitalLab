@@ -30,6 +30,11 @@ public static class DbInitializer
                         ALTER TABLE Tenants ADD IsAdFree BIT NOT NULL DEFAULT 0;
                     END
 
+                    IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE Name = 'MustChangePassword' AND Object_ID = Object_ID('AspNetUsers'))
+                    BEGIN
+                        ALTER TABLE AspNetUsers ADD MustChangePassword BIT NOT NULL DEFAULT 0;
+                    END
+
                     IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE Name = 'LisApiKey' AND Object_ID = Object_ID('Tenants'))
                     BEGIN
                         ALTER TABLE Tenants ADD LisApiKey NVARCHAR(100) NULL;

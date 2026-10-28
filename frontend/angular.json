@@ -52,7 +52,12 @@
             ],
             "styles": [
               "src/styles.css"
-            ]
+            ],
+            "optimization": {
+              "scripts": true,
+              "styles": true,
+              "fonts": false
+            }
           },
           "configurations": {
             "production": {

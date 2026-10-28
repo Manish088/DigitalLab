@@ -21,17 +21,23 @@ public class InvestigationsController : ControllerBase
     private readonly ICurrentUserService _currentUserService;
     private readonly IMemoryCache _cache;
     private readonly IHubContext<LabRealtimeHub> _hubContext;
+    private readonly IEmailService _emailService;
+    private readonly IConfiguration _config;
 
     public InvestigationsController(
         IApplicationDbContext context,
         ICurrentUserService currentUserService,
         IMemoryCache cache,
-        IHubContext<LabRealtimeHub> hubContext)
+        IHubContext<LabRealtimeHub> hubContext,
+        IEmailService emailService,
+        IConfiguration config)
     {
         _context = context;
         _currentUserService = currentUserService;
         _cache = cache;
         _hubContext = hubContext;
+        _emailService = emailService;
+        _config = config;
     }
 
     private IClientProxy GetTenantGroup(Guid tenantId)
@@ -361,6 +367,7 @@ public class InvestigationsController : ControllerBase
     public async Task<IActionResult> ApproveReport(Guid caseOrderId)
     {
         var caseOrder = await _context.CaseOrders
+            .Include(c => c.Patient)
             .Include(c => c.Items).ThenInclude(i => i.Results).ThenInclude(r => r.Parameter)
             .Include(c => c.Items).ThenInclude(i => i.Test)
             .FirstOrDefaultAsync(c => c.Id == caseOrderId);
@@ -424,6 +431,42 @@ public class InvestigationsController : ControllerBase
 
         await _context.SaveChangesAsync();
         EvictReportCache(caseOrderId, caseOrder.PublicAccessToken);
+
+        // Automated Patient Report Ready Email
+        try
+        {
+            if (caseOrder.Patient != null && !string.IsNullOrWhiteSpace(caseOrder.Patient.Email))
+            {
+                var patientEmail = caseOrder.Patient.Email.Trim();
+                if (patientEmail.Contains('@') && patientEmail.Contains('.'))
+                {
+                    var testNames = caseOrder.Items.Select(i => i.Test?.TestName ?? "Diagnostic Panel").ToList();
+                    var baseUrl = _config["AppUrl"] ?? "http://localhost:4200";
+                    var downloadUrl = $"{baseUrl}/report-download?token={caseOrder.PublicAccessToken}";
+                    var labTitle = labTenant?.LabName ?? "DigitalLab Diagnostics";
+
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await _emailService.SendPatientReportReadyEmailAsync(
+                                patientEmail,
+                                caseOrder.Patient.FullName,
+                                labTitle,
+                                caseOrder.CaseNumber,
+                                caseOrder.Patient.Uhid,
+                                testNames,
+                                downloadUrl);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"[Patient Report Email Error] {ex.Message}");
+                        }
+                    });
+                }
+            }
+        }
+        catch {}
 
         try
         {

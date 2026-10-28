@@ -12,4 +12,5 @@ public class ApplicationUser : IdentityUser
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public string? PermissionsJson { get; set; } // JSON array of permitted module codes
+    public bool MustChangePassword { get; set; } = false;
 }

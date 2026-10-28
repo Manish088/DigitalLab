@@ -80,6 +80,8 @@ export interface LoginResponse {
   labName?: string;
   logoUrl?: string;
   expiresAt: string;
+  mustChangePassword?: boolean;
+  defaultPassword?: string;
 }
 
 export interface DashboardStats {

@@ -4,10 +4,13 @@ namespace Lab.Application.DTOs;
 
 // Auth DTOs
 public record LoginRequest(string EmailOrUsername, string Password);
-public record LoginResponse(string Token, string RefreshToken, string UserId, string FullName, string Email, string Role, Guid? TenantId, string? LabName, string? LogoUrl, DateTime ExpiresAt);
-public record SendOtpRequest(string Phone, string? Email = null);
-public record VerifyOtpRequest(string Phone, string Otp);
-public record RegisterLabRequest(string LabName, string OwnerName, string? Email, string Phone, string Password, string? Address = null, string? City = null, string? State = null, string? ReferralCode = null, string? Otp = null);
+public record LoginResponse(string Token, string RefreshToken, string UserId, string FullName, string Email, string Role, Guid? TenantId, string? LabName, string? LogoUrl, DateTime ExpiresAt, bool MustChangePassword = false, string? DefaultPassword = null);
+public record SendOtpRequest(string? Phone, string? Email = null, string? OwnerName = null);
+public record VerifyOtpRequest(string? Phone, string? Email, string Otp);
+public record ForgotPasswordSendOtpRequest(string EmailOrPhone);
+public record ForgotPasswordVerifyOtpRequest(string UserId, string Otp);
+public record ForgotPasswordResetRequest(string UserId, string Otp, string NewPassword);
+public record RegisterLabRequest(string LabName, string OwnerName, string? Email, string Phone, string? Password = null, string? Address = null, string? City = null, string? State = null, string? ReferralCode = null, string? Otp = null);
 public record ChangePasswordRequest(string OldPassword, string NewPassword);
 public record UpdateProfileRequest(string FullName, string Email, string? PhoneNumber);
 public record StaffUserDto(string Id, string FullName, string Email, string PhoneNumber, string Role, string Designation, bool IsActive, string? PermissionsJson);

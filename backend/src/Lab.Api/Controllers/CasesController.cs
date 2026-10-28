@@ -19,17 +19,23 @@ public class CasesController : ControllerBase
     private readonly IBarcodeService _barcodeService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IHubContext<LabRealtimeHub> _hubContext;
+    private readonly IEmailService _emailService;
+    private readonly IConfiguration _config;
 
     public CasesController(
         IApplicationDbContext context,
         IBarcodeService barcodeService,
         ICurrentUserService currentUserService,
-        IHubContext<LabRealtimeHub> hubContext)
+        IHubContext<LabRealtimeHub> hubContext,
+        IEmailService emailService,
+        IConfiguration config)
     {
         _context = context;
         _barcodeService = barcodeService;
         _currentUserService = currentUserService;
         _hubContext = hubContext;
+        _emailService = emailService;
+        _config = config;
     }
 
     private IClientProxy GetTenantGroup(Guid tenantId)
@@ -563,6 +569,46 @@ public class CasesController : ControllerBase
             {
                 Console.WriteLine($"[SignalR Broadcast Error] {hubEx.Message}");
             }
+
+            // Automated Patient Case Registration & Billing Receipt Email
+            try
+            {
+                if (patientObj != null && !string.IsNullOrWhiteSpace(patientObj.Email))
+                {
+                    var pEmail = patientObj.Email.Trim();
+                    if (pEmail.Contains('@') && pEmail.Contains('.'))
+                    {
+                        var testNames = tests.Select(t => t.TestName).ToList();
+                        var lab = await _context.Tenants.FirstOrDefaultAsync(t => t.Id == caseOrder.TenantId);
+                        var labTitle = lab?.LabName ?? "DigitalLab Diagnostics";
+                        var baseUrl = _config["AppUrl"] ?? "http://localhost:4200";
+                        var viewUrl = $"{baseUrl}/report-download?token={caseOrder.PublicAccessToken}";
+
+                        _ = Task.Run(async () =>
+                        {
+                            try
+                            {
+                                await _emailService.SendPatientRegistrationReceiptEmailAsync(
+                                    pEmail,
+                                    patientObj.FullName,
+                                    labTitle,
+                                    caseOrder.CaseNumber,
+                                    patientObj.Uhid,
+                                    testNames,
+                                    caseOrder.NetAmount,
+                                    caseOrder.PaidAmount,
+                                    caseOrder.DueAmount,
+                                    viewUrl);
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"[Patient Receipt Email Error] {ex.Message}");
+                            }
+                        });
+                    }
+                }
+            }
+            catch {}
 
             return CreatedAtAction(nameof(GetCase), new { id = caseOrder.Id }, caseDto);
         }
