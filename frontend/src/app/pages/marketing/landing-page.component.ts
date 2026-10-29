@@ -66,9 +66,8 @@ import { SubscriptionPlan } from '../../core/models/lims.models';
               </div>
             </div>
 
-            <!-- Soft Bright Translucent Backdrop Overlay (Bright & High Contrast) -->
-            <div class="absolute inset-0 bg-white/80 backdrop-blur-[1.5px] pointer-events-none"></div>
-            <div class="absolute inset-0 bg-gradient-to-b from-white/90 via-white/70 to-white/95 pointer-events-none"></div>
+            <!-- Luminous Clean White Backdrop Overlay -->
+            <div class="absolute inset-0 bg-gradient-to-b from-white/85 via-white/70 to-white/90 backdrop-blur-[0.5px] pointer-events-none"></div>
           </div>
 
           <!-- Hero Content Overlay (Crystal Clear Dark Typography) -->
@@ -409,11 +408,11 @@ export class LandingPageComponent implements OnInit, OnDestroy {
   private slideTimer: any = null;
 
   slides = [
-    { url: 'images/lab-slide-1.jpg', title: 'Clinical Hematology & Microscopy Analysis' },
-    { url: 'images/lab-slide-2.jpg', title: 'Automated Biochemistry & Specimen Test Tubes' },
-    { url: 'images/lab-slide-3.jpg', title: 'Diagnostic Pathology Testing Workstation' },
-    { url: 'images/lab-slide-4.jpg', title: 'High-Throughput Clinical Laboratory Analyzers' },
-    { url: 'images/lab-slide-5.jpg', title: 'Centrifuge & Specimen Tube Preparation' }
+    { url: 'images/lab-slide-1.jpg', title: 'Modern Automated Diagnostic Analysis Workstation' },
+    { url: 'images/lab-slide-2.jpg', title: 'Ultra-Clean Clinical Pathology Research Suite' },
+    { url: 'images/lab-slide-3.jpg', title: 'Next-Generation Digital Laboratory Interior' },
+    { url: 'images/lab-slide-4.jpg', title: 'Precision Biochemistry & Specimen Testing' },
+    { url: 'images/lab-slide-5.jpg', title: 'Clinical Hematology & Microscopic Cell Review' }
   ];
 
   nextSlide(): void {
