@@ -1,4 +1,4 @@
-import { Component, signal, computed, OnInit, inject } from '@angular/core';
+import { Component, signal, computed, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -51,42 +51,97 @@ import { SubscriptionPlan } from '../../core/models/lims.models';
       <!-- Main Body -->
       <main>
         
-        <!-- Hero Section -->
-        <section class="py-12 sm:py-20 text-center px-4 sm:px-8 w-full max-w-6xl mx-auto space-y-6">
-          <div class="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-700">
-            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>Next-Gen Cloud LIMS for Diagnostic Laboratories</span>
+        <!-- Hero Section with Background Lab Image Slider -->
+        <section class="relative min-h-[520px] sm:min-h-[580px] lg:min-h-[640px] flex items-center justify-center overflow-hidden w-full bg-slate-950 text-white">
+          
+          <!-- Background Slides (5 Images Crossfade Carousel) -->
+          <div class="absolute inset-0 z-0">
+            <div *ngFor="let slide of slides; let idx = index"
+              class="absolute inset-0 transition-opacity duration-1000 ease-in-out"
+              [class.opacity-100]="currentSlide() === idx"
+              [class.opacity-0]="currentSlide() !== idx"
+              [class.scale-105]="currentSlide() === idx"
+              style="transition: opacity 1.2s ease-in-out, transform 6s ease-out;">
+              <img [src]="slide.url" [alt]="slide.title" class="w-full h-full object-cover object-center">
+            </div>
+
+            <!-- Deep Medical Gradient & Contrast Backdrop Overlay -->
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-slate-900/65 backdrop-blur-[0.5px]"></div>
+            <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(2,6,23,0.7)_100%)]"></div>
           </div>
 
-          <h1 class="text-3xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-[1.15] font-heading max-w-4xl mx-auto">
-            Run Your Pathology Lab Smarter, Faster & 100% on the Cloud
-          </h1>
+          <!-- Hero Content Overlay (Always Crisp & High Contrast) -->
+          <div class="relative z-10 w-full px-4 sm:px-8 py-16 sm:py-24 text-center max-w-5xl mx-auto space-y-6">
+            
+            <!-- Category Badge -->
+            <div class="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-xs font-bold text-emerald-300 backdrop-blur-md shadow-lg">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+              <span>Next-Gen Cloud LIMS for Diagnostic Laboratories</span>
+            </div>
 
-          <p class="text-sm sm:text-lg text-slate-600 max-w-3xl mx-auto leading-relaxed">
-            Register patients in under 10 seconds, print thermal barcode tube labels, generate compliant reports on plain A4 paper, and deliver instant WhatsApp PDFs with verified QR codes.
-          </p>
+            <!-- Main Headline -->
+            <h1 class="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.15] font-heading drop-shadow-md max-w-4xl mx-auto">
+              Run Your Pathology Lab Smarter, Faster & 100% on the Cloud
+            </h1>
 
-          <div class="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-            <a routerLink="/register" class="w-full sm:w-auto px-8 py-3.5 rounded-xl text-sm font-black bg-brand-600 hover:bg-brand-500 text-white shadow-lg shadow-brand-500/25 transition-all flex items-center justify-center space-x-2">
-              <i class="fa-solid fa-rocket text-amber-300"></i>
-              <span>Start 14-Day Free Trial</span>
-            </a>
-            <a href="https://wa.me/917706087066?text=Hello%20DigitalLab%2C%20I%20would%20like%20a%20live%20demo%20of%20the%20Pathology%20Software" target="_blank"
-              class="w-full sm:w-auto px-6 py-3.5 rounded-xl text-sm font-bold bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 shadow-sm transition-all flex items-center justify-center space-x-2">
-              <i class="fa-brands fa-whatsapp text-emerald-600 text-base"></i>
-              <span>Schedule WhatsApp Demo</span>
-            </a>
+            <!-- Subtitle -->
+            <p class="text-sm sm:text-lg text-slate-200 max-w-3xl mx-auto leading-relaxed drop-shadow">
+              Register patients in under 10 seconds, print thermal barcode tube labels, generate compliant reports on plain A4 paper, and deliver instant WhatsApp PDFs with verified QR codes.
+            </p>
+
+            <!-- Buttons -->
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-2">
+              <a routerLink="/register" class="w-full sm:w-auto px-8 py-4 rounded-xl text-sm font-black bg-gradient-to-r from-brand-500 via-cyan-500 to-emerald-500 hover:from-brand-400 hover:to-emerald-400 text-slate-950 shadow-2xl hover:scale-105 transition-all flex items-center justify-center space-x-2">
+                <i class="fa-solid fa-rocket text-slate-950"></i>
+                <span>Start 14-Day Free Trial</span>
+              </a>
+              <a href="https://wa.me/917706087066?text=Hello%20DigitalLab%2C%20I%20would%20like%20a%20live%20demo%20of%20the%20Pathology%20Software" target="_blank"
+                class="w-full sm:w-auto px-7 py-4 rounded-xl text-sm font-bold bg-white/15 hover:bg-white/25 text-white border border-white/30 backdrop-blur-md shadow-lg transition-all flex items-center justify-center space-x-2">
+                <i class="fa-brands fa-whatsapp text-emerald-400 text-lg"></i>
+                <span>Schedule WhatsApp Demo</span>
+              </a>
+            </div>
+
+            <!-- Trust Points -->
+            <div class="flex flex-wrap items-center justify-center gap-4 text-xs text-slate-300 font-semibold pt-2">
+              <span class="flex items-center text-emerald-300"><i class="fa-solid fa-check mr-1.5"></i> 14-Day Free Trial</span>
+              <span class="text-slate-600">•</span>
+              <span class="flex items-center text-cyan-300"><i class="fa-solid fa-bolt mr-1.5"></i> Instant 1-Minute Setup</span>
+              <span class="text-slate-600">•</span>
+              <span class="flex items-center text-slate-300"><i class="fa-solid fa-shield-halved mr-1.5"></i> No Credit Card Required</span>
+              <span class="text-slate-600">•</span>
+              <span class="flex items-center text-amber-300"><i class="fa-solid fa-flask-vial mr-1.5"></i> 100+ Tests Pre-loaded</span>
+            </div>
+
+            <!-- Slide Navigation Controls & Indicator Dots -->
+            <div class="pt-6 flex items-center justify-center space-x-3">
+              <button type="button" (click)="prevSlide()" class="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-all text-xs cursor-pointer border border-white/20" title="Previous Slide">
+                <i class="fa-solid fa-chevron-left"></i>
+              </button>
+              
+              <div class="flex items-center space-x-2">
+                <button *ngFor="let slide of slides; let idx = index"
+                  type="button"
+                  (click)="setSlide(idx)"
+                  [class]="currentSlide() === idx ? 'w-8 bg-emerald-400' : 'w-2 bg-white/40 hover:bg-white/70'"
+                  class="h-2 rounded-full transition-all duration-300 cursor-pointer"
+                  [title]="slide.title">
+                </button>
+              </div>
+
+              <button type="button" (click)="nextSlide()" class="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-all text-xs cursor-pointer border border-white/20" title="Next Slide">
+                <i class="fa-solid fa-chevron-right"></i>
+              </button>
+            </div>
+
+            <!-- Slide Title Caption -->
+            <div class="text-[11px] font-mono text-slate-400">
+              <i class="fa-solid fa-camera mr-1 text-slate-500"></i>
+              <span>Slide {{ currentSlide() + 1 }} of {{ slides.length }} • {{ slides[currentSlide()].title }}</span>
+            </div>
+
           </div>
 
-          <div class="flex flex-wrap items-center justify-center gap-4 text-xs text-slate-500 font-semibold pt-2">
-            <span>✓ 14-Day Free Trial</span>
-            <span>•</span>
-            <span>✓ Instant 1-Minute Setup</span>
-            <span>•</span>
-            <span>✓ No Credit Card Required</span>
-            <span>•</span>
-            <span>✓ 100+ Tests Pre-loaded</span>
-          </div>
         </section>
 
         <!-- Key Features Grid (Simple 6 Cards) -->
@@ -339,12 +394,52 @@ import { SubscriptionPlan } from '../../core/models/lims.models';
     </div>
   `
 })
-export class LandingPageComponent implements OnInit {
+export class LandingPageComponent implements OnInit, OnDestroy {
   private apiService = inject(ApiService);
 
   billingCycle = signal<'Monthly' | 'Annual'>('Annual');
   plans = signal<SubscriptionPlan[]>([]);
   loadingPlans = signal(false);
+
+  // Background 5 Lab Images Slider State
+  currentSlide = signal(0);
+  private slideTimer: any = null;
+
+  slides = [
+    { url: 'images/lab-slide-1.jpg', title: 'Clinical Hematology & Microscopy Analysis' },
+    { url: 'images/lab-slide-2.jpg', title: 'Automated Biochemistry & Specimen Test Tubes' },
+    { url: 'images/lab-slide-3.jpg', title: 'Diagnostic Pathology Testing Workstation' },
+    { url: 'images/lab-slide-4.jpg', title: 'High-Throughput Clinical Laboratory Analyzers' },
+    { url: 'images/lab-slide-5.jpg', title: 'Centrifuge & Specimen Tube Preparation' }
+  ];
+
+  nextSlide(): void {
+    this.currentSlide.update(i => (i + 1) % this.slides.length);
+    this.resetSlideTimer();
+  }
+
+  prevSlide(): void {
+    this.currentSlide.update(i => (i - 1 + this.slides.length) % this.slides.length);
+    this.resetSlideTimer();
+  }
+
+  setSlide(idx: number): void {
+    this.currentSlide.set(idx);
+    this.resetSlideTimer();
+  }
+
+  private startSlideTimer(): void {
+    this.slideTimer = setInterval(() => {
+      this.currentSlide.update(i => (i + 1) % this.slides.length);
+    }, 4500);
+  }
+
+  private resetSlideTimer(): void {
+    if (this.slideTimer) {
+      clearInterval(this.slideTimer);
+      this.startSlideTimer();
+    }
+  }
 
   private defaultPlans: SubscriptionPlan[] = [
     {
@@ -404,6 +499,13 @@ export class LandingPageComponent implements OnInit {
 
   ngOnInit(): void {
     this.fetchPlans();
+    this.startSlideTimer();
+  }
+
+  ngOnDestroy(): void {
+    if (this.slideTimer) {
+      clearInterval(this.slideTimer);
+    }
   }
 
   fetchPlans(): void {
