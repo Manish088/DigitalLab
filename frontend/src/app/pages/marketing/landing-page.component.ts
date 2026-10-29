@@ -51,30 +51,12 @@ import { SubscriptionPlan } from '../../core/models/lims.models';
       <!-- Main Body -->
       <main>
         
-        <!-- Hero Section with Clearly Visible Laboratory Background Image Slider -->
-        <section class="relative min-h-[580px] sm:min-h-[660px] lg:min-h-[720px] flex items-center justify-center overflow-hidden w-full bg-slate-100 text-slate-900 border-b border-slate-200">
-          
-          <!-- Background Slides (5 Images Horizontal Sliding Track - Fully Visible & Vivid) -->
-          <div class="absolute inset-0 z-0 overflow-hidden">
-            <div class="flex h-full transition-transform duration-700 ease-in-out"
-                 [style.transform]="'translateX(-' + (currentSlide() * (100 / slides.length)) + '%)'"
-                 [style.width]="(slides.length * 100) + '%'">
-              <div *ngFor="let slide of slides; let idx = index"
-                   class="h-full relative overflow-hidden"
-                   [style.width]="(100 / slides.length) + '%'">
-                <img [src]="slide.url" [alt]="slide.title" class="w-full h-full object-cover object-center brightness-[0.98]">
-              </div>
-            </div>
-
-            <!-- Soft Edge Blending Gradients (Image stays 100% visible and vivid in center) -->
-            <div class="absolute inset-0 bg-slate-950/10 pointer-events-none"></div>
-            <div class="absolute inset-0 bg-gradient-to-t from-white/40 via-transparent to-white/30 pointer-events-none"></div>
-          </div>
-
-          <!-- Hero Content Overlay with Glassmorphism Card (Crystal Clear Readability & Visible Lab Background) -->
-          <div class="relative z-10 w-full px-4 sm:px-6 py-10 sm:py-14 max-w-4xl mx-auto space-y-4">
+        <!-- Hero Section with Separate Content and Compact Laboratory Showcase Slider -->
+        <section class="pt-10 sm:pt-14 pb-12 bg-gradient-to-b from-slate-50/80 via-white to-white text-slate-900 border-b border-slate-200">
+          <div class="w-full px-4 sm:px-8 max-w-5xl mx-auto space-y-8">
             
-            <div class="bg-white/92 backdrop-blur-md rounded-2xl sm:rounded-3xl p-6 sm:p-10 shadow-2xl border border-white/80 space-y-6 text-center">
+            <!-- Hero Text Block (Separate, Clean, 100% Readable) -->
+            <div class="text-center max-w-4xl mx-auto space-y-5">
               
               <!-- Category Badge -->
               <div class="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-emerald-50 border border-emerald-300 text-xs font-bold text-emerald-800 shadow-sm">
@@ -88,7 +70,7 @@ import { SubscriptionPlan } from '../../core/models/lims.models';
               </h1>
 
               <!-- Subtitle -->
-              <p class="text-sm sm:text-lg text-slate-700 max-w-3xl mx-auto leading-relaxed font-medium">
+              <p class="text-sm sm:text-lg text-slate-600 max-w-3xl mx-auto leading-relaxed font-medium">
                 Register patients in under 10 seconds, print thermal barcode tube labels, generate compliant reports on plain A4 paper, and deliver instant WhatsApp PDFs with verified QR codes.
               </p>
 
@@ -106,7 +88,7 @@ import { SubscriptionPlan } from '../../core/models/lims.models';
               </div>
 
               <!-- Trust Points -->
-              <div class="flex flex-wrap items-center justify-center gap-4 text-xs text-slate-600 font-semibold pt-2">
+              <div class="flex flex-wrap items-center justify-center gap-4 text-xs text-slate-600 font-semibold pt-1">
                 <span class="flex items-center text-emerald-700"><i class="fa-solid fa-check mr-1.5"></i> 14-Day Free Trial</span>
                 <span class="text-slate-300">•</span>
                 <span class="flex items-center text-brand-700"><i class="fa-solid fa-bolt mr-1.5 text-amber-500"></i> Instant 1-Minute Setup</span>
@@ -118,37 +100,56 @@ import { SubscriptionPlan } from '../../core/models/lims.models';
 
             </div>
 
-            <!-- Slide Navigation Controls & Indicator Dots -->
-            <div class="pt-2 flex items-center justify-center space-x-3">
-              <button type="button" (click)="prevSlide()" class="p-2.5 rounded-full bg-white/95 hover:bg-white text-slate-700 hover:text-slate-900 shadow-lg border border-slate-200 transition-all text-xs cursor-pointer backdrop-blur-sm" title="Previous Slide">
-                <i class="fa-solid fa-chevron-left"></i>
-              </button>
-              
-              <div class="flex items-center space-x-2 px-3 py-1.5 bg-white/95 rounded-full shadow-lg border border-slate-200 backdrop-blur-sm">
+            <!-- Dedicated Compact Laboratory Image Slider (Height Kam: 220px to 360px, 100% Vivid Photos) -->
+            <div class="relative max-w-4xl mx-auto pt-2">
+              <div class="relative h-[220px] sm:h-[300px] md:h-[360px] rounded-2xl overflow-hidden shadow-2xl border border-slate-300/80 bg-slate-900 group">
+                
+                <!-- Sliding Images Track -->
+                <div class="flex h-full transition-transform duration-700 ease-in-out"
+                     [style.transform]="'translateX(-' + (currentSlide() * (100 / slides.length)) + '%)'"
+                     [style.width]="(slides.length * 100) + '%'">
+                  <div *ngFor="let slide of slides; let idx = index"
+                       class="h-full relative overflow-hidden"
+                       [style.width]="(100 / slides.length) + '%'">
+                    <img [src]="slide.url" [alt]="slide.title" class="w-full h-full object-cover object-center">
+                    
+                    <!-- Bottom Gradient Overlay with Slide Caption -->
+                    <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-slate-950/85 via-slate-950/40 to-transparent p-4 sm:p-5 flex items-end justify-between">
+                      <div class="text-white">
+                        <span class="text-[10px] sm:text-xs font-bold text-emerald-400 uppercase tracking-wider block">Clinical Laboratory Preview</span>
+                        <h4 class="text-xs sm:text-sm md:text-base font-bold text-white drop-shadow">{{ slide.title }}</h4>
+                      </div>
+                      <span class="text-[10px] sm:text-xs font-mono font-bold text-white/90 bg-white/20 px-3 py-1 rounded-full backdrop-blur-md border border-white/20">
+                        {{ idx + 1 }} / {{ slides.length }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Navigation Arrows on Slider -->
+                <button type="button" (click)="prevSlide()" class="absolute left-3 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-white/85 hover:bg-white text-slate-800 shadow-xl transition-all text-xs cursor-pointer backdrop-blur-sm opacity-85 hover:opacity-100" title="Previous Slide">
+                  <i class="fa-solid fa-chevron-left"></i>
+                </button>
+                <button type="button" (click)="nextSlide()" class="absolute right-3 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-white/85 hover:bg-white text-slate-800 shadow-xl transition-all text-xs cursor-pointer backdrop-blur-sm opacity-85 hover:opacity-100" title="Next Slide">
+                  <i class="fa-solid fa-chevron-right"></i>
+                </button>
+
+              </div>
+
+              <!-- Slide Dots Indicator Below Slider -->
+              <div class="pt-3.5 flex items-center justify-center space-x-2">
                 <button *ngFor="let slide of slides; let idx = index"
                   type="button"
                   (click)="setSlide(idx)"
-                  [class]="currentSlide() === idx ? 'w-7 bg-brand-600' : 'w-2 bg-slate-300 hover:bg-slate-400'"
+                  [class]="currentSlide() === idx ? 'w-8 bg-brand-600' : 'w-2 bg-slate-300 hover:bg-slate-400'"
                   class="h-2 rounded-full transition-all duration-300 cursor-pointer"
                   [title]="slide.title">
                 </button>
               </div>
 
-              <button type="button" (click)="nextSlide()" class="p-2.5 rounded-full bg-white/95 hover:bg-white text-slate-700 hover:text-slate-900 shadow-lg border border-slate-200 transition-all text-xs cursor-pointer backdrop-blur-sm" title="Next Slide">
-                <i class="fa-solid fa-chevron-right"></i>
-              </button>
-            </div>
-
-            <!-- Slide Title Caption -->
-            <div class="text-center">
-              <span class="text-[11px] font-semibold text-slate-700 bg-white/95 px-3.5 py-1 rounded-full border border-slate-200 inline-flex items-center shadow-lg backdrop-blur-sm">
-                <i class="fa-solid fa-camera mr-1.5 text-brand-600"></i>
-                <span>Slide {{ currentSlide() + 1 }} of {{ slides.length }} • {{ slides[currentSlide()].title }}</span>
-              </span>
             </div>
 
           </div>
-
         </section>
 
         <!-- Key Features Grid (Simple 6 Cards) -->
