@@ -55,15 +55,15 @@ import { SubscriptionPlan } from '../../core/models/lims.models';
         <section class="py-12 sm:py-20 text-center px-4 sm:px-8 w-full max-w-6xl mx-auto space-y-6">
           <div class="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-700">
             <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>Simple Cloud Pathology Software for Diagnostic Labs</span>
+            <span>Next-Gen Cloud LIMS for Diagnostic Laboratories</span>
           </div>
 
-          <h1 class="text-3xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-tight font-heading max-w-5xl mx-auto">
-            Simple, Fast & Reliable Software for Your Pathology Lab
+          <h1 class="text-3xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-[1.15] font-heading max-w-4xl mx-auto">
+            Run Your Pathology Lab Smarter, Faster & 100% on the Cloud
           </h1>
 
           <p class="text-sm sm:text-lg text-slate-600 max-w-3xl mx-auto leading-relaxed">
-            Manage patient registration, print thermal barcode stickers, generate reports on plain A4 paper, and send PDFs directly to patient WhatsApp with online QR verification.
+            Register patients in under 10 seconds, print thermal barcode tube labels, generate compliant reports on plain A4 paper, and deliver instant WhatsApp PDFs with verified QR codes.
           </p>
 
           <div class="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
@@ -71,21 +71,21 @@ import { SubscriptionPlan } from '../../core/models/lims.models';
               <i class="fa-solid fa-rocket text-amber-300"></i>
               <span>Start 14-Day Free Trial</span>
             </a>
-            <a href="https://wa.me/917706087066?text=Hello%20DigitalLab%2C%20I%20want%20a%20demo%20of%20the%20Pathology%20Software" target="_blank"
+            <a href="https://wa.me/917706087066?text=Hello%20DigitalLab%2C%20I%20would%20like%20a%20live%20demo%20of%20the%20Pathology%20Software" target="_blank"
               class="w-full sm:w-auto px-6 py-3.5 rounded-xl text-sm font-bold bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 shadow-sm transition-all flex items-center justify-center space-x-2">
               <i class="fa-brands fa-whatsapp text-emerald-600 text-base"></i>
-              <span>WhatsApp Demo</span>
+              <span>Schedule WhatsApp Demo</span>
             </a>
           </div>
 
           <div class="flex flex-wrap items-center justify-center gap-4 text-xs text-slate-500 font-semibold pt-2">
             <span>✓ 14-Day Free Trial</span>
             <span>•</span>
-            <span>✓ 1-Minute Setup</span>
+            <span>✓ Instant 1-Minute Setup</span>
             <span>•</span>
-            <span>✓ No Credit Card Needed</span>
+            <span>✓ No Credit Card Required</span>
             <span>•</span>
-            <span>✓ Preloaded 100+ Tests</span>
+            <span>✓ 100+ Tests Pre-loaded</span>
           </div>
         </section>
 
@@ -94,8 +94,8 @@ import { SubscriptionPlan } from '../../core/models/lims.models';
           <div class="w-full px-4 sm:px-8 lg:px-12 xl:px-16 space-y-10">
             
             <div class="text-center space-y-2 max-w-2xl mx-auto">
-              <h2 class="text-2xl sm:text-3xl font-black text-slate-900 font-heading">Everything Your Lab Needs</h2>
-              <p class="text-xs sm:text-sm text-slate-500">Built specifically for Indian pathology laboratories and collection centres.</p>
+              <h2 class="text-2xl sm:text-3xl font-black text-slate-900 font-heading">Everything Your Laboratory Needs to Scale</h2>
+              <p class="text-xs sm:text-sm text-slate-500">Engineered for modern diagnostic laboratories, collection centres, and hospital pathology departments.</p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-[1600px] mx-auto">
@@ -105,9 +105,9 @@ import { SubscriptionPlan } from '../../core/models/lims.models';
                 <div class="w-10 h-10 rounded-xl bg-brand-100 text-brand-600 flex items-center justify-center text-lg font-bold">
                   <i class="fa-solid fa-id-card-clip"></i>
                 </div>
-                <h3 class="font-bold text-slate-900 text-base font-heading">10-Second Patient Intake</h3>
+                <h3 class="font-bold text-slate-900 text-base font-heading">Fast Patient Intake & Billing</h3>
                 <p class="text-xs text-slate-600 leading-relaxed">
-                  Search patients by mobile number, auto-generate UHID, select preloaded tests (CBC, LFT, KFT), and collect cash or UPI.
+                  Register patients by phone number, auto-generate UHID records, select pre-loaded tests (CBC, LFT, KFT), and collect cash or UPI payments.
                 </p>
               </div>
 
@@ -116,9 +116,9 @@ import { SubscriptionPlan } from '../../core/models/lims.models';
                 <div class="w-10 h-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center text-lg font-bold">
                   <i class="fa-solid fa-barcode"></i>
                 </div>
-                <h3 class="font-bold text-slate-900 text-base font-heading">Barcode Tube Stickers</h3>
+                <h3 class="font-bold text-slate-900 text-base font-heading">Thermal Barcode Tube Labels</h3>
                 <p class="text-xs text-slate-600 leading-relaxed">
-                  Print 50x25mm thermal stickers for EDTA, Serum, and Fluoride tubes. Never mix up patient blood samples again.
+                  Print 50x25mm thermal barcode labels for EDTA, Serum, and Fluoride tubes to eliminate sample mix-ups at the centrifuge.
                 </p>
               </div>
 
@@ -127,9 +127,9 @@ import { SubscriptionPlan } from '../../core/models/lims.models';
                 <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-lg font-bold">
                   <i class="fa-solid fa-file-invoice"></i>
                 </div>
-                <h3 class="font-bold text-slate-900 text-base font-heading">Plain A4 Paper Printing</h3>
+                <h3 class="font-bold text-slate-900 text-base font-heading">Plain A4 Paper Report Printing</h3>
                 <p class="text-xs text-slate-600 leading-relaxed">
-                  Print clean reports on plain A4 paper with your lab logo and doctor signature. Save ₹3,000+ monthly on pre-printed pads.
+                  Print clinical reports on plain A4 paper with your custom laboratory letterhead, logo, and digital pathologist signature.
                 </p>
               </div>
 
@@ -138,9 +138,9 @@ import { SubscriptionPlan } from '../../core/models/lims.models';
                 <div class="w-10 h-10 rounded-xl bg-cyan-100 text-cyan-600 flex items-center justify-center text-lg font-bold">
                   <i class="fa-brands fa-whatsapp"></i>
                 </div>
-                <h3 class="font-bold text-slate-900 text-base font-heading">Instant WhatsApp Delivery</h3>
+                <h3 class="font-bold text-slate-900 text-base font-heading">Automated WhatsApp Delivery</h3>
                 <p class="text-xs text-slate-600 leading-relaxed">
-                  Send PDF reports directly to the patient's WhatsApp with online QR verification. Zero SMS recharge costs.
+                  Send digitally signed PDF reports directly to the patient's WhatsApp with a secure QR code for instant online authenticity verification.
                 </p>
               </div>
 
@@ -149,9 +149,9 @@ import { SubscriptionPlan } from '../../core/models/lims.models';
                 <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center text-lg font-bold">
                   <i class="fa-solid fa-user-doctor"></i>
                 </div>
-                <h3 class="font-bold text-slate-900 text-base font-heading">Doctor Referral Commission</h3>
+                <h3 class="font-bold text-slate-900 text-base font-heading">Doctor Referral Commission Tracking</h3>
                 <p class="text-xs text-slate-600 leading-relaxed">
-                  Calculate referring doctor shares automatically and print official signed settlement vouchers with 1 click.
+                  Track referring physicians automatically, calculate referral shares accurately, and generate official signed settlement vouchers.
                 </p>
               </div>
 
@@ -160,9 +160,9 @@ import { SubscriptionPlan } from '../../core/models/lims.models';
                 <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center text-lg font-bold">
                   <i class="fa-solid fa-cash-register"></i>
                 </div>
-                <h3 class="font-bold text-slate-900 text-base font-heading">Daily Cash Ledger</h3>
+                <h3 class="font-bold text-slate-900 text-base font-heading">Real-Time Financial Ledger</h3>
                 <p class="text-xs text-slate-600 leading-relaxed">
-                  Live summary of today's total bills, cash drawer, UPI payments, and uncollected dues from any phone or computer.
+                  Monitor daily billed revenue, physical cash drawer collections, UPI inflow, and uncollected dues from any phone or computer.
                 </p>
               </div>
 
@@ -174,27 +174,27 @@ import { SubscriptionPlan } from '../../core/models/lims.models';
         <!-- How It Works (Simple 3 Steps) -->
         <section id="how-it-works" class="py-12 sm:py-16 w-full px-4 sm:px-8 lg:px-12 xl:px-16 space-y-8">
           <div class="text-center space-y-2">
-            <h2 class="text-2xl sm:text-3xl font-black text-slate-900 font-heading">How It Works in 3 Steps</h2>
-            <p class="text-xs sm:text-sm text-slate-500">Start generating professional reports in under 3 minutes.</p>
+            <h2 class="text-2xl sm:text-3xl font-black text-slate-900 font-heading">How It Works in 3 Simple Steps</h2>
+            <p class="text-xs sm:text-sm text-slate-500">Start generating your first clinical test report in under three minutes.</p>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center max-w-[1600px] mx-auto">
             <div class="p-6 rounded-2xl bg-white border border-slate-200 space-y-2">
               <div class="w-9 h-9 rounded-full bg-brand-600 text-white font-black text-sm flex items-center justify-center mx-auto">1</div>
-              <h3 class="font-bold text-slate-900 text-base">Create Account</h3>
-              <p class="text-xs text-slate-500">Sign up in 30 seconds with your lab name and email. No installation needed.</p>
+              <h3 class="font-bold text-slate-900 text-base">Create Your Account</h3>
+              <p class="text-xs text-slate-500">Sign up in 30 seconds with your laboratory name and email address. Zero software installation required.</p>
             </div>
 
             <div class="p-6 rounded-2xl bg-white border border-slate-200 space-y-2">
               <div class="w-9 h-9 rounded-full bg-brand-600 text-white font-black text-sm flex items-center justify-center mx-auto">2</div>
-              <h3 class="font-bold text-slate-900 text-base">Register & Enter Values</h3>
-              <p class="text-xs text-slate-500">Add patient, choose preloaded tests (CBC, LFT, etc.), and type results.</p>
+              <h3 class="font-bold text-slate-900 text-base">Add Patient & Enter Results</h3>
+              <p class="text-xs text-slate-500">Register incoming patients, pick pre-loaded test profiles (CBC, LFT, KFT), and input observed values.</p>
             </div>
 
             <div class="p-6 rounded-2xl bg-white border border-slate-200 space-y-2">
               <div class="w-9 h-9 rounded-full bg-brand-600 text-white font-black text-sm flex items-center justify-center mx-auto">3</div>
-              <h3 class="font-bold text-slate-900 text-base">Print & WhatsApp</h3>
-              <p class="text-xs text-slate-500">Print instant QR report on plain paper or dispatch PDF directly via WhatsApp.</p>
+              <h3 class="font-bold text-slate-900 text-base">Deliver & Print Reports</h3>
+              <p class="text-xs text-slate-500">Print clear QR reports on plain paper or dispatch digitally signed PDF reports directly to patient WhatsApp.</p>
             </div>
           </div>
         </section>
