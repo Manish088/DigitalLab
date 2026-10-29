@@ -14,7 +14,7 @@ import { SubscriptionPlan } from '../../core/models/lims.models';
       
       <!-- Top Navigation -->
       <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between">
+        <div class="w-full px-4 sm:px-8 lg:px-12 xl:px-16 h-16 sm:h-20 flex items-center justify-between">
           
           <!-- Logo -->
           <a routerLink="/home" class="flex items-center space-x-2.5">
@@ -52,17 +52,17 @@ import { SubscriptionPlan } from '../../core/models/lims.models';
       <main>
         
         <!-- Hero Section -->
-        <section class="py-12 sm:py-20 text-center px-4 max-w-4xl mx-auto space-y-6">
+        <section class="py-12 sm:py-20 text-center px-4 sm:px-8 w-full max-w-6xl mx-auto space-y-6">
           <div class="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-700">
             <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             <span>Simple Cloud Pathology Software for Diagnostic Labs</span>
           </div>
 
-          <h1 class="text-3xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-tight font-heading">
+          <h1 class="text-3xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-tight font-heading max-w-5xl mx-auto">
             Simple, Fast & Reliable Software for Your Pathology Lab
           </h1>
 
-          <p class="text-sm sm:text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
+          <p class="text-sm sm:text-lg text-slate-600 max-w-3xl mx-auto leading-relaxed">
             Manage patient registration, print thermal barcode stickers, generate reports on plain A4 paper, and send PDFs directly to patient WhatsApp with online QR verification.
           </p>
 
@@ -91,14 +91,14 @@ import { SubscriptionPlan } from '../../core/models/lims.models';
 
         <!-- Key Features Grid (Simple 6 Cards) -->
         <section id="features" class="py-12 sm:py-16 bg-white border-y border-slate-200">
-          <div class="max-w-6xl mx-auto px-4 sm:px-6 space-y-10">
+          <div class="w-full px-4 sm:px-8 lg:px-12 xl:px-16 space-y-10">
             
             <div class="text-center space-y-2 max-w-2xl mx-auto">
               <h2 class="text-2xl sm:text-3xl font-black text-slate-900 font-heading">Everything Your Lab Needs</h2>
               <p class="text-xs sm:text-sm text-slate-500">Built specifically for Indian pathology laboratories and collection centres.</p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-[1600px] mx-auto">
               
               <!-- 1 -->
               <div class="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5 hover:border-brand-300 transition-all">
@@ -172,13 +172,13 @@ import { SubscriptionPlan } from '../../core/models/lims.models';
         </section>
 
         <!-- How It Works (Simple 3 Steps) -->
-        <section id="how-it-works" class="py-12 sm:py-16 max-w-5xl mx-auto px-4 sm:px-6 space-y-8">
+        <section id="how-it-works" class="py-12 sm:py-16 w-full px-4 sm:px-8 lg:px-12 xl:px-16 space-y-8">
           <div class="text-center space-y-2">
             <h2 class="text-2xl sm:text-3xl font-black text-slate-900 font-heading">How It Works in 3 Steps</h2>
             <p class="text-xs sm:text-sm text-slate-500">Start generating professional reports in under 3 minutes.</p>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center max-w-[1600px] mx-auto">
             <div class="p-6 rounded-2xl bg-white border border-slate-200 space-y-2">
               <div class="w-9 h-9 rounded-full bg-brand-600 text-white font-black text-sm flex items-center justify-center mx-auto">1</div>
               <h3 class="font-bold text-slate-900 text-base">Create Account</h3>
@@ -201,7 +201,7 @@ import { SubscriptionPlan } from '../../core/models/lims.models';
 
         <!-- Pricing Section (Dynamic from Database) -->
         <section id="pricing" class="py-12 sm:py-16 bg-white border-y border-slate-200">
-          <div class="max-w-6xl mx-auto px-4 sm:px-6 space-y-10">
+          <div class="w-full px-4 sm:px-8 lg:px-12 xl:px-16 space-y-10">
             
             <div class="text-center space-y-3 max-w-xl mx-auto">
               <h2 class="text-2xl sm:text-3xl font-black text-slate-900 font-heading">Simple, Transparent Pricing</h2>
@@ -224,7 +224,7 @@ import { SubscriptionPlan } from '../../core/models/lims.models';
             </div>
 
             <!-- Dynamic Plan Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-[1600px] mx-auto">
               <div *ngFor="let plan of displayPlans()"
                 [class]="plan.planCode === 'PRO' ? 'border-2 border-brand-600 bg-brand-50/20 shadow-lg relative' : 'border border-slate-200 bg-white'"
                 class="rounded-2xl p-6 flex flex-col justify-between space-y-6">
@@ -293,7 +293,7 @@ import { SubscriptionPlan } from '../../core/models/lims.models';
         </section>
 
         <!-- Final Simple CTA -->
-        <section class="py-12 sm:py-16 text-center max-w-2xl mx-auto px-4 space-y-5">
+        <section class="py-12 sm:py-16 text-center w-full max-w-4xl mx-auto px-4 sm:px-8 space-y-5">
           <h2 class="text-2xl sm:text-4xl font-black text-slate-900 font-heading">
             Ready to upgrade your laboratory?
           </h2>
@@ -315,7 +315,7 @@ import { SubscriptionPlan } from '../../core/models/lims.models';
 
       <!-- Simple Clean Footer -->
       <footer class="bg-white border-t border-slate-200 py-6 text-xs text-slate-500">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+        <div class="w-full px-4 sm:px-8 lg:px-12 xl:px-16 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
           <div class="flex items-center space-x-2">
             <img src="logo.png" alt="DigitalLab" class="w-6 h-6 object-contain">
             <span class="font-bold text-slate-800">DigitalLab Cloud LIMS</span>
