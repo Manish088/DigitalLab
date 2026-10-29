@@ -51,10 +51,10 @@ import { SubscriptionPlan } from '../../core/models/lims.models';
       <!-- Main Body -->
       <main>
         
-        <!-- Hero Section with Background Lab Image Slider -->
-        <section class="relative min-h-[520px] sm:min-h-[580px] lg:min-h-[640px] flex items-center justify-center overflow-hidden w-full bg-slate-950 text-white">
+        <!-- Hero Section with Bright Laboratory Background Image Slider -->
+        <section class="relative min-h-[520px] sm:min-h-[580px] lg:min-h-[620px] flex items-center justify-center overflow-hidden w-full bg-white text-slate-900 border-b border-slate-200">
           
-          <!-- Background Slides (5 Images Horizontal Sliding Carousel Track) -->
+          <!-- Background Slides (5 Images Horizontal Sliding Track) -->
           <div class="absolute inset-0 z-0 overflow-hidden">
             <div class="flex h-full transition-transform duration-700 ease-in-out"
                  [style.transform]="'translateX(-' + (currentSlide() * (100 / slides.length)) + '%)'"
@@ -66,57 +66,57 @@ import { SubscriptionPlan } from '../../core/models/lims.models';
               </div>
             </div>
 
-            <!-- Deep Medical Gradient & Contrast Backdrop Overlay -->
-            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-slate-900/65 backdrop-blur-[0.5px] pointer-events-none"></div>
-            <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(2,6,23,0.7)_100%)] pointer-events-none"></div>
+            <!-- Soft Bright Translucent Backdrop Overlay (Bright & High Contrast) -->
+            <div class="absolute inset-0 bg-white/80 backdrop-blur-[1.5px] pointer-events-none"></div>
+            <div class="absolute inset-0 bg-gradient-to-b from-white/90 via-white/70 to-white/95 pointer-events-none"></div>
           </div>
 
-          <!-- Hero Content Overlay (Always Crisp & High Contrast) -->
-          <div class="relative z-10 w-full px-4 sm:px-8 py-16 sm:py-24 text-center max-w-5xl mx-auto space-y-6">
+          <!-- Hero Content Overlay (Crystal Clear Dark Typography) -->
+          <div class="relative z-10 w-full px-4 sm:px-8 py-16 sm:py-20 text-center max-w-5xl mx-auto space-y-6">
             
             <!-- Category Badge -->
-            <div class="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-xs font-bold text-emerald-300 backdrop-blur-md shadow-lg">
-              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+            <div class="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-emerald-50 border border-emerald-300 text-xs font-bold text-emerald-800 shadow-sm">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
               <span>Next-Gen Cloud LIMS for Diagnostic Laboratories</span>
             </div>
 
             <!-- Main Headline -->
-            <h1 class="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.15] font-heading drop-shadow-md max-w-4xl mx-auto">
+            <h1 class="text-3xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-[1.15] font-heading max-w-4xl mx-auto">
               Run Your Pathology Lab Smarter, Faster & 100% on the Cloud
             </h1>
 
             <!-- Subtitle -->
-            <p class="text-sm sm:text-lg text-slate-200 max-w-3xl mx-auto leading-relaxed drop-shadow">
+            <p class="text-sm sm:text-lg text-slate-700 max-w-3xl mx-auto leading-relaxed font-medium">
               Register patients in under 10 seconds, print thermal barcode tube labels, generate compliant reports on plain A4 paper, and deliver instant WhatsApp PDFs with verified QR codes.
             </p>
 
             <!-- Buttons -->
             <div class="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-2">
-              <a routerLink="/register" class="w-full sm:w-auto px-8 py-4 rounded-xl text-sm font-black bg-gradient-to-r from-brand-500 via-cyan-500 to-emerald-500 hover:from-brand-400 hover:to-emerald-400 text-slate-950 shadow-2xl hover:scale-105 transition-all flex items-center justify-center space-x-2">
-                <i class="fa-solid fa-rocket text-slate-950"></i>
+              <a routerLink="/register" class="w-full sm:w-auto px-8 py-3.5 sm:py-4 rounded-xl text-sm font-black bg-brand-600 hover:bg-brand-500 text-white shadow-xl shadow-brand-500/25 hover:scale-105 transition-all flex items-center justify-center space-x-2">
+                <i class="fa-solid fa-rocket text-amber-300"></i>
                 <span>Start 14-Day Free Trial</span>
               </a>
               <a href="https://wa.me/917706087066?text=Hello%20DigitalLab%2C%20I%20would%20like%20a%20live%20demo%20of%20the%20Pathology%20Software" target="_blank"
-                class="w-full sm:w-auto px-7 py-4 rounded-xl text-sm font-bold bg-white/15 hover:bg-white/25 text-white border border-white/30 backdrop-blur-md shadow-lg transition-all flex items-center justify-center space-x-2">
-                <i class="fa-brands fa-whatsapp text-emerald-400 text-lg"></i>
+                class="w-full sm:w-auto px-7 py-3.5 sm:py-4 rounded-xl text-sm font-bold bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 shadow-md hover:border-emerald-500 transition-all flex items-center justify-center space-x-2">
+                <i class="fa-brands fa-whatsapp text-emerald-600 text-lg"></i>
                 <span>Schedule WhatsApp Demo</span>
               </a>
             </div>
 
             <!-- Trust Points -->
-            <div class="flex flex-wrap items-center justify-center gap-4 text-xs text-slate-300 font-semibold pt-2">
-              <span class="flex items-center text-emerald-300"><i class="fa-solid fa-check mr-1.5"></i> 14-Day Free Trial</span>
-              <span class="text-slate-600">•</span>
-              <span class="flex items-center text-cyan-300"><i class="fa-solid fa-bolt mr-1.5"></i> Instant 1-Minute Setup</span>
-              <span class="text-slate-600">•</span>
-              <span class="flex items-center text-slate-300"><i class="fa-solid fa-shield-halved mr-1.5"></i> No Credit Card Required</span>
-              <span class="text-slate-600">•</span>
-              <span class="flex items-center text-amber-300"><i class="fa-solid fa-flask-vial mr-1.5"></i> 100+ Tests Pre-loaded</span>
+            <div class="flex flex-wrap items-center justify-center gap-4 text-xs text-slate-600 font-semibold pt-2">
+              <span class="flex items-center text-emerald-700"><i class="fa-solid fa-check mr-1.5"></i> 14-Day Free Trial</span>
+              <span class="text-slate-300">•</span>
+              <span class="flex items-center text-brand-700"><i class="fa-solid fa-bolt mr-1.5 text-amber-500"></i> Instant 1-Minute Setup</span>
+              <span class="text-slate-300">•</span>
+              <span class="flex items-center text-slate-700"><i class="fa-solid fa-shield-halved mr-1.5 text-cyan-600"></i> No Credit Card Required</span>
+              <span class="text-slate-300">•</span>
+              <span class="flex items-center text-slate-700"><i class="fa-solid fa-flask-vial mr-1.5 text-teal-600"></i> 100+ Tests Pre-loaded</span>
             </div>
 
             <!-- Slide Navigation Controls & Indicator Dots -->
-            <div class="pt-6 flex items-center justify-center space-x-3">
-              <button type="button" (click)="prevSlide()" class="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-all text-xs cursor-pointer border border-white/20" title="Previous Slide">
+            <div class="pt-4 flex items-center justify-center space-x-3">
+              <button type="button" (click)="prevSlide()" class="p-2 rounded-full bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 shadow border border-slate-200 transition-all text-xs cursor-pointer" title="Previous Slide">
                 <i class="fa-solid fa-chevron-left"></i>
               </button>
               
@@ -124,21 +124,23 @@ import { SubscriptionPlan } from '../../core/models/lims.models';
                 <button *ngFor="let slide of slides; let idx = index"
                   type="button"
                   (click)="setSlide(idx)"
-                  [class]="currentSlide() === idx ? 'w-8 bg-emerald-400' : 'w-2 bg-white/40 hover:bg-white/70'"
+                  [class]="currentSlide() === idx ? 'w-8 bg-brand-600' : 'w-2 bg-slate-300 hover:bg-slate-400'"
                   class="h-2 rounded-full transition-all duration-300 cursor-pointer"
                   [title]="slide.title">
                 </button>
               </div>
 
-              <button type="button" (click)="nextSlide()" class="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-all text-xs cursor-pointer border border-white/20" title="Next Slide">
+              <button type="button" (click)="nextSlide()" class="p-2 rounded-full bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 shadow border border-slate-200 transition-all text-xs cursor-pointer" title="Next Slide">
                 <i class="fa-solid fa-chevron-right"></i>
               </button>
             </div>
 
             <!-- Slide Title Caption -->
-            <div class="text-[11px] font-mono text-slate-400">
-              <i class="fa-solid fa-camera mr-1 text-slate-500"></i>
-              <span>Slide {{ currentSlide() + 1 }} of {{ slides.length }} • {{ slides[currentSlide()].title }}</span>
+            <div>
+              <span class="text-[11px] font-semibold text-slate-600 bg-white/80 px-3 py-1 rounded-full border border-slate-200 inline-flex items-center shadow-sm">
+                <i class="fa-solid fa-camera mr-1.5 text-brand-600"></i>
+                <span>Slide {{ currentSlide() + 1 }} of {{ slides.length }} • {{ slides[currentSlide()].title }}</span>
+              </span>
             </div>
 
           </div>
