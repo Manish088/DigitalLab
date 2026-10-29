@@ -54,20 +54,21 @@ import { SubscriptionPlan } from '../../core/models/lims.models';
         <!-- Hero Section with Background Lab Image Slider -->
         <section class="relative min-h-[520px] sm:min-h-[580px] lg:min-h-[640px] flex items-center justify-center overflow-hidden w-full bg-slate-950 text-white">
           
-          <!-- Background Slides (5 Images Crossfade Carousel) -->
-          <div class="absolute inset-0 z-0">
-            <div *ngFor="let slide of slides; let idx = index"
-              class="absolute inset-0 transition-opacity duration-1000 ease-in-out"
-              [class.opacity-100]="currentSlide() === idx"
-              [class.opacity-0]="currentSlide() !== idx"
-              [class.scale-105]="currentSlide() === idx"
-              style="transition: opacity 1.2s ease-in-out, transform 6s ease-out;">
-              <img [src]="slide.url" [alt]="slide.title" class="w-full h-full object-cover object-center">
+          <!-- Background Slides (5 Images Horizontal Sliding Carousel Track) -->
+          <div class="absolute inset-0 z-0 overflow-hidden">
+            <div class="flex h-full transition-transform duration-700 ease-in-out"
+                 [style.transform]="'translateX(-' + (currentSlide() * (100 / slides.length)) + '%)'"
+                 [style.width]="(slides.length * 100) + '%'">
+              <div *ngFor="let slide of slides; let idx = index"
+                   class="h-full relative overflow-hidden"
+                   [style.width]="(100 / slides.length) + '%'">
+                <img [src]="slide.url" [alt]="slide.title" class="w-full h-full object-cover object-center">
+              </div>
             </div>
 
             <!-- Deep Medical Gradient & Contrast Backdrop Overlay -->
-            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-slate-900/65 backdrop-blur-[0.5px]"></div>
-            <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(2,6,23,0.7)_100%)]"></div>
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-slate-900/65 backdrop-blur-[0.5px] pointer-events-none"></div>
+            <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(2,6,23,0.7)_100%)] pointer-events-none"></div>
           </div>
 
           <!-- Hero Content Overlay (Always Crisp & High Contrast) -->
